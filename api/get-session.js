@@ -1,15 +1,11 @@
-const Stripe = require('stripe')
+import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
   if (debug) console.log('[get-session] invoked', { method: req.method, query: req.query })
 
-  if (req.method !== 'GET') {
-    if (debug) console.log('[get-session] method not allowed', req.method)
-    return res.status(405).end('Method not allowed')
-  }
-
+  if (req.method !== 'GET') return res.status(405).end('Method not allowed')
   const { sessionId } = req.query || {}
   if (!sessionId) return res.status(400).json({ error: 'sessionId required' })
 

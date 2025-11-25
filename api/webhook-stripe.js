@@ -1,8 +1,8 @@
-const Stripe = require('stripe')
+import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const { db } = require('./firebaseAdmin_cjs.cjs')
+import { db } from './firebaseAdmin.js'
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
   const sig = req.headers['stripe-signature']
   const rawBody = req.rawBody || ''
@@ -10,11 +10,9 @@ module.exports = async (req, res) => {
 
   try {
     if (debug) console.log('[webhook-stripe] rawBody length', rawBody && rawBody.length)
-    if (debug) console.log('[webhook-stripe] sig', sig)
     const event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET)
     console.log('[webhook-stripe] Stripe webhook event:', event.type)
 
-    // Handle checkout.session.completed
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
       const email = session.customer_details?.email || null
@@ -27,11 +25,7 @@ module.exports = async (req, res) => {
         const usersRef = db.collection('users')
         const q = await usersRef.where('email', '==', email).limit(1).get()
         if (q.empty) {
-          await usersRef.add({
-            email,
-            stripeCustomerId,
-            createdAt: new Date(),
-          })
+          await usersRef.add({ email, stripeCustomerId, createdAt: new Date() })
         } else {
           const doc = q.docs[0]
           await doc.ref.update({ stripeCustomerId })
@@ -53,10 +47,7 @@ module.exports = async (req, res) => {
       const invoice = event.data.object
       const subscriptionId = invoice.subscription
       if (subscriptionId) {
-        await db.collection('subscriptions').doc(subscriptionId).set({
-          status: 'active',
-          lastPaymentAt: new Date(),
-        }, { merge: true })
+        await db.collection('subscriptions').doc(subscriptionId).set({ status: 'active', lastPaymentAt: new Date() }, { merge: true })
       }
     }
 
@@ -64,18 +55,13 @@ module.exports = async (req, res) => {
       const sub = event.data.object
       const subscriptionId = sub.id
       const status = sub.status
-      await db.collection('subscriptions').doc(subscriptionId).set({
-        status,
-        updatedAt: new Date(),
-      }, { merge: true })
+      await db.collection('subscriptions').doc(subscriptionId).set({ status, updatedAt: new Date() }, { merge: true })
     }
 
     res.json({ received: true })
   } catch (err) {
     console.error('[webhook-stripe] Webhook error', err && err.message ? err.message : err)
-    if (debug) {
-      return res.status(400).send(`Webhook Error: ${err && err.message ? err.message : err}`)
-    }
+    if (debug) return res.status(400).send(`Webhook Error: ${err && err.message ? err.message : err}`)
     res.status(400).send('Webhook Error')
   }
 }

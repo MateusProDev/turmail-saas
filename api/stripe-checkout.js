@@ -1,14 +1,12 @@
-const Stripe = require('stripe')
+import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+import { json } from 'stream/consumers'
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
-  if (debug) console.log('[stripe-checkout] invoked', { method: req.method, headers: req.headers })
+  if (debug) console.log('[stripe-checkout] invoked', { method: req.method })
 
-  if (req.method !== 'POST') {
-    if (debug) console.log('[stripe-checkout] method not allowed', req.method)
-    return res.status(405).end('Method not allowed')
-  }
+  if (req.method !== 'POST') return res.status(405).end('Method not allowed')
 
   try {
     const { priceId } = req.body || {}
@@ -32,13 +30,11 @@ module.exports = async (req, res) => {
       cancel_url: cancelUrl,
     })
 
-    if (debug) console.log('[stripe-checkout] session created', { id: session.id, url: session.url })
+    if (debug) console.log('[stripe-checkout] session created', { id: session.id })
     return res.json({ url: session.url, id: session.id })
   } catch (err) {
     console.error('[stripe-checkout] error', err && err.message ? err.message : err)
-    if (debug) {
-      return res.status(500).json({ error: String(err && err.message ? err.message : 'internal'), stack: err.stack })
-    }
+    if (debug) return res.status(500).json({ error: String(err && err.message ? err.message : 'internal'), stack: err.stack })
     return res.status(500).json({ error: 'internal' })
   }
 }

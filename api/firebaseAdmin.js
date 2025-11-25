@@ -1,4 +1,7 @@
-const admin = require('firebase-admin')
+import admin from 'firebase-admin'
+
+const debug = process.env.DEBUG_API === 'true'
+if (debug) console.log('[firebaseAdmin] ESM init')
 
 if (!admin.apps.length) {
   const projectId = process.env.FIREBASE_PROJECT_ID
@@ -7,6 +10,8 @@ if (!admin.apps.length) {
   if (privateKey && privateKey.indexOf('\\n') !== -1) {
     privateKey = privateKey.replace(/\\n/g, '\n')
   }
+
+  if (debug) console.log('[firebaseAdmin] creds', { projectId, clientEmail, hasPrivateKey: !!privateKey })
 
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -17,5 +22,5 @@ if (!admin.apps.length) {
   })
 }
 
-const db = admin.firestore()
-module.exports = { admin, db }
+export const db = admin.firestore()
+export default admin
