@@ -35,11 +35,23 @@ export default async function handler(req, res) {
     // 14 days trial
     const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
+    // Canonical fields from makeInitialUserData
     const doc = {
-      email: email || null,
       uid,
-      ownerUid: uid,
+      email: email || '',
+      displayName: '',
+      photoURL: '',
+      role: 'user',
+      plan: 'free',
       planId: planId || 'free',
+      stripeCustomerId: '',
+      billing: {},
+      company: { name: '', website: '' },
+      phone: '',
+      locale: 'pt-BR',
+      onboardingCompleted: false,
+      metadata: {},
+      ownerUid: uid,
       status: 'trial',
       trialEndsAt,
       ipAddress: ip,

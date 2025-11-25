@@ -9,6 +9,24 @@
   background: transparent !important;
 }
 
+.dashboard .min-h-screen {
+  min-height: 100vh !important;
+}
+
+.dashboard aside a {
+  display: block !important;
+  padding: 0.35rem 0 !important;
+}
+
+.dashboard table th, .dashboard table td {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.dashboard .btn-ghost {
+  padding: 0.45rem 0.6rem !important;
+  border-radius: 6px !important;
+}
+
 .dashboard-top {
   display: flex !important;
   align-items: center !important;

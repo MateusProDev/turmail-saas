@@ -26,19 +26,40 @@ export default function Plans() {
       return
     }
     const subsRef = collection(db, 'subscriptions')
-    const q = query(subsRef, where('ownerUid', '==', user.uid))
-    const unsub = onSnapshot(q, (snap) => {
+    // Listen by ownerUid, then fallback to email if not found
+    const qByUid = query(subsRef, where('ownerUid', '==', user.uid))
+    let unsubUid: any = null
+    let unsubEmail: any = null
+
+    const handleSnap = (snap: any) => {
       if (!snap.empty) {
         const doc = snap.docs[0]
         setSubscription({ id: doc.id, ...doc.data() })
-      } else {
-        setSubscription(null)
+        return true
       }
-    }, (err) => {
-      console.error('failed to subscribe to subscriptions', err)
-      setSubscription(null)
-    })
-    return () => unsub()
+      return false
+    }
+
+    unsubUid = onSnapshot(qByUid, (snap) => {
+      const found = handleSnap(snap)
+      if (!found && user.email) {
+        if (unsubEmail) unsubEmail()
+        const qByEmail = query(subsRef, where('email', '==', user.email))
+        unsubEmail = onSnapshot(qByEmail, (snap2) => {
+          if (!snap2.empty) {
+            const doc = snap2.docs[0]
+            setSubscription({ id: doc.id, ...doc.data() })
+          } else {
+            setSubscription(null)
+          }
+        }, (err) => console.error('subscription-by-email snapshot error', err))
+      }
+    }, (err) => console.error('subscription snapshot error', err))
+
+    return () => {
+      if (unsubUid) unsubUid()
+      if (unsubEmail) unsubEmail()
+    }
   }, [user])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
@@ -287,9 +308,18 @@ export default function Plans() {
                           <div>Seu teste gratuito de 14 dias é ativado automaticamente ao acessar o dashboard.</div>
                           <div className="mt-2 flex items-center gap-3">
                                 <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Ir para o dashboard</button>
-                                {subscription && subscription.status === 'trial' && subscription.trialEndsAt && (
-                                  <CountdownBadge end={subscription.trialEndsAt} />
-                                )}
+                                {subscription && subscription.trialEndsAt && (function() {
+                                  const toDate = (t: any) => {
+                                    if (!t) return null
+                                    if (typeof t.toDate === 'function') return t.toDate()
+                                    if (t.seconds) return new Date(t.seconds * 1000)
+                                    return new Date(t)
+                                  }
+                                  const end = toDate(subscription.trialEndsAt)
+                                  if (!end) return <span className="text-xs text-gray-500">Aguardando ativação do teste...</span>
+                                  const active = end.getTime() > Date.now()
+                                  return active ? <CountdownBadge end={subscription.trialEndsAt} /> : <span className="text-xs text-red-600">Teste expirado</span>
+                                })()}
                               </div>
                         </div>
                       )
