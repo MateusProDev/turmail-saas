@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import dotenv from 'dotenv'
+dotenv.config({ path: '.env' })
 import admin from '../api/firebaseAdmin.js'
 
 async function main() {
