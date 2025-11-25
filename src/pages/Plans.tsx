@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { createCheckoutSession } from '../lib/stripe'
+import { useAuthState } from 'react-firebase-hooks/auth'
+import { auth, db } from '../lib/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
 
 const PLANS: { id: string; name: string; price: string; priceIdEnv?: string }[] = [
   { id: 'free', name: 'Free', price: 'R$0/mês' },
@@ -9,10 +13,34 @@ const PLANS: { id: string; name: string; price: string; priceIdEnv?: string }[] 
 
 export default function Plans() {
   const [loading, setLoading] = useState(false)
+  const [user] = useAuthState(auth)
+  const navigate = useNavigate()
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
     if (!plan.priceIdEnv) {
-      alert('Plano gratuito selecionado')
+      // free plan - create a simple subscription record for the user
+      if (!user) {
+        alert('Você precisa entrar para selecionar o plano gratuito')
+        navigate('/login')
+        return
+      }
+      try {
+        setLoading(true)
+        await addDoc(collection(db, 'subscriptions'), {
+          email: user.email || null,
+          uid: user.uid || null,
+          planId: 'free',
+          status: 'active',
+          createdAt: serverTimestamp(),
+        })
+        alert('Plano gratuito ativado!')
+        navigate('/dashboard')
+      } catch (err) {
+        console.error('failed to set free plan', err)
+        alert('Falha ao ativar plano gratuito')
+      } finally {
+        setLoading(false)
+      }
       return
     }
 
