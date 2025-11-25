@@ -4,7 +4,7 @@ import './Plans.css'
 import { createCheckoutSession } from '../lib/stripe'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 const PLANS: { id: string; name: string; priceMonthly?: number; priceIdEnvMonthly?: string; priceIdEnvAnnual?: string; recommended?: boolean }[] = [
@@ -25,23 +25,20 @@ export default function Plans() {
       setSubscription(null)
       return
     }
-    const fetchSubscription = async () => {
-      try {
-        const subsRef = collection(db, 'subscriptions')
-        const q = query(subsRef, where('ownerUid', '==', user.uid))
-        const snap = await getDocs(q)
-        if (!snap.empty) {
-          const doc = snap.docs[0]
-          setSubscription({ id: doc.id, ...doc.data() })
-        } else {
-          setSubscription(null)
-        }
-      } catch (err) {
-        console.error('failed to fetch subscription', err)
+    const subsRef = collection(db, 'subscriptions')
+    const q = query(subsRef, where('ownerUid', '==', user.uid))
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const doc = snap.docs[0]
+        setSubscription({ id: doc.id, ...doc.data() })
+      } else {
         setSubscription(null)
       }
-    }
-    fetchSubscription()
+    }, (err) => {
+      console.error('failed to subscribe to subscriptions', err)
+      setSubscription(null)
+    })
+    return () => unsub()
   }, [user])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {

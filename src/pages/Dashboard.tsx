@@ -3,7 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth'
 import './Dashboard.css'
 import { auth, db } from '../lib/firebase'
 import { useEffect, useState } from 'react'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -14,23 +14,18 @@ export default function Dashboard(){
 
   useEffect(() => {
     if (!user) return
-    const fetchSubscription = async () => {
-      try {
-        const subsRef = collection(db, 'subscriptions')
-        // Use ownerUid to scope subscriptions to the authenticated user
-        const q = query(subsRef, where('ownerUid', '==', user.uid))
-        const snap = await getDocs(q)
-        if (!snap.empty) {
-          const doc = snap.docs[0]
-          setSubscription({ id: doc.id, ...doc.data() })
-        } else {
-          setSubscription(null)
-        }
-      } catch (err) {
-        console.error('failed to fetch subscription', err)
+    // realtime listener so subscription changes (trial start) appear immediately
+    const subsRef = collection(db, 'subscriptions')
+    const q = query(subsRef, where('ownerUid', '==', user.uid))
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const doc = snap.docs[0]
+        setSubscription({ id: doc.id, ...doc.data() })
+      } else {
+        setSubscription(null)
       }
-    }
-    fetchSubscription()
+    }, (err) => console.error('subscription snapshot error', err))
+    return () => unsub()
   }, [user])
 
   if(loading) return <div>Carregando...</div>
