@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { FaPlane, FaEnvelope, FaChartBar, FaBullseye, FaCheck, FaTwitter, FaInstagram, FaLinkedin, FaGithub } from 'react-icons/fa'
 import './Home.css'
 
 export default function Home() {
@@ -23,14 +24,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">TM</span>
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Turmail
-                </span>
-              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Turmail</span>
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
@@ -91,13 +85,11 @@ export default function Home() {
                 </div>
                 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-                  Transforme 
-                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> passageiros </span>
-                  em clientes fiéis
+                  Aumente reservas e <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">fidelize clientes </span> de viagem
                 </h1>
-                
+
                 <p className="mt-6 text-xl text-gray-600 max-w-2xl leading-relaxed">
-                  Automatize sua comunicação e <strong>aumente em 3x as reservas recorrentes</strong> com emails personalizados para cada etapa da jornada do seu cliente.
+                  Automatize e personalize e‑mails para cada etapa da jornada do viajante. Teste agora mesmo.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -138,45 +130,41 @@ export default function Home() {
                       <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     </div>
-                    <div className="bg-gray-800 rounded-lg p-6">
-                      <div className="text-white font-mono text-sm">
-                        <div className="text-green-400">// Dashboard Turmail</div>
-                        <div className="mt-2 text-blue-400">clientesAtivos: <span className="text-white">1.247</span></div>
-                        <div className="text-blue-400">taxaReversas: <span className="text-white">"68%"</span></div>
-                        <div className="text-blue-400">receitaMensal: <span className="text-white">"R$ 45.230"</span></div>
+                      <div className="bg-gray-800 rounded-lg p-6">
+                        <div className="text-white font-mono text-sm">
+                          <div className="text-green-400">Exemplo de resultados</div>
+                          <div className="mt-2 text-blue-400">Aumento de reservas: <span className="text-white">3x</span></div>
+                          <div className="text-blue-400">Taxa de abertura média: <span className="text-white">45%</span></div>
+                          <div className="text-blue-400">Receita estimada: <span className="text-white">+120%</span></div>
+                        </div>
                       </div>
-                    </div>
                   </div>
                 </div>
                 
                 {/* Floating Elements */}
                 <div className="absolute -top-4 -right-4 bg-white p-4 rounded-xl shadow-lg border">
-                  <div className="text-sm font-semibold text-green-600">+42%</div>
-                  <div className="text-xs text-gray-500">Reservas</div>
+                  <div className="text-sm font-semibold text-green-600">Reservas: <span className="text-gray-700">+3x</span></div>
+                  <div className="text-xs text-gray-500">(após automações)</div>
                 </div>
-                
+
                 <div className="absolute -bottom-4 -left-4 bg-white p-4 rounded-xl shadow-lg border">
-                  <div className="text-sm font-semibold text-blue-600">3.2x</div>
-                  <div className="text-xs text-gray-500">Fidelização</div>
+                  <div className="text-sm font-semibold text-blue-600">Retenção: <span className="text-gray-700">+25%</span></div>
+                  <div className="text-xs text-gray-500">(exemplo de resultado)</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Social Proof */}
+        {/* Social Proof (temporarily removed) */}
         <section className="bg-gray-50 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <p className="text-gray-600 font-medium">Confiança de mais de 200 agências de turismo</p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p className="text-gray-600 font-medium mb-6">Estamos em piloto com agências selecionadas. Inscreva-se para testar o piloto.</p>
+            <div className="flex justify-center">
+              <Link to="/demo" className="px-6 py-3 bg-blue-600 text-white rounded-md font-medium">Solicitar acesso ao piloto</Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 opacity-60">
-              {['ViagemTop', 'TourBrasil', 'EcoTravel', 'LuxoTur'].map((brand) => (
-                <div key={brand} className="text-center text-gray-400 font-semibold text-lg">
-                  {brand}
-                </div>
-              ))}
-            </div>
+
+            {/* Partner grid removed for now; restore later if needed */}
           </div>
         </section>
 
@@ -196,37 +184,26 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
                 {
-                  icon: '✈️',
+                  icon: <FaPlane className="w-8 h-8 text-blue-600" />,
                   title: 'Templates para Viagens',
                   description: 'Modelos prontos para confirmações, lembretes e pós-viagem que convertem passageiros em fãs.',
                   features: ['Confirmação automática', 'Check-in digital', 'Pós-viagem']
                 },
                 {
-                  icon: '📧',
+                  icon: <FaEnvelope className="w-8 h-8 text-blue-600" />,
                   title: 'Campanhas Inteligentes',
                   description: 'Automações que enviam a mensagem certa na hora certa, baseado no comportamento do cliente.',
                   features: ['Abandoned cart', 'Recomendações', 'Ofertas personalizadas']
                 },
                 {
-                  icon: '📊',
+                  icon: <FaChartBar className="w-8 h-8 text-blue-600" />,
                   title: 'Analytics do Turismo',
                   description: 'Métricas que importam: taxa de reversa, destino preferido, gasto médio por cliente.',
                   features: ['Dashboard especializado', 'Relatórios automáticos', 'KPIs do setor']
                 },
+              
                 {
-                  icon: '🔄',
-                  title: 'Integração Brevo',
-                  description: 'Use toda potência da Brevo com uma interface feita especialmente para agências de turismo.',
-                  features: ['Setup em 5min', 'API Key segura', 'Sync em tempo real']
-                },
-                {
-                  icon: '💸',
-                  title: 'Monetização Fácil',
-                  description: 'Planos com cobrança recorrente integrada ao Stripe. Comece a ganhar desde o primeiro dia.',
-                  features: ['Checkout transparente', 'Multiplanos', 'Gestão de assinaturas']
-                },
-                {
-                  icon: '🎯',
+                  icon: <FaBullseye className="w-8 h-8 text-blue-600" />,
                   title: 'Segmentação Avançada',
                   description: 'Agrupe clientes por destino preferido, tipo de viagem, gasto médio e muito mais.',
                   features: ['Tags inteligentes', 'Comportamento', 'Histórico de viagens']
@@ -236,14 +213,18 @@ export default function Home() {
                   key={index}
                   className="group bg-white p-8 rounded-2xl border border-gray-100 hover:border-blue-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-2"
                 >
-                  <div className="text-3xl mb-4">{feature.icon}</div>
+                  <div className="mb-4 flex items-center justify-center">
+                    <div className="p-3 bg-blue-50 rounded-lg inline-flex items-center justify-center">
+                      {feature.icon}
+                    </div>
+                  </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">{feature.description}</p>
-                  <ul className="space-y-2">
+                    <ul className="space-y-2">
                     {feature.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-sm text-gray-500">
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        {feat}
+                      <li key={idx} className="flex items-center gap-3 text-sm text-gray-500">
+                        <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
+                        <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
@@ -286,50 +267,58 @@ export default function Home() {
       {/* Footer Melhorado */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-gray-900 font-bold text-sm">TM</span>
-                </div>
-                <span className="text-xl font-bold text-white">Turmail</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-left">
+              <div className="mb-4">
+                <div className="text-xl font-bold">Turmail</div>
+                <div className="text-gray-400 text-sm">Email marketing para agências de turismo.</div>
               </div>
-              <p className="text-gray-400 text-sm">
-                Soluções de email marketing especializadas para o mercado de turismo.
-              </p>
+
+              <div className="flex items-center gap-3 mt-4">
+                <a href="#" aria-label="Twitter" className="text-gray-400 hover:text-white"><FaTwitter className="w-5 h-5" /></a>
+                <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-white"><FaInstagram className="w-5 h-5" /></a>
+                <a href="#" aria-label="LinkedIn" className="text-gray-400 hover:text-white"><FaLinkedin className="w-5 h-5" /></a>
+                <a href="#" aria-label="GitHub" className="text-gray-400 hover:text-white"><FaGithub className="w-5 h-5" /></a>
+              </div>
             </div>
-            
-            {[
-              {
-                title: 'Produto',
-                links: ['Funcionalidades', 'Planos', 'Templates', 'API']
-              },
-              {
-                title: 'Recursos',
-                links: ['Documentação', 'Tutoriais', 'Blog', 'Suporte']
-              },
-              {
-                title: 'Empresa',
-                links: ['Sobre', 'Contato', 'Termos', 'Privacidade']
-              }
-            ].map((column, index) => (
-              <div key={index}>
-                <h4 className="font-semibold text-white mb-4">{column.title}</h4>
-                <ul className="space-y-2">
-                  {column.links.map((link, idx) => (
-                    <li key={idx}>
-                      <Link to={`/${link.toLowerCase()}`} className="text-gray-400 hover:text-white text-sm transition-colors">
-                        {link}
-                      </Link>
-                    </li>
-                  ))}
+
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold text-white mb-3">Produto</h4>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li><Link to="/features" className="hover:text-white">Funcionalidades</Link></li>
+                  <li><Link to="/plans" className="hover:text-white">Planos</Link></li>
+                  <li><Link to="/templates" className="hover:text-white">Templates</Link></li>
                 </ul>
               </div>
-            ))}
+              <div>
+                <h4 className="font-semibold text-white mb-3">Empresa</h4>
+                <ul className="space-y-2 text-gray-400 text-sm">
+                  <li><Link to="/about" className="hover:text-white">Sobre</Link></li>
+                  <li><Link to="/contact" className="hover:text-white">Contato</Link></li>
+                  <li><Link to="/privacy" className="hover:text-white">Privacidade</Link></li>
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-white mb-3">Receba novidades</h4>
+              <p className="text-gray-400 text-sm mb-4">Inscreva-se para receber atualizações do piloto e dicas para aumentar reservas.</p>
+              <form onSubmit={(e) => { e.preventDefault(); alert('Obrigado! Entraremos em contato.'); }} className="flex gap-2">
+                <input type="email" placeholder="Seu melhor email" className="w-full px-3 py-2 rounded-md text-gray-900" />
+                <button type="submit" className="px-4 py-2 bg-blue-600 rounded-md text-white">Inscrever</button>
+              </form>
+              <p className="text-gray-500 text-xs mt-3">Nós respeitamos a sua privacidade. Sem spam.</p>
+            </div>
           </div>
-          
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-            <p>© 2024 Turmail. Feito com ❤️ para agências de turismo brasileiras.</p>
+
+          <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400">
+            <p>© 2025 Turmail. Feito com ❤️ para agências de turismo brasileiras.</p>
+            <div className="flex gap-4 mt-4 md:mt-0">
+              <Link to="/terms" className="hover:text-white">Termos</Link>
+              <Link to="/privacy" className="hover:text-white">Privacidade</Link>
+              <Link to="/contact" className="hover:text-white">Suporte</Link>
+            </div>
           </div>
         </div>
       </footer>

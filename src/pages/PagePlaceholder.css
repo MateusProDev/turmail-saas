@@ -1,0 +1,17 @@
+.page-placeholder {
+  max-width: 880px;
+  margin: 6rem auto;
+  padding: 2rem;
+}
+.page-placeholder h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+.page-placeholder p {
+  color: #4b5563; /* gray-600 */
+  margin-bottom: 1rem;
+}
+.link-back {
+  color: #2563eb; /* blue-600 */
+  font-weight: 600;
+}
