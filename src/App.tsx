@@ -4,6 +4,10 @@ import Dashboard from './pages/Dashboard'
 import Plans from './pages/Plans'
 import Success from './pages/Success'
 import Home from './pages/Home'
+import Campaigns from './pages/Campaigns'
+import Contacts from './pages/Contacts'
+import Reports from './pages/Reports'
+import Settings from './pages/Settings'
 import Features from './pages/Features'
 import Templates from './pages/Templates'
 import About from './pages/About'
@@ -21,6 +25,10 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/campaigns" element={<Campaigns />} />
+          <Route path="/contacts" element={<Contacts />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/features" element={<Features />} />
           <Route path="/templates" element={<Templates />} />

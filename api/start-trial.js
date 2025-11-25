@@ -32,8 +32,11 @@ export default async function handler(req, res) {
       return res.json({ ok: true, id: existing.id, existing: true })
     }
 
-    // 14 days trial
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+    // 14 days trial ending at 23:59:59 of the 14th day
+    const now = new Date()
+    const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+    trialEndDate.setHours(23, 59, 59, 999)
+    const trialEndsAt = trialEndDate
 
     // Canonical fields from makeInitialUserData
     const doc = {
