@@ -17,7 +17,8 @@ export default function Dashboard(){
     const fetchSubscription = async () => {
       try {
         const subsRef = collection(db, 'subscriptions')
-        const q = query(subsRef, where('email', '==', user.email))
+        // Use ownerUid to scope subscriptions to the authenticated user
+        const q = query(subsRef, where('ownerUid', '==', user.uid))
         const snap = await getDocs(q)
         if (!snap.empty) {
           const doc = snap.docs[0]
@@ -54,31 +55,55 @@ export default function Dashboard(){
   const features = subscription && subscription.status === 'active'
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="dashboard p-6">
+      <div className="dashboard-top flex items-center justify-between">
         <div>
-          <button onClick={handleLogout} className="text-sm text-gray-600 mr-4">Sair</button>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-gray-600">Bem-vindo, {user?.email}</p>
+        </div>
+        <div className="dashboard-actions">
+          <button onClick={handleLogout} className="btn-ghost">Sair</button>
+          <Link to="/plans" className="btn-outline ml-3">Ver Planos</Link>
         </div>
       </div>
-      <p className="mt-4">Bem-vindo, {user?.email}</p>
 
-      <div className="mt-6">
-        <h2 className="font-semibold">Assinatura</h2>
-        {subscription ? (
-          <div className="mt-2">
-            <p>Plano: {subscription.planName || subscription.stripePriceId || 'Assinado'}</p>
-            <p>Status: {subscription.status}</p>
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="subscription-card p-4 bg-white rounded shadow">
+          <h2 className="font-semibold">Assinatura</h2>
+          {subscription ? (
+            <div className="mt-2">
+              <p className="text-sm">Plano: <strong>{subscription.planName || subscription.stripePriceId || 'Assinado'}</strong></p>
+              <p className="text-sm">Status: <span className={subscription.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>{subscription.status}</span></p>
+              <div className="mt-3">
+                <Link to="/plans" className="text-indigo-600 text-sm">Alterar plano</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <p className="text-sm">Você não possui um plano ativo.</p>
+              <div className="mt-2">
+                <Link to="/plans" className="text-indigo-600 text-sm">Ver planos e assinar</Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="metrics-card p-4 bg-white rounded shadow">
+          <h2 className="font-semibold">Contatos</h2>
+          <p className="mt-2 text-3xl font-bold">—</p>
+          <p className="text-sm text-gray-500 mt-1">Importe contatos para começar</p>
+        </div>
+
+        <div className="actions-card p-4 bg-white rounded shadow">
+          <h2 className="font-semibold">Ações</h2>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link to="/dashboard" className="btn-primary">Criar Campanha</Link>
+            <Link to="/plans" className="btn-secondary">Gerenciar Assinatura</Link>
           </div>
-        ) : (
-          <div className="mt-2">
-            <p>Você não possui um plano ativo.</p>
-            <Link to="/plans" className="text-indigo-600">Ver planos e assinar</Link>
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 features">
         <h2 className="font-semibold">Funcionalidades</h2>
         <ul className="mt-2 list-disc list-inside">
           <li>Ver contatos {features ? '(disponível)' : '(bloqueado)'}</li>
