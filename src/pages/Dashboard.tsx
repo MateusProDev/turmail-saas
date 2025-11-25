@@ -72,8 +72,27 @@ export default function Dashboard(){
           <h2 className="font-semibold">Assinatura</h2>
           {subscription ? (
             <div className="mt-2">
-              <p className="text-sm">Plano: <strong>{subscription.planName || subscription.stripePriceId || 'Assinado'}</strong></p>
+              <p className="text-sm">Plano: <strong>{subscription.planName || subscription.planId || subscription.stripePriceId || 'Assinado'}</strong></p>
               <p className="text-sm">Status: <span className={subscription.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>{subscription.status}</span></p>
+              {subscription.status === 'trial' && subscription.trialEndsAt && (
+                (() => {
+                  const toDate = (t: any) => {
+                    if (!t) return null
+                    if (typeof t.toDate === 'function') return t.toDate()
+                    if (t.seconds) return new Date(t.seconds * 1000)
+                    return new Date(t)
+                  }
+                  const trialEnds = toDate(subscription.trialEndsAt)
+                  const now = new Date()
+                  const daysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null
+                  return (
+                    <div className="mt-2 text-sm text-gray-700">
+                      <div>Teste válido até: <strong>{trialEnds ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(trialEnds) : '—'}</strong></div>
+                      {daysLeft !== null && <div className="text-xs text-gray-500">Dias restantes: {daysLeft} dia(s)</div>}
+                    </div>
+                  )
+                })()
+              )}
               <div className="mt-3">
                 <Link to="/plans" className="text-indigo-600 text-sm">Alterar plano</Link>
               </div>

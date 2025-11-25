@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaPlane, FaEnvelope, FaChartBar, FaBullseye, FaCheck, FaTwitter, FaInstagram, FaLinkedin, FaGithub } from 'react-icons/fa'
+import { FaEnvelope, FaChartBar, FaBullseye, FaCheck, FaTwitter, FaInstagram, FaLinkedin, FaGithub } from 'react-icons/fa'
 import './Home.css'
 
 export default function Home() {
@@ -183,12 +183,6 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
-                {
-                  icon: <FaPlane className="w-8 h-8 text-blue-600" />,
-                  title: 'Templates para Viagens',
-                  description: 'Modelos prontos para confirmações, lembretes e pós-viagem que convertem passageiros em fãs.',
-                  features: ['Confirmação automática', 'Check-in digital', 'Pós-viagem']
-                },
                 {
                   icon: <FaEnvelope className="w-8 h-8 text-blue-600" />,
                   title: 'Campanhas Inteligentes',
