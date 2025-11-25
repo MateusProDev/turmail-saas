@@ -19,9 +19,10 @@ export default function Settings(){
 
   const [brevoKey, setBrevoKey] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showBrevoKey, setShowBrevoKey] = useState(false)
   const [tenantKey, setTenantKey] = useState('')
-  const [tenantId, setTenantId] = useState('')
   const [savingTenant, setSavingTenant] = useState(false)
+  const [showTenantKey, setShowTenantKey] = useState(false)
 
   const saveToVercel = async () => {
     setSaving(true); setResult(null)
@@ -40,6 +41,8 @@ export default function Settings(){
       const data = await resp.json()
       if (!resp.ok) throw new Error(JSON.stringify(data))
       setResult(`Saved: ${data.action}`)
+      setBrevoKey('')
+      setShowBrevoKey(false)
     } catch (e: any) {
       setResult(String(e.message || e))
     } finally { setSaving(false) }
@@ -50,18 +53,30 @@ export default function Settings(){
     try {
       const token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
       if (!token) throw new Error('User not authenticated')
-      if (!tenantId) throw new Error('tenantId is required')
 
+      // Call endpoint without tenantId; backend will infer tenant for this user
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ tenantId, key: tenantKey }),
+        body: JSON.stringify({ key: tenantKey }),
       })
       const data = await resp.json()
       if (!resp.ok) throw new Error(JSON.stringify(data))
       setResult('Chave salva para o tenant')
+      setTenantKey('')
+      setShowTenantKey(false)
     } catch (e: any) {
-      setResult(String(e.message || e))
+      // try to show backend-provided tenants list if present
+      try {
+        const parsed = JSON.parse(String(e.message || e))
+        if (parsed && parsed.tenants) {
+          setResult('Múltiplos tenants encontrados: ' + parsed.tenants.join(', ') + '. Especifique manualmente.')
+        } else {
+          setResult(String(e.message || e))
+        }
+      } catch (_) {
+        setResult(String(e.message || e))
+      }
     } finally { setSavingTenant(false) }
   }
 
@@ -82,8 +97,9 @@ export default function Settings(){
 
         <div className="mt-4">
           <label className="block text-sm text-slate-600 mb-2">Inserir chave Brevo (será salva no Vercel)</label>
-          <div className="flex gap-2">
-            <input value={brevoKey} onChange={e => setBrevoKey(e.target.value)} className="flex-1 border rounded px-3 py-2" placeholder="sk_live_xxx" />
+          <div className="flex gap-2 items-center">
+            <input value={brevoKey} onChange={e => setBrevoKey(e.target.value)} type={showBrevoKey ? 'text' : 'password'} className="flex-1 border rounded px-3 py-2" placeholder="sk_live_xxx" />
+            <button onClick={() => setShowBrevoKey(s => !s)} type="button" className="px-2 py-1 border rounded text-sm">{showBrevoKey ? 'Ocultar' : 'Mostrar'}</button>
             <button onClick={saveToVercel} disabled={saving} className="px-3 py-2 bg-green-600 text-white rounded">Salvar na Vercel</button>
           </div>
           <div className="text-xs text-gray-500 mt-2">Requer que o servidor possua `VERCEL_TOKEN` e `VERCEL_PROJECT_ID` e que você esteja autenticado com permissão (ADMIN_UID/ADMIN_EMAIL opcional).</div>
@@ -92,15 +108,17 @@ export default function Settings(){
       
       <div className="bg-white rounded shadow p-4 mt-4">
         <h2 className="font-medium">Chave Brevo por Tenant</h2>
-        <p className="text-sm text-gray-500 mb-2">Cada tenant pode usar sua própria chave. Informe o `tenantId` e a chave abaixo.</p>
+        <p className="text-sm text-gray-500 mb-2">Cada tenant pode usar sua própria chave. Cole a chave abaixo; o sistema tentará identificar automaticamente seu tenant.</p>
         <div className="grid grid-cols-1 gap-2">
-          <input value={tenantId} onChange={e => setTenantId(e.target.value)} className="border rounded px-3 py-2" placeholder="tenantId (ex: tenant_abc)" />
-          <input value={tenantKey} onChange={e => setTenantKey(e.target.value)} className="border rounded px-3 py-2" placeholder="chave Brevo do tenant" />
+          <div className="flex gap-2 items-center">
+            <input value={tenantKey} onChange={e => setTenantKey(e.target.value)} type={showTenantKey ? 'text' : 'password'} className="flex-1 border rounded px-3 py-2" placeholder="chave Brevo do tenant" />
+            <button onClick={() => setShowTenantKey(s => !s)} type="button" className="px-2 py-1 border rounded text-sm">{showTenantKey ? 'Ocultar' : 'Mostrar'}</button>
+          </div>
           <div className="flex gap-2">
             <button onClick={saveTenantKey} disabled={savingTenant} className="px-3 py-2 bg-indigo-600 text-white rounded">Salvar para este tenant</button>
             <div className="text-sm text-gray-600">{savingTenant ? 'Salvando...' : null}</div>
           </div>
-          <div className="text-xs text-gray-500">Requer que você seja membro `owner` ou `admin` do tenant.</div>
+          <div className="text-xs text-gray-500">Requer que você seja membro `owner` ou `admin` do tenant; se pertencer a vários tenants, especifique manualmente.</div>
         </div>
       </div>
 

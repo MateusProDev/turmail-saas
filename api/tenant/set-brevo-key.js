@@ -31,19 +31,47 @@ export default async function handler(req, res) {
     const decoded = await admin.auth().verifyIdToken(idToken)
     if (debug) console.log('[tenant/set-brevo-key] decoded', { uid: decoded.uid })
 
-    const { tenantId, key } = req.body || {}
-    if (!tenantId || !key) return res.status(400).json({ error: 'tenantId and key are required' })
+    const { tenantId: bodyTenantId, key } = req.body || {}
+    if (!key) return res.status(400).json({ error: 'key is required' })
 
-    // check membership
+    let tenantId = bodyTenantId
+
+    // If tenantId not provided, try to infer from membership docs (owner/admin)
+    if (!tenantId) {
+      // search collectionGroup 'members' for documents with id == uid
+      const q = db.collectionGroup('members').where(admin.firestore.FieldPath.documentId(), '==', decoded.uid)
+      const snaps = await q.get()
+      if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
+      // collect matching tenantIds where role is owner/admin
+      const matching = []
+      snaps.forEach(docSnap => {
+        const role = docSnap.data()?.role || 'member'
+        if (['owner', 'admin'].includes(role)) {
+          const tenantDoc = docSnap.ref.parent.parent
+          if (tenantDoc && tenantDoc.id) matching.push(tenantDoc.id)
+        }
+      })
+      if (matching.length === 0) return res.status(403).json({ error: 'No tenant membership with owner/admin role found' })
+      if (matching.length > 1) return res.status(409).json({ error: 'Multiple tenant memberships found; please specify tenantId', tenants: matching })
+      tenantId = matching[0]
+      if (debug) console.log('[tenant/set-brevo-key] inferred tenantId', tenantId)
+    }
+
+    // check membership for the resolved tenantId
     const memberRef = db.collection('tenants').doc(tenantId).collection('members').doc(decoded.uid)
     const memberSnap = await memberRef.get()
     if (!memberSnap.exists) return res.status(403).json({ error: 'Not a member of tenant' })
     const role = memberSnap.data()?.role || 'member'
     if (!['owner', 'admin'].includes(role)) return res.status(403).json({ error: 'Insufficient role' })
 
-    // save key under tenant settings; consider encrypting in future
+    // save key under tenant settings; encrypt if ENC_KEY present
     const settingsRef = db.collection('tenants').doc(tenantId).collection('settings').doc('secrets')
-    await settingsRef.set({ brevoApiKey: key }, { merge: true })
+    const encrypted = encryptText(String(key))
+    if (encrypted) {
+      await settingsRef.set({ brevoApiKey: encrypted, encrypted: true }, { merge: true })
+    } else {
+      await settingsRef.set({ brevoApiKey: String(key), encrypted: false }, { merge: true })
+    }
     if (debug) console.log('[tenant/set-brevo-key] saved key for tenant', tenantId)
     return res.status(200).json({ ok: true })
   } catch (err) {
