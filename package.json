@@ -8,7 +8,8 @@
     "generate-css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify || true",
     "build": "npm run generate-css && tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backfill:users": "node scripts/backfill-users.js"
   },
   "dependencies": {
     "axios": "^1.4.0",
