@@ -8,6 +8,7 @@ import Campaigns from './pages/Campaigns'
 import Contacts from './pages/Contacts'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import TenantMembers from './pages/TenantMembers'
 import Features from './pages/Features'
 import Templates from './pages/Templates'
 import About from './pages/About'
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/tenants/:tenantId/members" element={<TenantMembers />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/features" element={<Features />} />
           <Route path="/templates" element={<Templates />} />

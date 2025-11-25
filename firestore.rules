@@ -2,9 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default deny everything
-    match /{document=**} {
-      allow read, write: if false;
+    // Tenant members management
+    match /tenants/{tenantId}/members/{memberId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+
+      // owner of the tenant (existing owner) may create new members; users may create their own member doc
+      allow create: if request.auth != null && (
+        request.auth.uid == memberId ||
+        (exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role == 'owner')
+      );
+
+      // update/delete allowed by the member themselves or tenant owner
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == memberId ||
+        (exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role == 'owner')
+      );
+    }
+
+    // Tenant settings (sensitive). Only owner/admin of tenant may read or write.
+    match /tenants/{tenantId}/settings/{docId} {
+      allow read, write: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
     }
 
     // Users: only the user themselves may read or write their document.
@@ -13,11 +32,8 @@ service cloud.firestore {
     }
 
     // Subscriptions: only server (Admin SDK) can write.
-    // Subscriptions: only server (Admin SDK) can write.
     // Clients may read if they are the owner (ownerUid) OR if the subscription
-    // document's email matches the authenticated user's email. The latter
-    // allows clients created by webhooks to be readable by the user when
-    // ownerUid wasn't populated. Keep write operations restricted to server.
+    // document's email matches the authenticated user's email.
     match /subscriptions/{subId} {
       allow create, update, delete: if false;
       allow read: if request.auth != null && (
@@ -44,10 +60,49 @@ service cloud.firestore {
       );
     }
 
-    // Public documents (if you need a small public area)
+    // Public documents (small public area)
     match /public/{docId} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // Contacts: allow tenant or owner-based access
+    match /contacts/{contactId} {
+      allow create: if request.auth != null && (
+        // owner set in request.resource
+        request.resource.data.ownerUid == request.auth.uid ||
+        // or tenant membership admin/owner
+        (request.resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+      allow read: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+      allow update, delete: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+    }
+
+    // Campaigns: allow tenant or owner-based access
+    match /campaigns/{campaignId} {
+      allow create: if request.auth != null && (
+        request.resource.data.ownerUid == request.auth.uid ||
+        (request.resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+      allow read: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+      allow update, delete: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
+      );
+    }
+
+    // Fallback: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
