@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     const idToken = authHeader.split(' ')[1]
     const decoded = await admin.auth().verifyIdToken(idToken)
     if (debug) console.log('[set-brevo-key] decoded token', { uid: decoded.uid, email: decoded.email })
+    console.log('[set-brevo-key] auth check uid=%s email=%s admin=%s', decoded.uid, decoded.email, !!decoded.admin)
 
     // admin guard: prefer Firebase custom claim `admin: true` for multi-admin SaaS.
     // Fall back to ADMIN_UID / ADMIN_EMAIL for compatibility if claims are not used yet.
@@ -26,12 +27,20 @@ export default async function handler(req, res) {
     }
 
     const { key } = req.body || {}
-    if (!key) return res.status(400).json({ error: 'Key is required' })
+    if (!key) {
+      console.log('[set-brevo-key] missing key in request body')
+      return res.status(400).json({ error: 'Key is required' })
+    }
+    const maskedKey = typeof key === 'string' ? `${key.slice(0,6)}...(${key.length} chars)` : String(key)
+    console.log('[set-brevo-key] request to set BREVO_API_KEY, masked=%s', maskedKey)
 
     // Vercel config from server env
     const vercelToken = process.env.VERCEL_TOKEN
     const projectId = process.env.VERCEL_PROJECT_ID
-    if (!vercelToken || !projectId) return res.status(500).json({ error: 'Vercel config missing on server' })
+    if (!vercelToken || !projectId) {
+      console.log('[set-brevo-key] VERCEL_TOKEN or VERCEL_PROJECT_ID missing in env')
+      return res.status(500).json({ error: 'Vercel config missing on server' })
+    }
 
     // list env vars to find existing
     const listUrl = `https://api.vercel.com/v9/projects/${projectId}/env`
@@ -46,7 +55,7 @@ export default async function handler(req, res) {
         target: ['production','preview','development'],
         type: 'encrypted',
       }, { headers: { Authorization: `Bearer ${vercelToken}` } })
-      if (debug) console.log('[set-brevo-key] updated env')
+      console.log('[set-brevo-key] updated Vercel env for project %s envId=%s', projectId, existing.id)
       return res.status(200).json({ ok: true, action: 'updated' })
     }
 
@@ -58,8 +67,7 @@ export default async function handler(req, res) {
       target: ['production','preview','development'],
       type: 'encrypted',
     }, { headers: { Authorization: `Bearer ${vercelToken}` } })
-
-    if (debug) console.log('[set-brevo-key] created env')
+    console.log('[set-brevo-key] created Vercel env for project %s', projectId)
     return res.status(200).json({ ok: true, action: 'created' })
   } catch (err) {
     console.error('[set-brevo-key] error', err.response?.data || err.message || err)

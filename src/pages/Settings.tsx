@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { collectionGroup, query, where, getDocs, documentId } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
 export default function Settings(){
   const [testing, setTesting] = useState(false)
@@ -23,12 +25,17 @@ export default function Settings(){
   const [tenantKey, setTenantKey] = useState('')
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
+  const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
+  const [loadingTenants, setLoadingTenants] = useState(false)
 
   const saveToVercel = async () => {
     setSaving(true); setResult(null)
     try {
       // get id token to authenticate with server
       const token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      console.log('[Settings] saveToVercel invoked; hasToken=', !!token)
+      const masked = brevoKey ? `${brevoKey.slice(0,6)}...(${brevoKey.length} chars)` : '<empty>'
+      console.log('[Settings] saving global brevo key masked=%s', masked)
       // if using react-firebase-hooks, fallback to calling endpoint without token will fail
       const headers: any = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = `Bearer ${token}`
@@ -39,6 +46,7 @@ export default function Settings(){
         body: JSON.stringify({ key: brevoKey }),
       })
       const data = await resp.json()
+      console.log('[Settings] saveToVercel response', resp.status, data)
       if (!resp.ok) throw new Error(JSON.stringify(data))
       setResult(`Saved: ${data.action}`)
       setBrevoKey('')
@@ -52,15 +60,21 @@ export default function Settings(){
     setSavingTenant(true); setResult(null)
     try {
       const token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      console.log('[Settings] saveTenantKey invoked; hasToken=', !!token, 'selectedTenant=', selectedTenant)
+      const maskedTenant = tenantKey ? `${tenantKey.slice(0,6)}...(${tenantKey.length} chars)` : '<empty>'
+      console.log('[Settings] tenantKey masked=%s', maskedTenant)
       if (!token) throw new Error('User not authenticated')
+      // Call endpoint with selected tenantId if we auto-detected one, otherwise let backend infer
+      const body: any = { key: tenantKey }
+      if (selectedTenant) body.tenantId = selectedTenant
 
-      // Call endpoint without tenantId; backend will infer tenant for this user
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ key: tenantKey }),
+        body: JSON.stringify(body),
       })
       const data = await resp.json()
+      console.log('[Settings] saveTenantKey response', resp.status, data)
       if (!resp.ok) throw new Error(JSON.stringify(data))
       setResult('Chave salva para o tenant')
       setTenantKey('')
@@ -79,6 +93,43 @@ export default function Settings(){
       }
     } finally { setSavingTenant(false) }
   }
+
+  // Auto-select tenant based on logged-in user's memberships (owner preferred)
+  useEffect(() => {
+    const unsub = (window as any).firebase?.auth()?.onAuthStateChanged(async (user: any) => {
+      if (!user) {
+        setSelectedTenant(null)
+        return
+      }
+      try {
+        setLoadingTenants(true)
+        const q = query(collectionGroup(db, 'members'), where(documentId(), '==', user.uid))
+        const snaps = await getDocs(q)
+        const tenants: Array<{ id: string, role: string }> = []
+        snaps.forEach(s => {
+          const role = s.data()?.role || 'member'
+          const tenantDoc = s.ref.parent.parent
+          if (tenantDoc && tenantDoc.id) tenants.push({ id: tenantDoc.id, role })
+        })
+        console.log('[Settings] loaded tenant memberships for uid=%s count=%d', user.uid, tenants.length)
+        if (tenants.length === 0) {
+          setSelectedTenant(null)
+        } else {
+          // prefer owner then admin then first
+          const owner = tenants.find(t => t.role === 'owner')
+          const admin = tenants.find(t => t.role === 'admin')
+          const chosen = owner ? owner.id : (admin ? admin.id : tenants[0].id)
+          console.log('[Settings] selectedTenant chosen=%s from list=%o', chosen, tenants.map(t => t.id))
+          setSelectedTenant(chosen)
+        }
+      } catch (err) {
+        console.error('Failed to load tenant memberships', err)
+      } finally {
+        setLoadingTenants(false)
+      }
+    })
+    return () => unsub && unsub()
+  }, [])
 
   return (
     <div className="p-6 max-w-5xl mx-auto">

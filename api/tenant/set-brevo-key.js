@@ -26,13 +26,22 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   try {
     const authHeader = req.headers.authorization || ''
-    if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing auth token' })
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('[tenant/set-brevo-key] missing Authorization header')
+      return res.status(401).json({ error: 'Missing auth token' })
+    }
     const idToken = authHeader.split(' ')[1]
     const decoded = await admin.auth().verifyIdToken(idToken)
-    if (debug) console.log('[tenant/set-brevo-key] decoded', { uid: decoded.uid })
+    console.log('[tenant/set-brevo-key] decoded uid=%s email=%s', decoded.uid, decoded.email)
 
     const { tenantId: bodyTenantId, key } = req.body || {}
-    if (!key) return res.status(400).json({ error: 'key is required' })
+    if (!key) {
+      console.log('[tenant/set-brevo-key] no key in body')
+      return res.status(400).json({ error: 'key is required' })
+    }
+    // do not log full key; log masked version for debugging
+    const maskedKey = typeof key === 'string' ? `${key.slice(0,6)}...(${key.length} chars)` : String(key)
+    console.log('[tenant/set-brevo-key] received key:', maskedKey)
 
     let tenantId = bodyTenantId
 
@@ -41,6 +50,7 @@ export default async function handler(req, res) {
       // search collectionGroup 'members' for documents with id == uid
       const q = db.collectionGroup('members').where(admin.firestore.FieldPath.documentId(), '==', decoded.uid)
       const snaps = await q.get()
+      console.log('[tenant/set-brevo-key] membership docs found:', snaps.size)
       if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
       // collect matching tenantIds where role is owner/admin
       const matching = []
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
       if (matching.length === 0) return res.status(403).json({ error: 'No tenant membership with owner/admin role found' })
       if (matching.length > 1) return res.status(409).json({ error: 'Multiple tenant memberships found; please specify tenantId', tenants: matching })
       tenantId = matching[0]
-      if (debug) console.log('[tenant/set-brevo-key] inferred tenantId', tenantId)
+      console.log('[tenant/set-brevo-key] inferred tenantId', tenantId)
     }
 
     // check membership for the resolved tenantId
@@ -69,13 +79,14 @@ export default async function handler(req, res) {
     const encrypted = encryptText(String(key))
     if (encrypted) {
       await settingsRef.set({ brevoApiKey: encrypted, encrypted: true }, { merge: true })
+      console.log('[tenant/set-brevo-key] saved encrypted key for tenant', tenantId)
     } else {
       await settingsRef.set({ brevoApiKey: String(key), encrypted: false }, { merge: true })
+      console.log('[tenant/set-brevo-key] saved plain key for tenant', tenantId)
     }
-    if (debug) console.log('[tenant/set-brevo-key] saved key for tenant', tenantId)
     return res.status(200).json({ ok: true })
   } catch (err) {
-    console.error('[tenant/set-brevo-key] error', err)
+    console.error('[tenant/set-brevo-key] error', err?.response?.data || err.message || err)
     return res.status(500).json({ error: err.message || 'internal error' })
   }
 }

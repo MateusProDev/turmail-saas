@@ -30,29 +30,38 @@ function tryDecrypt(val) {
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
   if (debug) console.log('[send-campaign] invoked', { method: req.method })
+  console.log('[send-campaign] entry method=%s', req.method)
 
   if (req.method !== 'POST') return res.status(405).end('Method not allowed')
 
   try {
     const body = req.body || {}
-    if (debug) console.log('[send-campaign] body', body)
+    // summarize body for debug (avoid logging recipient emails or full content)
+    if (debug) console.log('[send-campaign] body (full)', body)
+    console.log('[send-campaign] body summary subject=%s hasHtml=%s hasTo=%s', body.subject || '<no-subject>', !!body.htmlContent || !!body.html, !!body.to)
 
     // If tenantId provided, try to load tenant-specific key from Firestore
     let apiKey = process.env.BREVO_API_KEY
     const tenantId = body.tenantId
     if (tenantId) {
+      console.log('[send-campaign] tenantId provided=%s', tenantId)
       const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
       let tenantKey = settingsDoc.exists ? settingsDoc.data()?.brevoApiKey : null
       if (tenantKey) {
         // try to decrypt if encrypted
         const maybe = tryDecrypt(tenantKey)
-        if (maybe) tenantKey = maybe
+        if (maybe) {
+          tenantKey = maybe
+          console.log('[send-campaign] tenant key successfully decrypted for tenant=%s', tenantId)
+        } else {
+          console.log('[send-campaign] tenant key present but not decrypted (storing as plain?) for tenant=%s', tenantId)
+        }
       }
       if (tenantKey) {
         apiKey = tenantKey
-        if (debug) console.log('[send-campaign] using tenant key for', tenantId)
-      } else if (debug) {
-        console.log('[send-campaign] no tenant key, falling back to global')
+        console.log('[send-campaign] using tenant key for', tenantId)
+      } else {
+        console.log('[send-campaign] no tenant key found for tenant=%s, falling back to global', tenantId)
       }
     }
 
@@ -62,6 +71,8 @@ export default async function handler(req, res) {
     const payload = { ...body }
     delete payload.tenantId
 
+    const maskedKey = typeof apiKey === 'string' ? `${apiKey.slice(0,6)}...(${apiKey.length} chars)` : String(apiKey)
+    console.log('[send-campaign] sending to Brevo using apiKey masked=%s', maskedKey)
     const resp = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
       headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
     })
