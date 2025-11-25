@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { collectionGroup, query, where, getDocs, documentId } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { db, auth } from '../lib/firebase'
 
 export default function Settings(){
   const [testing, setTesting] = useState(false)
@@ -32,12 +32,26 @@ export default function Settings(){
     setSaving(true); setResult(null)
     try {
       // get id token to authenticate with server
-      let token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      // safe token retrieval: currentUser may be null while auth initializes
+      const getIdTokenSafe = async (force = false) => {
+        if (auth.currentUser) {
+          try { return await auth.currentUser.getIdToken(force) } catch (e) { return null }
+        }
+        return await new Promise<string | null>((resolve) => {
+          const unsub = auth.onAuthStateChanged(async (u) => {
+            unsub()
+            if (!u) return resolve(null)
+            try { const t = await u.getIdToken(force); resolve(t) } catch (e) { resolve(null) }
+          })
+        })
+      }
+
+      let token = await getIdTokenSafe(false)
       // If no token (or claims recently changed), force refresh once
       if (!token) {
         console.log('[Settings] no token found, forcing refresh')
         try {
-          token = await (window as any).firebase?.auth()?.currentUser?.getIdToken(true)
+          token = await getIdTokenSafe(true)
         } catch (err) {
           console.warn('[Settings] token refresh failed', err)
         }
@@ -74,7 +88,20 @@ export default function Settings(){
   const saveTenantKey = async () => {
     setSavingTenant(true); setResult(null)
     try {
-      const token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      const getIdTokenSafe = async (force = false) => {
+        if (auth.currentUser) {
+          try { return await auth.currentUser.getIdToken(force) } catch (e) { return null }
+        }
+        return await new Promise<string | null>((resolve) => {
+          const unsub = auth.onAuthStateChanged(async (u) => {
+            unsub()
+            if (!u) return resolve(null)
+            try { const t = await u.getIdToken(force); resolve(t) } catch (e) { resolve(null) }
+          })
+        })
+      }
+
+      const token = await getIdTokenSafe(false)
       console.log('[Settings] saveTenantKey invoked; hasToken=', !!token, 'selectedTenant=', selectedTenant)
       const maskedTenant = tenantKey ? `${tenantKey.slice(0,6)}...(${tenantKey.length} chars)` : '<empty>'
       console.log('[Settings] tenantKey masked=%s', maskedTenant)
