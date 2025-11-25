@@ -1,72 +1,27 @@
-/* Hero */
-.home-reset, .home-reset * {
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-}
-.home-hero {
-  padding-top: 3.5rem !important;
-  padding-bottom: 3.5rem !important;
-  text-align: center !important;
-}
-.home-hero h1 {
-  font-size: 2rem !important;
-  line-height: 1.05 !important;
-}
-.home-hero p {
-  max-width: 56ch !important;
-  margin: 0.75rem auto 0 !important;
-  color: #4b5563 !important;
-}
+/* Clean, minimal overrides for Home page */
 
-/* CTA */
-.home-cta {
-  margin-top: 1.25rem !important;
-  display: flex !important;
-  gap: 0.75rem !important;
-  justify-content: center !important;
-  flex-wrap: wrap !important;
-}
-.home-cta a {
-  text-decoration: none !important;
-  display: inline-block !important;
-}
-
-/* Features grid */
-.home-features {
-  margin-top: 2.5rem !important;
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 1rem !important;
-}
-.home-features > div {
-  min-height: 6rem !important;
-  padding: 1.25rem !important;
-}
-
-/* Why section */
-.home-why {
-  margin-top: 2.5rem !important;
-  padding: 1rem !important;
-  background: rgba(99, 102, 241, 0.06) !important;
-  border-radius: 0.5rem !important;
-}
-
-/* Footer */
+/* Footer spacing */
 footer {
-  margin-top: 3rem !important;
-  padding: 1.25rem 0 !important;
+  margin-top: 3rem;
+  padding: 1.25rem 0;
 }
 
-/* Responsive */
+/* Small adjustments for hero content */
+.max-w-prose { max-width: 56ch; }
+
 @media (min-width: 640px) {
-  .home-hero h1 { font-size: 2.75rem !important; }
-  .home-features { grid-template-columns: repeat(2, 1fr) !important; }
+  .home-hero h1 { font-size: 2.75rem; }
 }
 @media (min-width: 1024px) {
-  .home-hero { padding-top: 4.5rem !important; padding-bottom: 4.5rem !important; }
-  .home-hero h1 { font-size: 3.25rem !important; }
-  .home-features { grid-template-columns: repeat(3, 1fr) !important; }
-  .home-features > div { padding: 1.5rem !important; }
+  .home-hero h1 { font-size: 3.25rem; }
 }
 
+/* Header scrolled state (subtle shadow) */
+.header-scrolled {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+/* Utility for compact hero subtitle */
+.hero-subtitle {
+  color: #4b5563;
+}

@@ -1,16 +1,176 @@
-.plans-reset, .plans-reset * {
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
+.plans-root {
+  width: 100%;
 }
 
 .plans-grid {
-  gap: 1rem !important;
+  gap: 1rem;
 }
+
 .plans-card {
-  min-height: 8rem !important;
+  min-height: 6rem;
+  border: 1px solid #eef2ff;
+  transition: transform .12s ease, box-shadow .12s ease;
+  padding: 0.75rem 1rem; /* smaller padding to make cards less tall */
 }
+
+/* make the card a positioned ancestor so the badge can be placed over the border */
+.plans-card {
+  position: relative;
+}
+
+.plans-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+.plans-card.featured {
+  border-color: #6366f1;
+  box-shadow: 0 12px 36px rgba(99, 102, 241, 0.18);
+  transform: translateY(-6px) scale(1.02);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  border-width: 1.5px;
+}
+
+.plans-card h2 {
+  margin: 0;
+}
+
+.plans-cta {
+  display: inline-block;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.plans-cta.disabled,
+.plans-cta[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.plans-card ul {
+  margin: 0;
+  padding-left: 0; /* we'll use custom bullets */
+}
+
+.plans-card ul li {
+  position: relative;
+  padding-left: 1.25rem; /* room for custom bullet */
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.25rem;
+  color: #374151; /* gray-700 */
+  display: flex;
+  align-items: flex-start;
+}
+
+.plans-card ul li::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: #d1d5db; /* gray-300 */
+  position: absolute;
+  left: 0.35rem;
+  top: 0.9rem;
+  transform: translateY(-50%);
+}
+
+/* featured card: stronger bullet color and slightly darker text */
+.plans-card.featured ul li::before {
+  background: #6366f1;
+}
+.plans-card.featured ul li {
+  color: #111827; /* gray-900 */
+}
+
+/* reduce bullet and spacing on very small screens */
+@media (max-width: 420px) {
+  .plans-card ul li {
+    padding-left: 1rem;
+    font-size: 0.85rem;
+  }
+  .plans-card ul li::before {
+    left: 0.25rem;
+    width: 0.4rem;
+    height: 0.4rem;
+  }
+}
+
+/* slightly smaller badge for compact cards */
+.plans-badge {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+.plans-badge.current {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+.plans-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  position: absolute;
+  top: -0.6rem; /* lift badge above the top border */
+  left: 1rem;
+  transform: translateY(-10%);
+  z-index: 20;
+  background: #eef2ff;
+  color: #3730a3;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+/* featured card badge style (stronger contrast) */
+.plans-card.featured .plans-badge {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.18);
+}
+
+/* current plan badge (right side) */
+.plans-badge.current {
+  left: auto;
+  right: 1rem;
+  background: #10b981;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12);
+}
+
 .plans-note {
-  font-size: 0.9rem !important;
-  color: #6b7280 !important;
+  font-size: 0.9rem;
+  color: #6b7280;
 }
+
+/* Price annual styles */
+.price-annual .original {
+  text-decoration: line-through;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+.price-annual .discounted {
+  color: #111827; /* stronger */
+}
+.price-annual .equiv {
+  margin-top: 0.15rem;
+}
+
+/* Ensure price block is left-aligned and compact */
+.price-annual {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+.price-annual .original { font-size: 0.9rem; }
+.price-annual .discounted { font-size: 1.25rem; }
+.price-annual .equiv { font-size: 0.85rem; color: #6b7280; }
