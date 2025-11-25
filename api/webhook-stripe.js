@@ -48,7 +48,10 @@ export default async function handler(req, res) {
         const usersRef = db.collection('users')
         const q = await usersRef.where('email', '==', email).limit(1).get()
         if (q.empty) {
-          await usersRef.add({ email, stripeCustomerId, createdAt: new Date() })
+          // create a full initial user object for consistency
+          const { makeInitialUserForServer } = await import('./initUser.js')
+          const userObj = makeInitialUserForServer({ email, stripeCustomerId })
+          await usersRef.add(userObj)
         } else {
           const doc = q.docs[0]
           await doc.ref.update({ stripeCustomerId })

@@ -3,7 +3,8 @@ import './Login.css'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../lib/firebase'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
+import makeInitialUserData from '../lib/initUser'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -18,11 +19,21 @@ export default function Login() {
         const userCred = await createUserWithEmailAndPassword(auth, email, password)
         // create user doc in Firestore
         try {
-          await setDoc(doc(db, 'users', userCred.user.uid), {
-            email: userCred.user.email,
-            uid: userCred.user.uid,
-            createdAt: serverTimestamp(),
-          })
+          // initialize user doc with canonical fields; use merge to avoid
+          // overwriting anything that might already exist
+          const init = makeInitialUserData(userCred.user.uid, userCred.user.email)
+          await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
+        
+          // Start 14-day trial automatically on signup (server will record IP + trial window)
+          try {
+            await fetch('/api/start-trial', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid: userCred.user.uid, email: userCred.user.email, planId: 'free' }),
+            })
+          } catch (trialErr) {
+            console.error('failed to start trial on signup', trialErr)
+          }
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
         }

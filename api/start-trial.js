@@ -16,6 +16,22 @@ export default async function handler(req, res) {
     const ipFromHeader = typeof xff === 'string' ? xff.split(',')[0].trim() : null
     const ip = ipFromHeader || req.connection?.remoteAddress || null
 
+    // Check for an existing subscription for this user that is still
+    // relevant (trial or active). If found, return it to keep this
+    // endpoint idempotent and avoid duplicating trial docs.
+    const subsRef = db.collection('subscriptions')
+    const q = await subsRef
+      .where('uid', '==', uid)
+      .where('status', 'in', ['trial', 'active'])
+      .limit(1)
+      .get()
+
+    if (!q.empty) {
+      const existing = q.docs[0]
+      if (debug) console.log('[start-trial] existing subscription found', existing.id)
+      return res.json({ ok: true, id: existing.id, existing: true })
+    }
+
     // 14 days trial
     const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
@@ -36,7 +52,7 @@ export default async function handler(req, res) {
     // NOTE: Storing IP addresses has privacy implications. Ensure your
     // privacy policy discloses this and you comply with local law.
 
-    return res.json({ ok: true, id: ref.id })
+    return res.json({ ok: true, id: ref.id, existing: false })
   } catch (err) {
     console.error('[start-trial] error', err && err.message ? err.message : err)
     return res.status(500).json({ error: 'internal' })
