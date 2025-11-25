@@ -14,18 +14,45 @@ export default function Dashboard(){
 
   useEffect(() => {
     if (!user) return
-    // realtime listener so subscription changes (trial start) appear immediately
+    // realtime listener: try ownerUid first; if none, fallback to email lookup
     const subsRef = collection(db, 'subscriptions')
-    const q = query(subsRef, where('ownerUid', '==', user.uid))
-    const unsub = onSnapshot(q, (snap) => {
+    const qByUid = query(subsRef, where('ownerUid', '==', user.uid))
+    let unsubUid: any = null
+    let unsubEmail: any = null
+
+    const handleSnap = (snap: any) => {
       if (!snap.empty) {
         const doc = snap.docs[0]
+        console.log('[dashboard] subscription found', doc.id, doc.data())
         setSubscription({ id: doc.id, ...doc.data() })
-      } else {
-        setSubscription(null)
+        return true
       }
+      return false
+    }
+
+    unsubUid = onSnapshot(qByUid, (snap) => {
+      const found = handleSnap(snap)
+      if (!found && user.email) {
+        // fallback: listen by email
+        if (unsubEmail) unsubEmail()
+        const qByEmail = query(subsRef, where('email', '==', user.email))
+        unsubEmail = onSnapshot(qByEmail, (snap2) => {
+          if (!snap2.empty) {
+            const doc = snap2.docs[0]
+            console.log('[dashboard] subscription found by email', doc.id, doc.data())
+            setSubscription({ id: doc.id, ...doc.data() })
+          } else {
+            setSubscription(null)
+          }
+        }, (err) => console.error('subscription-by-email snapshot error', err))
+      }
+      if (!snap.empty) return
     }, (err) => console.error('subscription snapshot error', err))
-    return () => unsub()
+
+    return () => {
+      if (unsubUid) unsubUid()
+      if (unsubEmail) unsubEmail()
+    }
   }, [user])
 
   if(loading) return <div>Carregando...</div>
@@ -49,6 +76,13 @@ export default function Dashboard(){
 
   const features = subscription && subscription.status === 'active'
 
+  const toDate = (t: any) => {
+    if (!t) return null
+    if (typeof t.toDate === 'function') return t.toDate()
+    if (t.seconds) return new Date(t.seconds * 1000)
+    return new Date(t)
+  }
+
   return (
     <div className="dashboard p-6">
       <div className="dashboard-top flex items-center justify-between">
@@ -57,6 +91,11 @@ export default function Dashboard(){
           <p className="text-sm text-gray-600">Bem-vindo, {user?.email}</p>
         </div>
         <div className="dashboard-actions">
+          {subscription && subscription.status === 'trial' && subscription.trialEndsAt && (
+            <div className="inline-block mr-4">
+              <CountdownDisplay end={toDate(subscription.trialEndsAt)} />
+            </div>
+          )}
           <button onClick={handleLogout} className="btn-ghost">Sair</button>
           <Link to="/plans" className="btn-outline ml-3">Ver Planos</Link>
         </div>

@@ -13,22 +13,35 @@ service cloud.firestore {
     }
 
     // Subscriptions: only server (Admin SDK) can write.
-    // Clients may read only if the document has an `ownerUid` field equal to the authenticated UID.
+    // Subscriptions: only server (Admin SDK) can write.
+    // Clients may read if they are the owner (ownerUid) OR if the subscription
+    // document's email matches the authenticated user's email. The latter
+    // allows clients created by webhooks to be readable by the user when
+    // ownerUid wasn't populated. Keep write operations restricted to server.
     match /subscriptions/{subId} {
       allow create, update, delete: if false;
-      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow read: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.email != null && request.auth.token != null && resource.data.email == request.auth.token.email)
+      );
     }
 
     // Invoices: server writes only. Clients read only if ownerUid matches.
     match /invoices/{invoiceId} {
       allow create, update, delete: if false;
-      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow read: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.email != null && request.auth.token != null && resource.data.email == request.auth.token.email)
+      );
     }
 
     // Checkout sessions: server writes only. Clients read only if ownerUid matches.
     match /checkout_sessions/{sessionId} {
       allow create, update, delete: if false;
-      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+      allow read: if request.auth != null && (
+        (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.email != null && request.auth.token != null && resource.data.email == request.auth.token.email)
+      );
     }
 
     // Public documents (if you need a small public area)

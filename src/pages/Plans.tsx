@@ -285,9 +285,12 @@ export default function Plans() {
                       ) : (
                         <div className="text-sm text-gray-600">
                           <div>Seu teste gratuito de 14 dias é ativado automaticamente ao acessar o dashboard.</div>
-                          <div className="mt-2">
-                            <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Ir para o dashboard</button>
-                          </div>
+                          <div className="mt-2 flex items-center gap-3">
+                                <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Ir para o dashboard</button>
+                                {subscription && subscription.status === 'trial' && subscription.trialEndsAt && (
+                                  <CountdownBadge end={subscription.trialEndsAt} />
+                                )}
+                              </div>
                         </div>
                       )
                     )
@@ -310,5 +313,38 @@ export default function Plans() {
 
       {/* Footer note removed per user request (env setup instructions were previously shown here) */}
     </div>
+  )
+}
+
+function CountdownBadge({ end }: { end: any }) {
+  const toDate = (t: any) => {
+    if (!t) return null
+    if (typeof t.toDate === 'function') return t.toDate()
+    if (t.seconds) return new Date(t.seconds * 1000)
+    return new Date(t)
+  }
+  const endDate = toDate(end)
+  const [remMs, setRemMs] = useState(() => endDate ? Math.max(0, endDate.getTime() - Date.now()) : 0)
+
+  useEffect(() => {
+    if (!endDate) return
+    const tick = () => setRemMs(Math.max(0, endDate.getTime() - Date.now()))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [endDate])
+
+  if (!endDate) return null
+  if (remMs <= 0) return <span className="text-xs text-red-600">Teste expirado</span>
+
+  const totalSec = Math.floor(remMs / 1000)
+  const days = Math.floor(totalSec / (3600 * 24))
+  const hours = Math.floor((totalSec % (3600 * 24)) / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+
+  const two = (n: number) => String(n).padStart(2, '0')
+
+  return (
+    <span className="text-xs text-gray-600">{days > 0 ? `${days}d ` : ''}{two(hours)}:{two(minutes)}</span>
   )
 }
