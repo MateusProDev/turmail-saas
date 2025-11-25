@@ -1,6 +1,5 @@
 import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-import { json } from 'stream/consumers'
 
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'

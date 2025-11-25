@@ -2,15 +2,38 @@ import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 import { db } from './firebaseAdmin.js'
 
+async function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    req.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+    req.on('end', () => resolve(Buffer.concat(chunks)))
+    req.on('error', reject)
+  })
+}
+
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
-  const sig = req.headers['stripe-signature']
-  const rawBody = req.rawBody || ''
-  if (debug) console.log('[webhook-stripe] invoked', { headers: req.headers })
+  if (debug) console.log('[webhook-stripe] invoked', { method: req.method, headers: req.headers })
+
+  if (req.method !== 'POST') return res.status(405).end('Method not allowed')
+
+  const sig = req.headers['stripe-signature'] || req.headers['Stripe-Signature']
+  if (!sig) {
+    console.error('[webhook-stripe] stripe-signature header missing')
+    return res.status(400).send('Missing stripe signature')
+  }
 
   try {
-    if (debug) console.log('[webhook-stripe] rawBody length', rawBody && rawBody.length)
-    const event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET)
+    const rawBodyBuffer = req.rawBody ? (Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.from(req.rawBody)) : await getRawBody(req)
+    if (debug) console.log('[webhook-stripe] rawBody length', rawBodyBuffer && rawBodyBuffer.length)
+
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      console.error('[webhook-stripe] STRIPE_WEBHOOK_SECRET missing')
+      return res.status(500).send('Stripe webhook secret not configured')
+    }
+
+    const event = stripe.webhooks.constructEvent(rawBodyBuffer, sig, webhookSecret)
     console.log('[webhook-stripe] Stripe webhook event:', event.type)
 
     if (event.type === 'checkout.session.completed') {
