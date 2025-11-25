@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users: only the user themselves may read or write their document.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Subscriptions: only server (Admin SDK) can write.
+    // Clients may read only if the document has an `ownerUid` field equal to the authenticated UID.
+    match /subscriptions/{subId} {
+      allow create, update, delete: if false;
+      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Invoices: server writes only. Clients read only if ownerUid matches.
+    match /invoices/{invoiceId} {
+      allow create, update, delete: if false;
+      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Checkout sessions: server writes only. Clients read only if ownerUid matches.
+    match /checkout_sessions/{sessionId} {
+      allow create, update, delete: if false;
+      allow read: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Public documents (if you need a small public area)
+    match /public/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+  }
+}

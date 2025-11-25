@@ -1,0 +1,16 @@
+.plans-reset, .plans-reset * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.plans-grid {
+  gap: 1rem !important;
+}
+.plans-card {
+  min-height: 8rem !important;
+}
+.plans-note {
+  font-size: 0.9rem !important;
+  color: #6b7280 !important;
+}

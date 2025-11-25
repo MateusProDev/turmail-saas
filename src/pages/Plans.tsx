@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './Plans.css'
 import { createCheckoutSession } from '../lib/stripe'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
@@ -29,6 +30,7 @@ export default function Plans() {
         await addDoc(collection(db, 'subscriptions'), {
           email: user.email || null,
           uid: user.uid || null,
+          ownerUid: user.uid || null,
           planId: 'free',
           status: 'active',
           createdAt: serverTimestamp(),

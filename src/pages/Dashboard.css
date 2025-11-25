@@ -1,0 +1,15 @@
+.dashboard-reset, .dashboard-reset * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard {
+  padding: 2rem !important;
+}
+.dashboard .actions ul {
+  margin-left: 1rem !important;
+}
+.dashboard .features li {
+  margin-bottom: 0.5rem !important;
+}

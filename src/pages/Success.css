@@ -1,0 +1,15 @@
+.success-reset, .success-reset * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.success-container {
+  max-width: 720px !important;
+  margin: 0 auto !important;
+}
+.session-card {
+  background: #ffffff !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+}

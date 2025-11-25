@@ -1,5 +1,6 @@
 // React import not required with the new JSX transform
 import { useAuthState } from 'react-firebase-hooks/auth'
+import './Dashboard.css'
 import { auth, db } from '../lib/firebase'
 import { useEffect, useState } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'

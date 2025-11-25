@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import './Success.css'
 
 export default function Success() {
   const [searchParams] = useSearchParams()
@@ -20,11 +21,11 @@ export default function Success() {
   if (!sessionId) return <div className="p-8">session_id ausente</div>
 
   return (
-    <div className="p-8">
+    <div className="p-8 success-container">
       <h1 className="text-2xl font-bold">Pagamento concluído</h1>
       {loading && <p>Carregando informações da sessão...</p>}
       {session && (
-        <div className="mt-4 bg-white p-4 rounded shadow">
+        <div className="mt-4 session-card shadow">
           <p><strong>Session ID:</strong> {session.id}</p>
           <p><strong>Status:</strong> {session.status}</p>
           <p><strong>Customer email:</strong> {session.customer_details?.email}</p>

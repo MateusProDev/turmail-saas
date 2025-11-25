@@ -1,0 +1,16 @@
+.login-reset, .login-reset * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.login-form {
+  max-width: 420px !important;
+  margin: 0 auto !important;
+}
+.login-form input[type="email"], .login-form input[type="password"] {
+  width: 100% !important;
+}
+.login-toggle {
+  text-align: center !important;
+}
