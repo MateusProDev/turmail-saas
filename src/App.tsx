@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Plans from './pages/Plans'
+import Success from './pages/Success'
 import './App.css'
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/plans" element={<Plans />} />
+            <Route path="/success" element={<Success />} />
           </Routes>
         </main>
       </div>

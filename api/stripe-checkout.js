@@ -8,14 +8,17 @@ module.exports = async (req, res) => {
     const { priceId } = req.body || {}
     if (!priceId) return res.status(400).json({ error: 'priceId required' })
 
+    const successUrl = (process.env.SUCCESS_URL || 'https://your-site.com/success') + '?session_id={CHECKOUT_SESSION_ID}'
+    const cancelUrl = process.env.CANCEL_URL || 'https://your-site.com/cancel'
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: process.env.SUCCESS_URL || 'https://your-site.com/success',
-      cancel_url: process.env.CANCEL_URL || 'https://your-site.com/cancel',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     })
 
-    return res.json({ url: session.url })
+    return res.json({ url: session.url, id: session.id })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ error: 'internal' })
