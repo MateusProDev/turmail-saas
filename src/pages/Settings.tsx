@@ -26,19 +26,33 @@ export default function Settings(){
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
-  const [loadingTenants, setLoadingTenants] = useState(false)
+  const [, setLoadingTenants] = useState(false)
 
   const saveToVercel = async () => {
     setSaving(true); setResult(null)
     try {
       // get id token to authenticate with server
-      const token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      let token = await (window as any).firebase?.auth()?.currentUser?.getIdToken()
+      // If no token (or claims recently changed), force refresh once
+      if (!token) {
+        console.log('[Settings] no token found, forcing refresh')
+        try {
+          token = await (window as any).firebase?.auth()?.currentUser?.getIdToken(true)
+        } catch (err) {
+          console.warn('[Settings] token refresh failed', err)
+        }
+      }
       console.log('[Settings] saveToVercel invoked; hasToken=', !!token)
       const masked = brevoKey ? `${brevoKey.slice(0,6)}...(${brevoKey.length} chars)` : '<empty>'
       console.log('[Settings] saving global brevo key masked=%s', masked)
       // if using react-firebase-hooks, fallback to calling endpoint without token will fail
       const headers: any = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = `Bearer ${token}`
+      else {
+        setResult('Não autenticado: atualize a página e faça login novamente (token ausente).')
+        setSaving(false)
+        return
+      }
 
       const resp = await fetch('/api/set-brevo-key', {
         method: 'POST',
@@ -52,6 +66,7 @@ export default function Settings(){
       setBrevoKey('')
       setShowBrevoKey(false)
     } catch (e: any) {
+      console.error('[Settings] saveToVercel error', e)
       setResult(String(e.message || e))
     } finally { setSaving(false) }
   }
@@ -153,7 +168,7 @@ export default function Settings(){
             <button onClick={() => setShowBrevoKey(s => !s)} type="button" className="px-2 py-1 border rounded text-sm">{showBrevoKey ? 'Ocultar' : 'Mostrar'}</button>
             <button onClick={saveToVercel} disabled={saving} className="px-3 py-2 bg-green-600 text-white rounded">Salvar na Vercel</button>
           </div>
-          <div className="text-xs text-gray-500 mt-2">Requer que o servidor possua `VERCEL_TOKEN` e `VERCEL_PROJECT_ID` e que você esteja autenticado com permissão (ADMIN_UID/ADMIN_EMAIL opcional).</div>
+          <div className="text-xs text-gray-500 mt-2">Requer que o servidor possua <code>VERCEL_TOKEN</code> e <code>VERCEL_PROJECT_ID</code> e que você esteja autenticado com permissão (ADMIN_UID/ADMIN_EMAIL opcional).</div>
         </div>
       </div>
       
@@ -169,7 +184,7 @@ export default function Settings(){
             <button onClick={saveTenantKey} disabled={savingTenant} className="px-3 py-2 bg-indigo-600 text-white rounded">Salvar para este tenant</button>
             <div className="text-sm text-gray-600">{savingTenant ? 'Salvando...' : null}</div>
           </div>
-          <div className="text-xs text-gray-500">Requer que você seja membro `owner` ou `admin` do tenant; se pertencer a vários tenants, especifique manualmente.</div>
+          <div className="text-xs text-gray-500">Requer que você seja membro <code>owner</code> ou <code>admin</code> do tenant; se pertencer a vários tenants, especifique manualmente.</div>
         </div>
       </div>
 

@@ -8,7 +8,10 @@ export default async function handler(req, res) {
 
   try {
     const authHeader = req.headers.authorization || ''
-    if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing auth token' })
+    if (!authHeader.startsWith('Bearer ')) {
+      console.log('[set-brevo-key] missing Authorization header on request from', req.headers['x-forwarded-for'] || req.ip || 'unknown')
+      return res.status(401).json({ error: 'Missing auth token. Re-login or provide ID token in Authorization header.' })
+    }
     const idToken = authHeader.split(' ')[1]
     const decoded = await admin.auth().verifyIdToken(idToken)
     if (debug) console.log('[set-brevo-key] decoded token', { uid: decoded.uid, email: decoded.email })
@@ -20,10 +23,16 @@ export default async function handler(req, res) {
     const adminEmail = process.env.ADMIN_EMAIL
     const isAdminClaim = !!decoded.admin
     if (!isAdminClaim) {
-      if (adminUid && decoded.uid !== adminUid) return res.status(403).json({ error: 'Not authorized' })
-      if (adminEmail && decoded.email !== adminEmail) return res.status(403).json({ error: 'Not authorized' })
+      if (adminUid && decoded.uid !== adminUid) {
+        console.log('[set-brevo-key] uid not allowed', decoded.uid)
+        return res.status(403).json({ error: 'Not authorized (uid mismatch). Ensure ADMIN_UID or admin claim.' })
+      }
+      if (adminEmail && decoded.email !== adminEmail) {
+        console.log('[set-brevo-key] email not allowed', decoded.email)
+        return res.status(403).json({ error: 'Not authorized (email mismatch). Ensure ADMIN_EMAIL or admin claim.' })
+      }
       // if no ADMIN_UID/EMAIL provided and no admin claim, deny access
-      if (!adminUid && !adminEmail) return res.status(403).json({ error: 'Not authorized' })
+      if (!adminUid && !adminEmail) return res.status(403).json({ error: 'Not authorized. No admin claim and no ADMIN_UID/EMAIL configured.' })
     }
 
     const { key } = req.body || {}
