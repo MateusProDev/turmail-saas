@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "postinstall": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify || true",
+    "generate-css": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify || true",
+    "build": "npm run generate-css && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
