@@ -1,6 +1,6 @@
 const Stripe = require('stripe')
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const { db } = require('./firebaseAdmin.cjs')
+const { db } = require('./firebaseAdmin_cjs.cjs')
 
 module.exports = async (req, res) => {
   const sig = req.headers['stripe-signature']
