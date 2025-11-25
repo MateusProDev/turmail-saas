@@ -47,14 +47,15 @@ export default async function handler(req, res) {
 
     // If tenantId not provided, try to infer from membership docs (owner/admin)
     if (!tenantId) {
-      // search collectionGroup 'members' for documents with id == uid
-      const q = db.collectionGroup('members').where(admin.firestore.FieldPath.documentId(), '==', decoded.uid)
+      // collectionGroup documentId() returns full path; instead query by role and filter by doc.id === uid
+      const q = db.collectionGroup('members').where('role', 'in', ['owner', 'admin'])
       const snaps = await q.get()
       console.log('[tenant/set-brevo-key] membership docs found:', snaps.size)
       if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
-      // collect matching tenantIds where role is owner/admin
+      // collect matching tenantIds where doc id equals uid
       const matching = []
       snaps.forEach(docSnap => {
+        if (docSnap.id !== decoded.uid) return
         const role = docSnap.data()?.role || 'member'
         if (['owner', 'admin'].includes(role)) {
           const tenantDoc = docSnap.ref.parent.parent

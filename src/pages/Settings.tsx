@@ -145,10 +145,14 @@ export default function Settings(){
       }
       try {
         setLoadingTenants(true)
-        const q = query(collectionGroup(db, 'members'), where(documentId(), '==', user.uid))
+        // collectionGroup documentId() returns the full path (tenants/{tenantId}/members/{uid}),
+        // so comparing to uid alone fails. Instead, query by role and filter by doc.id === uid.
+        const q = query(collectionGroup(db, 'members'), where('role', 'in', ['owner', 'admin']))
         const snaps = await getDocs(q)
         const tenants: Array<{ id: string, role: string }> = []
         snaps.forEach(s => {
+          // doc id is the member uid (we create members with uid as doc id)
+          if (s.id !== user.uid) return
           const role = s.data()?.role || 'member'
           const tenantDoc = s.ref.parent.parent
           if (tenantDoc && tenantDoc.id) tenants.push({ id: tenantDoc.id, role })

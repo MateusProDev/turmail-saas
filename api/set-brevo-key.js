@@ -54,7 +54,9 @@ export default async function handler(req, res) {
     // list env vars to find existing
     const listUrl = `https://api.vercel.com/v9/projects/${projectId}/env`
     const listResp = await axios.get(listUrl, { headers: { Authorization: `Bearer ${vercelToken}` } })
-    const existing = (listResp.data || []).find((v) => v.key === 'BREVO_API_KEY')
+    // Vercel may return data in different shapes (e.g. { envs: [...] })
+    const envs = listResp.data?.envs || listResp.data || []
+    const existing = (Array.isArray(envs) ? envs : []).find((v) => v.key === 'BREVO_API_KEY')
 
     if (existing) {
       // update
