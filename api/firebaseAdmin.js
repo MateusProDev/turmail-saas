@@ -15,9 +15,10 @@ if (!admin.apps.length) {
 
   admin.initializeApp({
     credential: admin.credential.cert({
-      projectId,
-      clientEmail,
-      privateKey,
+      // firebase-admin expects the service account keys using snake_case
+      project_id: projectId,
+      client_email: clientEmail,
+      private_key: privateKey,
     }),
   })
 }

@@ -75,7 +75,7 @@ export default function Dashboard(){
               <p className="text-sm">Plano: <strong>{subscription.planName || subscription.planId || subscription.stripePriceId || 'Assinado'}</strong></p>
               <p className="text-sm">Status: <span className={subscription.status === 'active' ? 'text-green-600' : 'text-yellow-600'}>{subscription.status}</span></p>
               {subscription.status === 'trial' && subscription.trialEndsAt && (
-                (() => {
+                (function TrialCountdown() {
                   const toDate = (t: any) => {
                     if (!t) return null
                     if (typeof t.toDate === 'function') return t.toDate()
@@ -83,12 +83,11 @@ export default function Dashboard(){
                     return new Date(t)
                   }
                   const trialEnds = toDate(subscription.trialEndsAt)
-                  const now = new Date()
-                  const daysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : null
+
                   return (
                     <div className="mt-2 text-sm text-gray-700">
-                      <div>Teste válido até: <strong>{trialEnds ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(trialEnds) : '—'}</strong></div>
-                      {daysLeft !== null && <div className="text-xs text-gray-500">Dias restantes: {daysLeft} dia(s)</div>}
+                      <div>Teste válido até: <strong>{trialEnds ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(trialEnds) : '—'}</strong></div>
+                      {trialEnds ? <CountdownDisplay end={trialEnds} /> : <div className="text-xs text-gray-500">—</div>}
                     </div>
                   )
                 })()
@@ -129,6 +128,35 @@ export default function Dashboard(){
           <li>Enviar campanha {features ? '(disponível)' : '(bloqueado)'}</li>
         </ul>
       </div>
+    </div>
+  )
+}
+
+function CountdownDisplay({ end }: { end: Date }) {
+  const [remainingMs, setRemainingMs] = useState(() => Math.max(0, end.getTime() - Date.now()))
+
+  useEffect(() => {
+    const tick = () => setRemainingMs(Math.max(0, end.getTime() - Date.now()))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [end])
+
+  if (remainingMs <= 0) return <div className="mt-1 text-xs text-red-600">Teste expirado</div>
+
+  const totalSec = Math.floor(remainingMs / 1000)
+  const days = Math.floor(totalSec / (3600 * 24))
+  const hours = Math.floor((totalSec % (3600 * 24)) / 3600)
+  const minutes = Math.floor((totalSec % 3600) / 60)
+  const seconds = totalSec % 60
+
+  const two = (n: number) => String(n).padStart(2, '0')
+
+  return (
+    <div className="mt-1 text-sm">
+      <span className="font-medium">Tempo restante: </span>
+      {days > 0 ? <span>{days} dia(s) </span> : null}
+      <span>{two(hours)}:{two(minutes)}:{two(seconds)}</span>
     </div>
   )
 }
