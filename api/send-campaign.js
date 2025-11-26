@@ -81,11 +81,23 @@ export default async function handler(req, res) {
       // Determine SMTP login: prefer tenant-specific `smtpLogin` field or env vars
       let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
       try {
-        // also try to read a tenant-level smtpLogin (settings doc)
+        // try tenant-level smtpLogin in settings
         const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
         if (settingsDoc.exists) {
           const s = settingsDoc.data() || {}
           if (!smtpUser && s.smtpLogin) smtpUser = s.smtpLogin
+        }
+        // if still not found, try tenant owner member doc (ownerUid) for member-level smtpLogin
+        if (!smtpUser) {
+          const tenantDoc = await db.collection('tenants').doc(tenantId).get()
+          const ownerUid = tenantDoc.exists ? tenantDoc.data()?.ownerUid : null
+          if (ownerUid) {
+            const memberDoc = await db.collection('tenants').doc(tenantId).collection('members').doc(ownerUid).get()
+            if (memberDoc.exists) {
+              const m = memberDoc.data() || {}
+              if (m.smtpLogin) smtpUser = m.smtpLogin
+            }
+          }
         }
       } catch (e) {
         // ignore

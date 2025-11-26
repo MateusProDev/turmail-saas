@@ -34,35 +34,49 @@ async function main() {
   const brevoArg = args.find(a => a.startsWith('--brevoKey='))
   const brevoKey = brevoArg ? brevoArg.split('=')[1] : process.env.BREVO_API_KEY || ''
   const doEncrypt = args.includes('--encrypt')
+  const ownerArg = args.find(a => a.startsWith('--ownerUid='))
+  const ownerUid = ownerArg ? ownerArg.split('=')[1] : null
 
-  if (!brevoKey) {
-    console.error('No Brevo API key provided (use --brevoKey or set BREVO_API_KEY env). Aborting.')
+  // Allow creating tenant without providing a Brevo key; settings will be created with null values.
+  if (!brevoKey && doEncrypt) {
+    console.error('TENANT_ENCRYPTION_KEY requested but no Brevo key provided to encrypt. Aborting.')
     process.exit(2)
   }
 
   try {
-    console.log('Creating tenant', tenantId, 'encrypt=%s', doEncrypt)
+    console.log('Creating tenant', tenantId, 'encrypt=%s ownerUid=%s', doEncrypt, ownerUid)
     const tenantRef = db.collection('tenants').doc(tenantId)
     await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    // If an ownerUid was provided, create a members doc for the tenant and set tenant.ownerUid
+    if (ownerUid) {
+      const memberRef = tenantRef.collection('members').doc(ownerUid)
+      await memberRef.set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+      await tenantRef.set({ ownerUid }, { merge: true })
+      console.log('Created member owner for tenant', tenantId, 'uid=', ownerUid)
+    }
 
-    let storedVal = brevoKey
+    // Prepare settings values. If brevoKey provided, optionally encrypt; otherwise set null defaults.
+    let storedVal = null
     let encryptedFlag = false
-    if (doEncrypt) {
-      if (!ENC_KEY) {
-        console.error('TENANT_ENCRYPTION_KEY not set in environment; cannot encrypt. Aborting.')
-        process.exit(2)
+    if (brevoKey) {
+      storedVal = brevoKey
+      if (doEncrypt) {
+        if (!ENC_KEY) {
+          console.error('TENANT_ENCRYPTION_KEY not set in environment; cannot encrypt. Aborting.')
+          process.exit(2)
+        }
+        const enc = encryptText(String(brevoKey))
+        if (!enc) {
+          console.error('Encryption failed')
+          process.exit(2)
+        }
+        storedVal = enc
+        encryptedFlag = true
       }
-      const enc = encryptText(String(brevoKey))
-      if (!enc) {
-        console.error('Encryption failed')
-        process.exit(2)
-      }
-      storedVal = enc
-      encryptedFlag = true
     }
 
     const settingsRef = tenantRef.collection('settings').doc('secrets')
-    await settingsRef.set({ brevoApiKey: storedVal, encrypted: encryptedFlag }, { merge: true })
+    await settingsRef.set({ brevoApiKey: storedVal, encrypted: encryptedFlag, smtpLogin: null }, { merge: true })
     console.log('Tenant created/updated:', tenantId, 'encrypted=', encryptedFlag)
     process.exit(0)
   } catch (err) {

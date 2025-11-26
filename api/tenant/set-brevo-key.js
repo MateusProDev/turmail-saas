@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     const decoded = await admin.auth().verifyIdToken(idToken)
     console.log('[tenant/set-brevo-key] decoded uid=%s email=%s', decoded.uid, decoded.email)
 
-    const { tenantId: bodyTenantId, key } = req.body || {}
+    const { tenantId: bodyTenantId, key, smtpLogin, memberLevel } = req.body || {}
     if (!key) {
       console.log('[tenant/set-brevo-key] no key in body')
       return res.status(400).json({ error: 'key is required' })
@@ -47,16 +47,15 @@ export default async function handler(req, res) {
 
     // If tenantId not provided, try to infer from membership docs (owner/admin)
     if (!tenantId) {
-      // Try to find membership documents for this uid using documentId() on the collectionGroup
-      // This avoids using `in` queries which can require additional composite indexes.
+      // Find membership documents by role and filter by member doc id (which is the user uid)
       try {
-        const docIdField = admin.firestore.FieldPath.documentId()
-        const q = db.collectionGroup('members').where(docIdField, '==', decoded.uid)
+        const q = db.collectionGroup('members').where('role', 'in', ['owner', 'admin'])
         const snaps = await q.get()
-        console.log('[tenant/set-brevo-key] membership docs found (by id):', snaps.size)
+        console.log('[tenant/set-brevo-key] membership docs found (by role):', snaps.size)
         if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
         const matching = []
         snaps.forEach(docSnap => {
+          if (docSnap.id !== decoded.uid) return
           const role = docSnap.data()?.role || 'member'
           if (['owner', 'admin'].includes(role)) {
             const tenantDoc = docSnap.ref.parent.parent
@@ -90,7 +89,25 @@ export default async function handler(req, res) {
       await settingsRef.set({ brevoApiKey: String(key), encrypted: false }, { merge: true })
       console.log('[tenant/set-brevo-key] saved plain key for tenant', tenantId)
     }
-    return res.status(200).json({ ok: true })
+
+    // Optionally save smtpLogin either at tenant settings or at member level
+    if (smtpLogin) {
+      try {
+        if (memberLevel) {
+          // store on member doc for this uid
+          await memberRef.set({ smtpLogin }, { merge: true })
+          console.log('[tenant/set-brevo-key] saved smtpLogin on member doc for uid=%s tenant=%s', decoded.uid, tenantId)
+        } else {
+          // store on tenant settings
+          await settingsRef.set({ smtpLogin }, { merge: true })
+          console.log('[tenant/set-brevo-key] saved smtpLogin on tenant settings for tenant=%s', tenantId)
+        }
+      } catch (sErr) {
+        console.error('[tenant/set-brevo-key] failed saving smtpLogin', sErr && sErr.message)
+      }
+    }
+
+    return res.status(200).json({ ok: true, tenantId })
   } catch (err) {
     // Log more diagnostic info to help trace Firestore / Admin SDK failures
     console.error('[tenant/set-brevo-key] error code=%s message=%s', err && err.code, err && err.message)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { collectionGroup, query, where, getDocs, documentId } from 'firebase/firestore'
+import { collectionGroup, query, where, getDocs } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
 export default function Settings(){
@@ -54,6 +54,8 @@ export default function Settings(){
   const [saving, setSaving] = useState(false)
   const [showBrevoKey, setShowBrevoKey] = useState(false)
   const [tenantKey, setTenantKey] = useState('')
+  const [smtpLogin, setSmtpLogin] = useState('')
+  const [smtpMemberLevel, setSmtpMemberLevel] = useState(false)
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
@@ -141,6 +143,8 @@ export default function Settings(){
       // Call endpoint with selected tenantId if we auto-detected one, otherwise let backend infer
       const body: any = { key: tenantKey }
       if (selectedTenant) body.tenantId = selectedTenant
+      if (smtpLogin) body.smtpLogin = smtpLogin
+      if (smtpMemberLevel) body.memberLevel = true
 
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
@@ -177,11 +181,12 @@ export default function Settings(){
       }
       try {
         setLoadingTenants(true)
-        // Query membership documents by documentId == user.uid to avoid `in` queries
-        const q = query(collectionGroup(db, 'members'), where(documentId(), '==', user.uid))
+        // Query membership documents by role and filter by doc id (member uid)
+        const q = query(collectionGroup(db, 'members'), where('role', 'in', ['owner', 'admin']))
         const snaps = await getDocs(q)
         const tenants: Array<{ id: string, role: string }> = []
         snaps.forEach(s => {
+          if (s.id !== user.uid) return
           const role = s.data()?.role || 'member'
           const tenantDoc = s.ref.parent.parent
           if (tenantDoc && tenantDoc.id) tenants.push({ id: tenantDoc.id, role })
@@ -241,6 +246,10 @@ export default function Settings(){
           <div className="flex gap-2 items-center">
             <input value={tenantKey} onChange={e => setTenantKey(e.target.value)} type={showTenantKey ? 'text' : 'password'} className="flex-1 border rounded px-3 py-2" placeholder="chave Brevo do tenant" />
             <button onClick={() => setShowTenantKey(s => !s)} type="button" className="px-2 py-1 border rounded text-sm">{showTenantKey ? 'Ocultar' : 'Mostrar'}</button>
+          </div>
+          <div className="flex gap-2 items-center">
+            <input value={smtpLogin} onChange={e => setSmtpLogin(e.target.value)} type="text" className="flex-1 border rounded px-3 py-2" placeholder="SMTP login (ex: 9c6dd5001@smtp-brevo.com)" />
+            <label className="text-sm flex items-center gap-2"><input type="checkbox" checked={smtpMemberLevel} onChange={e => setSmtpMemberLevel(e.target.checked)} /> Salvar como login SMTP no nível do membro</label>
           </div>
           <div>
             {loadingTenants ? (
