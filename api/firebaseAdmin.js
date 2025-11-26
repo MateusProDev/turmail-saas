@@ -28,6 +28,21 @@ if (!admin.apps.length) {
         privateKey = privateKey.replace(/\\n/g, '\n')
       }
       if (debug) console.log('[firebaseAdmin] using split env vars', { projectId, clientEmail, hasPrivateKey: !!privateKey })
+
+      // Validate presence of required split env vars and fail with a helpful message
+      const missing = []
+      if (!projectId) missing.push('FIREBASE_PROJECT_ID')
+      if (!clientEmail) missing.push('FIREBASE_CLIENT_EMAIL')
+      if (!privateKey) missing.push('FIREBASE_ADMIN_PRIVATE_KEY')
+      if (missing.length > 0) {
+        throw new Error(
+          `[firebaseAdmin] missing admin credentials: ${missing.join(', ')}. ` +
+            `For local runs provide either GOOGLE_APPLICATION_CREDENTIALS (path to JSON), ` +
+            `or set FIREBASE_SERVICE_ACCOUNT_JSON with the JSON contents, ` +
+            `or set all of FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY (private_key with real newlines).`
+        )
+      }
+
       admin.initializeApp({
         credential: admin.credential.cert({
           project_id: projectId,
