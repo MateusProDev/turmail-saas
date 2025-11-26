@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 
-import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId, doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
