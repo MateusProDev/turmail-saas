@@ -7,29 +7,21 @@ if (debug) console.log('[firebaseAdmin] ESM init')
 
 if (!admin.apps.length) {
   try {
-    // 1) Prefer GOOGLE_APPLICATION_CREDENTIALS (path to JSON file)
     const gacPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
     if (gacPath) {
       if (debug) console.log('[firebaseAdmin] using GOOGLE_APPLICATION_CREDENTIALS', gacPath)
-      // Let the SDK pick up ADC from file
       admin.initializeApp({ credential: admin.credential.applicationDefault() })
     } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-      // 2) Allow passing the full service account JSON as an env var (useful in CI)
       if (debug) console.log('[firebaseAdmin] using FIREBASE_SERVICE_ACCOUNT_JSON env var')
       const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
       admin.initializeApp({ credential: admin.credential.cert(sa) })
     } else {
-      // 3) Backwards-compatible: individual env vars (project id, client email, private key)
       const projectId = process.env.FIREBASE_PROJECT_ID
       const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
       let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY || ''
-      // Some shells store literal \n sequences; convert them to real newlines
       if (privateKey && privateKey.indexOf('\\n') !== -1) {
         privateKey = privateKey.replace(/\\n/g, '\n')
       }
-      if (debug) console.log('[firebaseAdmin] using split env vars', { projectId, clientEmail, hasPrivateKey: !!privateKey })
-
-      // Validate presence of required split env vars and fail with a helpful message
       const missing = []
       if (!projectId) missing.push('FIREBASE_PROJECT_ID')
       if (!clientEmail) missing.push('FIREBASE_CLIENT_EMAIL')
@@ -37,9 +29,7 @@ if (!admin.apps.length) {
       if (missing.length > 0) {
         throw new Error(
           `[firebaseAdmin] missing admin credentials: ${missing.join(', ')}. ` +
-            `For local runs provide either GOOGLE_APPLICATION_CREDENTIALS (path to JSON), ` +
-            `or set FIREBASE_SERVICE_ACCOUNT_JSON with the JSON contents, ` +
-            `or set all of FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY (private_key with real newlines).`
+            `Provide GOOGLE_APPLICATION_CREDENTIALS, FIREBASE_SERVICE_ACCOUNT_JSON, or the split env vars.`
         )
       }
 

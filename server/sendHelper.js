@@ -28,7 +28,6 @@ function tryDecrypt(val) {
 }
 
 export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
-  // Determine api key: prefer tenant key if present
   let apiKey = process.env.BREVO_API_KEY
   if (tenantId) {
     const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
@@ -42,9 +41,7 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
 
   if (!apiKey) throw new Error('Brevo API key missing')
 
-  // If key looks like SMTP, do SMTP relay using nodemailer
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
-    // find smtp login
     let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
     try {
       if (tenantId) {
@@ -87,14 +84,14 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     return { status: 201, data: { messageId: info && info.messageId } }
   }
 
-  // Otherwise use Brevo REST API via brevoMail (retries + idempotency)
   try {
     const idempotencyKey = (payload && payload.headers && payload.headers['Idempotency-Key']) || payload.idempotencyKey || undefined
     const resp = await sendEmail({ apiKey, payload, idempotencyKey })
     return { status: resp.status, data: resp.data }
   } catch (err) {
-    // normalize axios-like errors
     if (err?.cause?.response?.data) throw err.cause
     throw err
   }
 }
+
+export default { sendUsingBrevoOrSmtp }

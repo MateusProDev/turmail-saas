@@ -1,4 +1,4 @@
-import { db } from './firebaseAdmin.js'
+import { db } from '../server/firebaseAdmin.js'
 
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'

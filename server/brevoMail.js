@@ -23,7 +23,6 @@ export async function sendEmail({ apiKey, payload, retries = 2, timeout = 15000,
     } catch (err) {
       lastErr = err
       const status = err?.response?.status
-      // retry on 5xx and 429
       if (status && (status >= 500 || status === 429) && attempt <= retries) {
         const backoff = 200 * Math.pow(2, attempt)
         await sleep(backoff)

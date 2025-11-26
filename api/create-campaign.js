@@ -1,4 +1,4 @@
-import admin from './firebaseAdmin.js'
+import admin from '../server/firebaseAdmin.js'
 import { nanoid } from 'nanoid'
 
 const db = admin.firestore()

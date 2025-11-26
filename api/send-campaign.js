@@ -1,4 +1,4 @@
-import { sendUsingBrevoOrSmtp } from './sendHelper.js'
+import { sendUsingBrevoOrSmtp } from '../server/sendHelper.js'
 
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     try {
       const campaignId = body.campaignId
       if (campaignId) {
-        const admin = (await import('./firebaseAdmin.js')).default
+        const admin = (await import('../server/firebaseAdmin.js')).default
         const db = admin.firestore()
         const docRef = db.collection('campaigns').doc(campaignId)
         const doc = await docRef.get()

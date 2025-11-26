@@ -1,4 +1,4 @@
-import admin from '../../api/firebaseAdmin.js'
+import admin from '../../server/firebaseAdmin.js'
 import crypto from 'crypto'
 
 const db = admin.firestore()

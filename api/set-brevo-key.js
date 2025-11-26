@@ -1,5 +1,5 @@
 import axios from 'axios'
-import admin from './firebaseAdmin.js'
+import admin from '../server/firebaseAdmin.js'
 
 const debug = process.env.DEBUG_API === 'true'
 
