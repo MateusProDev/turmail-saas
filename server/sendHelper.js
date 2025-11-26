@@ -79,6 +79,30 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     throw new Error('Brevo API key missing')
   }
 
+  // Validate / normalize sender. Use DEFAULT_FROM_EMAIL/NAME as fallback.
+  function isValidEmail(e) {
+    return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
+  }
+
+  const defaultFromEmail = process.env.DEFAULT_FROM_EMAIL || ''
+  const defaultFromName = process.env.DEFAULT_FROM_NAME || ''
+
+  // ensure payload.sender exists and has a valid email; otherwise fallback
+  payload = payload || {}
+  payload.sender = payload.sender || {}
+  if (!isValidEmail(payload.sender.email)) {
+    if (isValidEmail(defaultFromEmail)) {
+      if (debug) console.log('[sendHelper] using DEFAULT_FROM_EMAIL fallback')
+      payload.sender.email = defaultFromEmail
+      payload.sender.name = payload.sender.name || defaultFromName || ''
+    } else {
+      console.error('[sendHelper] invalid sender email and no DEFAULT_FROM_EMAIL configured', payload.sender && payload.sender.email)
+      const err = new Error('valid sender email required')
+      err.code = 'invalid_sender'
+      throw err
+    }
+  }
+
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
     if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)')
     let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
