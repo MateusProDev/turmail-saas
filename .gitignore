@@ -29,3 +29,22 @@ dist-ssr
 .env.*.local
 
 .vercel
+# Vercel env file (do not commit)
+.env.vercel
+
+# Service account / GCP credentials
+serviceAccount.json
+serviceAccount.*.json
+*.firebase-adminsdk*.json
+gcloud-service-account.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+
+# Other local secrets
+.credentials
+.gcp-credentials.json
+.secret
+.env.*.vercel
