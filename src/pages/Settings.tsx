@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { collectionGroup, query, where, getDocs, documentId } from 'firebase/firestore'
+import { collectionGroup, query, where, getDocs } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
 export default function Settings(){
