@@ -43,7 +43,26 @@ function replacePlaceholders(template = '', recipient = {}, params = {}){
   return out
 }
 
+function normalizeRecipients(raw) {
+  // Accept: string email, object {email,name}, array of strings, array of objects
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return raw.map(r => {
+      if (!r) return null
+      if (typeof r === 'string') return { email: r, name: '' }
+      if (typeof r === 'object') return { email: r.email || r.value || '', name: r.name || r.label || '' }
+      return null
+    }).filter(Boolean)
+  }
+  if (typeof raw === 'string') return [{ email: raw, name: '' }]
+  if (typeof raw === 'object') return [{ email: raw.email || raw.value || '', name: raw.name || raw.label || '' }]
+  return []
+}
+
 export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
+  const debug = process.env.DEBUG_SEND === 'true'
+  if (debug) console.log('[sendHelper] start', { tenantId, campaignId: payload && payload.campaignId, hasTemplate: !!payload.templateId })
+
   let apiKey = process.env.BREVO_API_KEY
   if (tenantId) {
     const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
@@ -55,9 +74,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     if (tenantKey) apiKey = tenantKey
   }
 
-  if (!apiKey) throw new Error('Brevo API key missing')
+  if (!apiKey) {
+    console.error('[sendHelper] Brevo API key missing for tenant', tenantId)
+    throw new Error('Brevo API key missing')
+  }
 
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
+    if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)')
     let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
     try {
       if (tenantId) {
@@ -91,37 +114,48 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
 
     // If payload contains placeholders ({{name}} etc.) and there are multiple recipients,
     // send personalized messages per-recipient.
-    const recipients = Array.isArray(payload.to) ? payload.to : (payload.to ? [payload.to] : [])
+    const recipients = normalizeRecipients(payload.to)
     if (recipients.length > 1 && /{{\s*\w+\s*}}/.test(payload.htmlContent || payload.html || '')) {
       const results = []
       for (const r of recipients) {
-        const html = replacePlaceholders(payload.htmlContent || payload.html || '', r, payload.params)
-        const subject = replacePlaceholders(payload.subject || '', r, payload.params)
-        const mailOptions = {
-          from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
-          to: r.email,
-          subject,
-          html,
+        try {
+          const html = replacePlaceholders(payload.htmlContent || payload.html || '', r, payload.params)
+          const subject = replacePlaceholders(payload.subject || '', r, payload.params)
+          const mailOptions = {
+            from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
+            to: r.email,
+            subject,
+            html,
+          }
+          if (debug) console.log('[sendHelper][smtp] sending to', r.email)
+          const info = await transporter.sendMail(mailOptions)
+          results.push({ to: r.email, status: 201, messageId: info && info.messageId })
+        } catch (e) {
+          console.error('[sendHelper][smtp] send error for', r.email, e && (e.response || e.message || e))
+          results.push({ to: r.email, status: 500, error: e && (e.response?.data || e.message || String(e)) })
         }
-        const info = await transporter.sendMail(mailOptions)
-        results.push({ to: r.email, status: 201, messageId: info && info.messageId })
       }
       return { status: 207, data: { results } }
     }
 
-    const mailOptions = {
-      from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
-      to: Array.isArray(payload.to) ? payload.to.map(t => t.email).join(',') : (payload.to && payload.to.email) || '',
-      subject: payload.subject || '',
-      html: payload.htmlContent || payload.html || '',
+    try {
+      const mailOptions = {
+        from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
+        to: recipients.map(r => r.email).join(','),
+        subject: payload.subject || '',
+        html: payload.htmlContent || payload.html || '',
+      }
+      if (debug) console.log('[sendHelper][smtp] sending batch to', mailOptions.to)
+      const info = await transporter.sendMail(mailOptions)
+      return { status: 201, data: { messageId: info && info.messageId } }
+    } catch (e) {
+      console.error('[sendHelper][smtp] send batch error', e && (e.response || e.message || e))
+      throw e
     }
-
-    const info = await transporter.sendMail(mailOptions)
-    return { status: 201, data: { messageId: info && info.messageId } }
   }
 
   try {
-    const recipients = Array.isArray(payload.to) ? payload.to : (payload.to ? [payload.to] : [])
+    const recipients = normalizeRecipients(payload.to)
     const hasPlaceholders = /{{\s*\w+\s*}}/.test(payload.htmlContent || payload.html || '')
 
     // If placeholders present and multiple recipients, send individualized messages
@@ -137,19 +171,29 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
         // generate per-recipient idempotency key
         const baseIdem = payload.idempotencyKey || payload.idempotency || undefined
         const idem = baseIdem ? `${baseIdem}-${encodeURIComponent(r.email)}` : undefined
-        const resp = await sendEmail({ apiKey, payload: personalized, idempotencyKey: idem })
-        results.push({ to: r.email, status: resp.status, data: resp.data })
+        if (debug) console.log('[sendHelper] sending personalized via Brevo to', r.email, { idem })
+        try {
+          const resp = await sendEmail({ apiKey, payload: personalized, idempotencyKey: idem })
+          results.push({ to: r.email, status: resp.status, data: resp.data })
+        } catch (e) {
+          console.error('[sendHelper] brevo send error for', r.email, e && (e.response?.data || e.message || e))
+          results.push({ to: r.email, status: e?.response?.status || 500, error: e && (e.response?.data || e.message || String(e)) })
+        }
       }
       return { status: 207, data: { results } }
     }
 
     const idempotencyKey = (payload && payload.headers && payload.headers['Idempotency-Key']) || payload.idempotencyKey || undefined
+    if (debug) console.log('[sendHelper] sending via Brevo', { to: recipients.map(r => r.email).slice(0,5), idempotencyKey })
     const resp = await sendEmail({ apiKey, payload, idempotencyKey })
     return { status: resp.status, data: resp.data }
   } catch (err) {
+    console.error('[sendHelper] unexpected error', err && (err.response?.data || err.message || err))
     if (err?.cause?.response?.data) throw err.cause
     throw err
   }
 }
+
+export { normalizeRecipients }
 
 export default { sendUsingBrevoOrSmtp }

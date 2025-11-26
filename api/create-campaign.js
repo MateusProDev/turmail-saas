@@ -36,7 +36,16 @@ export default async function handler(req, res) {
     let finalAction = sendImmediate ? 'sent' : 'queued'
     if (sendImmediate) {
       try {
-        const payload = { tenantId, subject, htmlContent, to, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }, idempotencyKey }
+        // Normalize recipients before sending
+        let normalizedTo = to
+        try {
+          const { normalizeRecipients } = await import('../server/sendHelper.js')
+          normalizedTo = normalizeRecipients(to)
+        } catch (e) {
+          console.warn('[create-campaign] failed to normalize recipients', e)
+        }
+
+        const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }, idempotencyKey }
         const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
         const updates = { attempts: 1, updatedAt: admin.firestore.FieldValue.serverTimestamp(), status: 'sent' }
         if (result && result.data) {

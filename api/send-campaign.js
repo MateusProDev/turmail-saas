@@ -1,8 +1,8 @@
 import { sendUsingBrevoOrSmtp } from '../server/sendHelper.js'
 
 export default async function handler(req, res) {
-  const debug = process.env.DEBUG_API === 'true'
-  if (debug) console.log('[send-campaign] invoked', { method: req.method })
+  const debug = process.env.DEBUG_API === 'true' || process.env.DEBUG_SEND === 'true'
+  if (debug) console.log('[send-campaign] invoked', { method: req.method, bodySnippet: { campaignId: req.body?.campaignId, tenantId: req.body?.tenantId } })
 
   if (req.method !== 'POST') return res.status(405).end('Method not allowed')
 
@@ -37,6 +37,14 @@ export default async function handler(req, res) {
   }
 
   // Basic validation: must have either `to` or `templateId` and a sender email
+  // Normalize recipients early for validation and logging
+  try {
+    const { normalizeRecipients } = await import('../server/sendHelper.js')
+    payload.to = normalizeRecipients(payload.to)
+  } catch (e) {
+    if (debug) console.warn('[send-campaign] failed to normalize recipients', e)
+  }
+
   if ((!payload.to || (Array.isArray(payload.to) && payload.to.length === 0)) && !payload.templateId) {
     return res.status(400).json({ error: 'Missing recipients (`to`) or `templateId`' })
   }
@@ -61,8 +69,9 @@ export default async function handler(req, res) {
       }
     }
 
+    if (debug) console.log('[send-campaign] sending', { tenantId, campaignId, to: Array.isArray(payload.to) ? payload.to.map(t=>t.email).slice(0,5) : payload.to })
     const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
-    if (debug) console.log('[send-campaign] send result', result && result.status)
+    if (debug) console.log('[send-campaign] send result', result && result.status, result && (result.data || result))
 
     // Persist result on campaign doc if present (store httpStatus and responseBody when available)
     if (campaignId && db && docRef) {

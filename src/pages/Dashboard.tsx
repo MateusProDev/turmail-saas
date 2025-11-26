@@ -41,9 +41,15 @@ export default function Dashboard(){
           } else {
             setSubscription(null)
           }
-        }, (err) => console.error('subscription-by-email snapshot error', err))
+        }, (err) => {
+          console.error('subscription-by-email snapshot error', err)
+          setSubscription(null)
+        })
       }
-    }, (err) => console.error('subscription snapshot error', err))
+    }, (err) => {
+      console.error('subscription snapshot error', err)
+      setSubscription(null)
+    })
 
     return () => {
       if (unsubUid) unsubUid()
@@ -60,10 +66,14 @@ export default function Dashboard(){
       const q = query(cRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(6))
       const unsub = onSnapshot(q, (snap) => {
         setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-      }, (err) => console.error('campaigns snapshot error', err))
+      }, (err) => {
+        console.error('campaigns snapshot error', err)
+        setCampaigns([])
+      })
       return () => unsub()
     } catch (e) {
       console.error('campaigns listener error', e)
+      setCampaigns([])
     }
   }, [user])
 
@@ -76,10 +86,14 @@ export default function Dashboard(){
       const q = query(cRef, where('ownerUid', '==', user.uid))
       const unsub = onSnapshot(q, (snap) => {
         setContactsCount(snap.size)
-      }, (err) => console.error('contacts snapshot error', err))
+      }, (err) => {
+        console.error('contacts snapshot error', err)
+        setContactsCount(null)
+      })
       return () => unsub()
     } catch (e) {
       console.error('contacts listener error', e)
+      setContactsCount(null)
     }
   }, [user])
 
