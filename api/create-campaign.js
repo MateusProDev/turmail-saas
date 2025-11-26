@@ -1,5 +1,6 @@
 import admin from '../server/firebaseAdmin.js'
 import { nanoid } from 'nanoid'
+import { sendUsingBrevoOrSmtp } from '../server/sendHelper.js'
 
 const db = admin.firestore()
 
@@ -9,10 +10,11 @@ export default async function handler(req, res) {
   try {
     const body = req.body || {}
     // basic validation
-    const { tenantId, subject, htmlContent, to, scheduledAt } = body
+    const { tenantId, subject, htmlContent, to, scheduledAt, ownerUid, sendImmediate } = body
     if (!subject || !htmlContent) return res.status(400).json({ error: 'subject and htmlContent are required' })
 
     const id = `camp_${nanoid(10)}`
+    const docRef = db.collection('campaigns').doc(id)
     const doc = {
       tenantId: tenantId || null,
       subject,
@@ -20,12 +22,31 @@ export default async function handler(req, res) {
       to: to || null,
       status: 'queued',
       attempts: 0,
+      ownerUid: ownerUid || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       scheduledAt: scheduledAt ? admin.firestore.Timestamp.fromDate(new Date(scheduledAt)) : admin.firestore.FieldValue.serverTimestamp(),
     }
 
-    await db.collection('campaigns').doc(id).set(doc)
-    return res.status(201).json({ id, action: 'queued' })
+    await docRef.set(doc)
+
+    // If caller requested immediate send, attempt to send now and persist results
+    if (sendImmediate) {
+      try {
+        const payload = { tenantId, subject, htmlContent, to, campaignId: id }
+        const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
+        const updates = { attempts: 1, updatedAt: admin.firestore.FieldValue.serverTimestamp(), status: 'sent' }
+        if (result && result.data) {
+          updates.result = result.data
+          if (result.data.messageId) updates.messageId = result.data.messageId
+        }
+        await docRef.update(updates).catch(e => console.error('Failed updating campaign doc after immediate send:', e))
+      } catch (e) {
+        console.error('[create-campaign] immediate send failed', e)
+        await docRef.update({ status: 'failed', updatedAt: admin.firestore.FieldValue.serverTimestamp(), attempts: admin.firestore.FieldValue.increment(1), error: (e && e.message) || String(e) }).catch(()=>{})
+      }
+    }
+
+    return res.status(201).json({ id, action: sendImmediate ? 'sent' : 'queued' })
   } catch (err) {
     console.error('[create-campaign] error', err)
     return res.status(500).json({ error: 'failed to create campaign' })

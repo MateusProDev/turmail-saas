@@ -112,7 +112,7 @@ export default function Campaigns(){
     setResult(null)
 
     const to = recipients.map(email => ({ email }))
-    const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, to }
+    const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, to, ownerUid: user?.uid, sendImmediate }
     if (templateId) payload.templateId = Number(templateId)
     if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
 
