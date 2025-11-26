@@ -11,7 +11,8 @@ function tryDecrypt(val) {
   if (!val) return null
   try {
     const parsed = typeof val === 'string' ? JSON.parse(val) : null
-    if (!parsed || !parsed.v || !parsed.data) return val
+    // Expect envelope format: { iv, tag, data } (base64 strings)
+    if (!parsed || !parsed.iv || !parsed.tag || !parsed.data) return val
     if (!ENC_KEY) return null
     const key = Buffer.from(ENC_KEY, 'base64')
     if (key.length !== 32) return null

@@ -30,6 +30,7 @@ export default async function handler(req, res) {
     await docRef.set(doc)
 
     // If caller requested immediate send, attempt to send now and persist results
+    let finalAction = sendImmediate ? 'sent' : 'queued'
     if (sendImmediate) {
       try {
         const payload = { tenantId, subject, htmlContent, to, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` } }
@@ -40,13 +41,15 @@ export default async function handler(req, res) {
           if (result.data.messageId) updates.messageId = result.data.messageId
         }
         await docRef.update(updates).catch(e => console.error('Failed updating campaign doc after immediate send:', e))
+        finalAction = 'sent'
       } catch (e) {
         console.error('[create-campaign] immediate send failed', e)
-        await docRef.update({ status: 'failed', updatedAt: admin.firestore.FieldValue.serverTimestamp(), attempts: admin.firestore.FieldValue.increment(1), error: (e && e.message) || String(e) }).catch(()=>{})
+        await docRef.update({ status: 'failed', updatedAt: admin.firestore.FieldValue.serverTimestamp(), attempts: admin.firestore.FieldValue.increment(1), error: (e && (e.response?.data || e.message)) || String(e) }).catch(()=>{})
+        finalAction = 'failed'
       }
     }
 
-    return res.status(201).json({ id, action: sendImmediate ? 'sent' : 'queued' })
+    return res.status(201).json({ id, action: finalAction })
   } catch (err) {
     console.error('[create-campaign] error', err)
     return res.status(500).json({ error: 'failed to create campaign' })
