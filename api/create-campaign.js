@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     // If caller requested immediate send, attempt to send now and persist results
     if (sendImmediate) {
       try {
-        const payload = { tenantId, subject, htmlContent, to, campaignId: id }
+        const payload = { tenantId, subject, htmlContent, to, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` } }
         const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
         const updates = { attempts: 1, updatedAt: admin.firestore.FieldValue.serverTimestamp(), status: 'sent' }
         if (result && result.data) {
