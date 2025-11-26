@@ -14,12 +14,15 @@ export default async function handler(req, res) {
     if (!subject || !htmlContent) return res.status(400).json({ error: 'subject and htmlContent are required' })
 
     const id = `camp_${nanoid(10)}`
+    // Generate an idempotency key for this campaign so retries use the same key
+    const idempotencyKey = body.idempotencyKey || `camp-${id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
     const docRef = db.collection('campaigns').doc(id)
     const doc = {
       tenantId: tenantId || null,
       subject,
       htmlContent,
       to: to || null,
+      idempotencyKey,
       status: 'queued',
       attempts: 0,
       ownerUid: ownerUid || null,
@@ -33,7 +36,7 @@ export default async function handler(req, res) {
     let finalAction = sendImmediate ? 'sent' : 'queued'
     if (sendImmediate) {
       try {
-        const payload = { tenantId, subject, htmlContent, to, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` } }
+        const payload = { tenantId, subject, htmlContent, to, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }, idempotencyKey }
         const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
         const updates = { attempts: 1, updatedAt: admin.firestore.FieldValue.serverTimestamp(), status: 'sent' }
         if (result && result.data) {

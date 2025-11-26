@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 
+import DOMPurify from 'dompurify'
+
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId } from 'firebase/firestore'
 
 export default function Campaigns(){
@@ -21,6 +23,12 @@ export default function Campaigns(){
   const [scheduledAt, setScheduledAt] = useState('')
   const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [templateId, setTemplateId] = useState<string>('')
+  const [availableTemplates] = useState<Array<{id:string, name:string, subject?:string, html:string}>>([{
+    id: 'tpl_welcome', name: 'Welcome — Simple', subject: 'Bem-vindo!', html: '<h2>Bem-vindo a {{company}}</h2><p>Olá {{name}},<br/>Obrigado por se juntar a nós.</p><p>Atenciosamente,<br/>Equipe {{company}}</p>'
+  },{
+    id: 'tpl_news', name: 'Newsletter — Two column', subject: 'Novidades da semana', html: '<h2>Novidades</h2><p>Olá {{name}}, confira as novidades:</p><ul><li>Item 1</li><li>Item 2</li></ul><p>Saudações, {{company}}</p>'
+  }])
+  const [showPreview, setShowPreview] = useState(true)
   
   const [sendImmediate, setSendImmediate] = useState(true)
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null)
@@ -170,7 +178,64 @@ export default function Campaigns(){
               <option value="">(usar global)</option>
               {tenantOptions.map(t => (<option key={t.id} value={t.id}>{t.id} {t.role ? `(${t.role})` : ''}</option>))}
             </select>
-            <textarea value={htmlContent} onChange={e => setHtmlContent(e.target.value)} className="border rounded px-3 py-2 h-36" placeholder="Conteúdo HTML (ou deixe em branco se usar template)" />
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <div className="flex gap-2 mb-2">
+                  <select value={templateId} onChange={e => setTemplateId(e.target.value)} className="border rounded px-3 py-2">
+                    <option value="">(Escolher template)</option>
+                    {availableTemplates.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
+                  </select>
+                  <button onClick={() => {
+                    const t = availableTemplates.find(x => x.id === templateId)
+                    if (t) { setHtmlContent(t.html); if (t.subject) setSubject(t.subject) }
+                  }} className="px-3 py-2 border rounded text-sm">Inserir template</button>
+                  <button onClick={() => { setHtmlContent('<p>Olá {{name}},</p><p>Seu conteúdo aqui...</p>'); setSubject(subject || 'Nova campanha') }} className="px-3 py-2 border rounded text-sm">Usar modelo básico</button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <label className="text-sm">Preview</label>
+                    <input type="checkbox" checked={showPreview} onChange={e=>setShowPreview(e.target.checked)} />
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <div className="flex gap-2 mb-2">
+                    <button type="button" onClick={() => {
+                      const ta = document.getElementById('campaign-html') as HTMLTextAreaElement | null
+                      if (!ta) return
+                      const start = ta.selectionStart, end = ta.selectionEnd
+                      const before = ta.value.slice(0, start), sel = ta.value.slice(start, end), after = ta.value.slice(end)
+                      ta.value = before + '<strong>' + sel + '</strong>' + after
+                      setHtmlContent(ta.value)
+                    }} className="px-2 py-1 border rounded font-bold">B</button>
+                    <button type="button" onClick={() => {
+                      const ta = document.getElementById('campaign-html') as HTMLTextAreaElement | null
+                      if (!ta) return
+                      const start = ta.selectionStart, end = ta.selectionEnd
+                      const before = ta.value.slice(0, start), sel = ta.value.slice(start, end), after = ta.value.slice(end)
+                      ta.value = before + '<em>' + sel + '</em>' + after
+                      setHtmlContent(ta.value)
+                    }} className="px-2 py-1 border rounded italic">I</button>
+                    <button type="button" onClick={() => {
+                      const ta = document.getElementById('campaign-html') as HTMLTextAreaElement | null
+                      if (!ta) return
+                      const start = ta.selectionStart, end = ta.selectionEnd
+                      const before = ta.value.slice(0, start), sel = ta.value.slice(start, end), after = ta.value.slice(end)
+                      ta.value = before + '<h3>' + sel + '</h3>' + after
+                      setHtmlContent(ta.value)
+                    }} className="px-2 py-1 border rounded">H1</button>
+                    <button type="button" onClick={() => setHtmlContent((h) => h + '<p>Olá {{name}},</p>')} className="px-2 py-1 border rounded">{'{{name}}'}</button>
+                  </div>
+                  <textarea id="campaign-html" value={htmlContent} onChange={e => setHtmlContent(e.target.value)} className="border rounded px-3 py-2 h-48 w-full" placeholder="Conteúdo HTML (ou deixe em branco se usar template)" />
+                </div>
+              </div>
+
+              {showPreview && (
+                <div className="w-1/3 border rounded p-3 bg-gray-50">
+                  <div className="text-xs text-gray-500 mb-2">Preview (sanitizado)</div>
+                  <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent || '<p>Sem conteúdo</p>') }} />
+                </div>
+              )}
+
+            </div>
             <div className="grid sm:grid-cols-2 gap-2">
               <textarea value={recipientsText} onChange={e => setRecipientsText(e.target.value)} className="border rounded px-3 py-2" placeholder="Destinatários (uma linha por e-mail ou separados por vírgula)" />
               <div className="flex flex-col gap-2">
@@ -209,6 +274,14 @@ export default function Campaigns(){
                       <td className="px-2 py-2">{c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleString() : '—'}</td>
                       <td className="px-2 py-2">
                         <button onClick={() => sendTestForCampaign(c)} className="px-2 py-1 bg-indigo-600 text-white rounded text-xs mr-2">Enviar teste</button>
+                        <button onClick={async ()=>{
+                          try {
+                            const resp = await fetch('/api/send-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ campaignId: c.id }) })
+                            const j = await resp.json()
+                            if (!resp.ok) throw new Error(JSON.stringify(j))
+                            setResult('Reenvio iniciado')
+                          } catch (e:any) { setResult(String(e.message || e)) }
+                        }} className="px-2 py-1 border rounded text-xs mr-2">Reenviar</button>
                         <button onClick={() => { setShowForm(true); setEditingCampaign(c); setSubject(c.subject||''); setHtmlContent(c.htmlContent||''); setRecipientsText((c.to||[]).map((t:any)=>t.email).join('\n')); setSelectedTenant(c.tenantId||'') }} className="text-xs text-gray-600 mr-2">Editar</button>
                         <button onClick={async ()=>{
                           if (!confirm('Confirma remover esta campanha?')) return

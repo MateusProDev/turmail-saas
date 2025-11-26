@@ -36,7 +36,31 @@ export default async function handler(req, res) {
     }
   }
 
+  // Basic validation: must have either `to` or `templateId` and a sender email
+  if ((!payload.to || (Array.isArray(payload.to) && payload.to.length === 0)) && !payload.templateId) {
+    return res.status(400).json({ error: 'Missing recipients (`to`) or `templateId`' })
+  }
+  const senderEmail = payload.sender && (payload.sender.email || payload.sender)
+  if (!senderEmail && !process.env.DEFAULT_FROM_EMAIL) {
+    return res.status(400).json({ error: 'Missing sender email (set in payload.sender or DEFAULT_FROM_EMAIL env)' })
+  }
+
   try {
+    // If the campaign doc contains an idempotencyKey, prefer that
+    if (campaignId && db && docRef) {
+      try {
+        const docSnap = await docRef.get()
+        if (docSnap.exists) {
+          const data = docSnap.data() || {}
+          if (data.idempotencyKey) {
+            payload.idempotencyKey = payload.idempotencyKey || data.idempotencyKey
+          }
+        }
+      } catch (e) {
+        // continue without persisted idempotencyKey
+      }
+    }
+
     const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
     if (debug) console.log('[send-campaign] send result', result && result.status)
 
