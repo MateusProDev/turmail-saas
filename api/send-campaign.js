@@ -1,5 +1,3 @@
-import { sendUsingBrevoOrSmtp } from '../server/sendHelper.js'
-
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true' || process.env.DEBUG_SEND === 'true'
   if (debug) console.log('[send-campaign] invoked', { method: req.method, bodySnippet: { campaignId: req.body?.campaignId, tenantId: req.body?.tenantId } })
@@ -67,6 +65,16 @@ export default async function handler(req, res) {
       } catch (e) {
         // continue without persisted idempotencyKey
       }
+    }
+
+    // Lazy-import send helper to avoid Admin SDK initialization at module import time
+    let sendUsingBrevoOrSmtp
+    try {
+      const sh = await import('../server/sendHelper.js')
+      sendUsingBrevoOrSmtp = sh.sendUsingBrevoOrSmtp || sh.default?.sendUsingBrevoOrSmtp || sh.default
+    } catch (e) {
+      console.error('[send-campaign] failed to import send helper', e)
+      return res.status(500).json({ error: 'server configuration error: send helper not available' })
     }
 
     if (debug) console.log('[send-campaign] sending', { tenantId, campaignId, to: Array.isArray(payload.to) ? payload.to.map(t=>t.email).slice(0,5) : payload.to })

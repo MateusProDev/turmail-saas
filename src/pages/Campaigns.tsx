@@ -42,20 +42,14 @@ export default function Campaigns(){
     async function loadTenants() {
       if (!user) return
       try {
-        // Use collectionGroup to find member docs across tenants where the
-        // document ID equals the current user's uid. This avoids listing the
-        // `tenants` root collection which our security rules don't permit.
-        const membersGroup = collectionGroup(db, 'members')
-        // Query by role to limit results, then filter by member document id (which is the uid)
-        const q = query(membersGroup, where('role', 'in', ['owner', 'admin', 'member']))
-        const snap = await getDocs(q)
-        const opts: Array<{id:string, role:string}> = []
-        for (const md of snap.docs) {
-          if (md.id !== user.uid) continue
-          // member doc path: tenants/{tenantId}/members/{memberId}
-          const tenantId = md.ref.parent.parent?.id
-          if (tenantId) opts.push({ id: tenantId, role: md.data()?.role || '' })
+        const idToken = await user.getIdToken()
+        const resp = await fetch('/api/my-tenants', { method: 'GET', headers: { Authorization: `Bearer ${idToken}` } })
+        if (!resp.ok) {
+          console.warn('my-tenants endpoint returned', resp.status)
+          return
         }
+        const json = await resp.json()
+        const opts = (json.tenants || []).map((t: any) => ({ id: t.tenantId, role: t.role }))
         setTenantOptions(opts)
       } catch (e) {
         console.warn('Failed loading tenant memberships', e)

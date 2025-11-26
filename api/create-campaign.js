@@ -1,6 +1,6 @@
 import admin from '../server/firebaseAdmin.js'
 import { nanoid } from 'nanoid'
-import { sendUsingBrevoOrSmtp } from '../server/sendHelper.js'
+// send helper will be lazy-imported when needed to avoid Admin SDK init on import
 
 const db = admin.firestore()
 
@@ -46,6 +46,15 @@ export default async function handler(req, res) {
         }
 
         const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }, idempotencyKey }
+        let sendUsingBrevoOrSmtp
+        try {
+          const sh = await import('../server/sendHelper.js')
+          sendUsingBrevoOrSmtp = sh.sendUsingBrevoOrSmtp || sh.default?.sendUsingBrevoOrSmtp || sh.default
+        } catch (e) {
+          console.error('[create-campaign] failed to import send helper', e)
+          throw new Error('server misconfiguration: send helper not available')
+        }
+
         const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
         const updates = { attempts: 1, updatedAt: admin.firestore.FieldValue.serverTimestamp(), status: 'sent' }
         if (result && result.data) {
