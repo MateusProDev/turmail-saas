@@ -64,14 +64,16 @@ export default async function handler(req, res) {
     const result = await sendUsingBrevoOrSmtp({ tenantId, payload })
     if (debug) console.log('[send-campaign] send result', result && result.status)
 
-    // Persist result on campaign doc if present
+    // Persist result on campaign doc if present (store httpStatus and responseBody when available)
     if (campaignId && db && docRef) {
       try {
         const docSnap = await docRef.get()
         const updates = { attempts: (docSnap.exists && docSnap.data().attempts ? docSnap.data().attempts + 1 : 1), updatedAt: admin.firestore.FieldValue.serverTimestamp() }
-        if (result && result.data) {
+        if (result) {
+          updates.httpStatus = result.status || null
+          try { updates.responseBody = result.data ? (typeof result.data === 'object' ? result.data : String(result.data)) : null } catch(e){ updates.responseBody = String(result.data) }
+          if (result.data && result.data.messageId) updates.messageId = result.data.messageId
           updates.result = result.data
-          if (result.data.messageId) updates.messageId = result.data.messageId
         }
         updates.status = 'sent'
         await docRef.update(updates).catch(e => console.error('Failed updating campaign doc after send:', e))
@@ -87,7 +89,8 @@ export default async function handler(req, res) {
     if (campaignId && db && docRef) {
       try {
         const errorPayload = (err && (err.response?.data || err.message)) || String(err)
-        await docRef.update({ status: 'failed', updatedAt: admin.firestore.FieldValue.serverTimestamp(), attempts: admin.firestore.FieldValue.increment(1), error: errorPayload }).catch(()=>{})
+        const statusCode = err?.response?.status || 500
+        await docRef.update({ status: 'failed', updatedAt: admin.firestore.FieldValue.serverTimestamp(), attempts: admin.firestore.FieldValue.increment(1), error: errorPayload, httpStatus: statusCode, responseBody: err?.response?.data || null }).catch(()=>{})
       } catch (e) {
         console.error('Failed persisting failure to campaign doc', e)
       }

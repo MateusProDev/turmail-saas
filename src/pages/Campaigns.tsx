@@ -5,7 +5,7 @@ import { auth, db } from '../lib/firebase'
 
 import DOMPurify from 'dompurify'
 
-import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup } from 'firebase/firestore'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
@@ -46,10 +46,12 @@ export default function Campaigns(){
         // document ID equals the current user's uid. This avoids listing the
         // `tenants` root collection which our security rules don't permit.
         const membersGroup = collectionGroup(db, 'members')
-        const q = query(membersGroup, where(documentId(), '==', user.uid))
+        // Query by role to limit results, then filter by member document id (which is the uid)
+        const q = query(membersGroup, where('role', 'in', ['owner', 'admin', 'member']))
         const snap = await getDocs(q)
         const opts: Array<{id:string, role:string}> = []
         for (const md of snap.docs) {
+          if (md.id !== user.uid) continue
           // member doc path: tenants/{tenantId}/members/{memberId}
           const tenantId = md.ref.parent.parent?.id
           if (tenantId) opts.push({ id: tenantId, role: md.data()?.role || '' })
