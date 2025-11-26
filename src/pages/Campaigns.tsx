@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 
-import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId, doc, getDoc } from 'firebase/firestore'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
@@ -34,13 +34,21 @@ export default function Campaigns(){
     async function loadTenants() {
       if (!user) return
       try {
-        const cg = collectionGroup(db, 'members')
-        const q = query(cg, where(documentId(), '==', user.uid))
-        const snap = await getDocs(q)
-        const opts: Array<{id:string, role:string}> = snap.docs.map(d => {
-          const tenantId = d.ref.parent.parent ? d.ref.parent.parent.id : null
-          return tenantId ? { id: tenantId, role: d.data()?.role || '' } : null
-        }).filter(Boolean) as Array<{id:string,role:string}>
+        // Fallback approach: iterate tenants and check if member doc exists for current user.
+        const tenantsRef = collection(db, 'tenants')
+        const tenantsSnap = await getDocs(tenantsRef)
+        const opts: Array<{id:string, role:string}> = []
+        for (const t of tenantsSnap.docs) {
+          try {
+            const memberRef = doc(db, 'tenants', t.id, 'members', user.uid)
+            const md = await getDoc(memberRef)
+            if (md.exists()) {
+              opts.push({ id: t.id, role: md.data()?.role || '' })
+            }
+          } catch (innerErr) {
+            // ignore per-tenant errors
+          }
+        }
         setTenantOptions(opts)
       } catch (e) {
         console.warn('Failed loading tenant memberships', e)
@@ -248,3 +256,5 @@ export default function Campaigns(){
     </div>
   )
 }
+
+// end of `Campaigns` component

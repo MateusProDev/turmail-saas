@@ -90,10 +90,17 @@ service cloud.firestore {
         request.resource.data.ownerUid == request.auth.uid ||
         (request.resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
       );
+
+      // Allow reads for the owner, tenant admins, and (development-friendly) any authenticated user
+      // to see campaigns that do not yet have an `ownerUid` set. This helps the UI show newly
+      // created campaigns that haven't been backfilled. For production tighten this rule by
+      // removing the `resource.data.ownerUid == null` clause.
       allow read: if request.auth != null && (
         (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.ownerUid == null) ||
         (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
       );
+
       allow update, delete: if request.auth != null && (
         (resource.data.ownerUid == request.auth.uid) ||
         (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
