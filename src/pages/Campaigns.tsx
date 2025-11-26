@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
+
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup, documentId } from 'firebase/firestore'
 
 export default function Campaigns(){
@@ -20,14 +21,18 @@ export default function Campaigns(){
   const [scheduledAt, setScheduledAt] = useState('')
   const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [templateId, setTemplateId] = useState<string>('')
-  const [previewId, setPreviewId] = useState<string | null>(null)
+  
   const [sendImmediate, setSendImmediate] = useState(true)
+  const [editingCampaign, setEditingCampaign] = useState<any | null>(null)
+  const [page, setPage] = useState(1)
+  const pageSize = 10
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
 
   // Simple campaigns listener: campaigns where ownerUid == user.uid
   useEffect(() => {
     // load tenant memberships for the current user so they can choose tenant-scoped keys
     async function loadTenants() {
+      if (!user) return
       try {
         const cg = collectionGroup(db, 'members')
         const q = query(cg, where(documentId(), '==', user.uid))
@@ -98,24 +103,34 @@ export default function Campaigns(){
   }
 
   const createCampaign = async () => {
-    if (!subject || !htmlContent) { setResult('Assunto e conteúdo são obrigatórios'); return }
+    if (!subject || (!htmlContent && !templateId)) { setResult('Assunto e conteúdo ou template são obrigatórios'); return }
     // parse recipients and basic validation
     const recipients = recipientsText.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
     if (recipients.length === 0) { setResult('Adicione ao menos 1 destinatário'); return }
     const invalid = recipients.find(r => !/^\S+@\S+\.\S+$/.test(r))
     if (invalid) { setResult(`Endereço inválido: ${invalid}`); return }
     setResult(null)
+
+    const to = recipients.map(email => ({ email }))
+    const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, to }
+    if (templateId) payload.templateId = Number(templateId)
+    if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
+
     try {
-      const to = recipients.map(email => ({ email }))
-      const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, to }
-      if (templateId) payload.templateId = Number(templateId)
-      if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
-      const resp = await fetch('/api/create-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(JSON.stringify(data))
-      setResult(`Campanha criada: ${data.id}`)
+      if (editingCampaign && editingCampaign.id) {
+        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, to, scheduledAt: payload.scheduledAt, templateId: payload.templateId }) })
+        const data = await resp.json()
+        if (!resp.ok) throw new Error(JSON.stringify(data))
+        setResult('Campanha atualizada')
+      } else {
+        const resp = await fetch('/api/create-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+        const data = await resp.json()
+        if (!resp.ok) throw new Error(JSON.stringify(data))
+        setResult(`Campanha criada: ${data.id}`)
+      }
+
       setShowForm(false)
-      // refresh lists
+      setEditingCampaign(null)
       if (selectedTenant) await refreshCampaignsByTenant(selectedTenant)
     } catch (e: any) {
       setResult(String(e.message || e))
@@ -146,6 +161,10 @@ export default function Campaigns(){
           <h2 className="font-medium">Criar nova campanha</h2>
           <div className="grid gap-2 mt-3">
             <input value={subject} onChange={e => setSubject(e.target.value)} className="border rounded px-3 py-2" placeholder="Assunto" />
+            <select value={selectedTenant ?? ''} onChange={e => setSelectedTenant(e.target.value || null)} className="border rounded px-3 py-2">
+              <option value="">(usar global)</option>
+              {tenantOptions.map(t => (<option key={t.id} value={t.id}>{t.id} {t.role ? `(${t.role})` : ''}</option>))}
+            </select>
             <textarea value={htmlContent} onChange={e => setHtmlContent(e.target.value)} className="border rounded px-3 py-2 h-36" placeholder="Conteúdo HTML (ou deixe em branco se usar template)" />
             <div className="grid sm:grid-cols-2 gap-2">
               <textarea value={recipientsText} onChange={e => setRecipientsText(e.target.value)} className="border rounded px-3 py-2" placeholder="Destinatários (uma linha por e-mail ou separados por vírgula)" />
@@ -156,7 +175,7 @@ export default function Campaigns(){
                   <input type="checkbox" checked={sendImmediate} onChange={e => setSendImmediate(e.target.checked)} />
                 </div>
                 <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="border rounded px-3 py-2" disabled={sendImmediate} />
-                <button onClick={() => setPreviewId('local')} className="text-sm text-gray-600 underline">Visualizar conteúdo</button>
+                <button onClick={() => null} className="text-sm text-gray-600 underline">Visualizar conteúdo</button>
               </div>
             </div>
             <div className="flex gap-2 items-center">
@@ -168,28 +187,16 @@ export default function Campaigns(){
         </div>
       )}
 
-      {/* preview modal / area */}
-      {previewId === 'local' && (
-        <div className="mb-6 bg-white p-4 rounded shadow">
-          <h3 className="font-medium">Pré-visualização</h3>
-          <div className="mt-2 border rounded p-3 text-sm text-gray-800">
-            <div dangerouslySetInnerHTML={{ __html: htmlContent || '<em>Nenhum conteúdo</em>' }} />
-          </div>
-          <div className="mt-2 text-right">
-            <button onClick={() => setPreviewId(null)} className="px-3 py-1 border rounded">Fechar pré-visualização</button>
-          </div>
-        </div>
-      )}
-
       <section className="mb-6">
         <div className="text-sm text-gray-500 mb-2">Lista de campanhas recentes</div>
         <div className="bg-white rounded shadow p-4 text-sm text-gray-600">
           {loading ? <div>Carregando campanhas...</div> : (
             campaigns.length === 0 ? <div>Nenhuma campanha encontrada.</div> : (
+              <>
               <table className="min-w-full table-auto text-sm">
                 <thead className="text-left text-xs text-gray-500 uppercase"><tr><th>Assunto</th><th>Destinatários</th><th>Status</th><th>Criado</th><th>Ações</th></tr></thead>
                 <tbody>
-                  {campaigns.map(c => (
+                  {campaigns.slice((page-1)*pageSize, page*pageSize).map(c => (
                     <tr key={c.id} className="border-t">
                       <td className="px-2 py-2">{c.subject}</td>
                       <td className="px-2 py-2">{(c.to || []).length}</td>
@@ -197,12 +204,25 @@ export default function Campaigns(){
                       <td className="px-2 py-2">{c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleString() : '—'}</td>
                       <td className="px-2 py-2">
                         <button onClick={() => sendTestForCampaign(c)} className="px-2 py-1 bg-indigo-600 text-white rounded text-xs mr-2">Enviar teste</button>
+                        <button onClick={() => { setShowForm(true); setEditingCampaign(c); setSubject(c.subject||''); setHtmlContent(c.htmlContent||''); setRecipientsText((c.to||[]).map((t:any)=>t.email).join('\n')); setSelectedTenant(c.tenantId||'') }} className="text-xs text-gray-600 mr-2">Editar</button>
+                        <button onClick={async ()=>{
+                          if (!confirm('Confirma remover esta campanha?')) return
+                          try { const resp = await fetch('/api/delete-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: c.id }) }); const j = await resp.json(); if (!resp.ok) throw new Error(JSON.stringify(j)); setCampaigns(prev=>prev.filter(x=>x.id!==c.id)); setResult('Campanha removida') } catch (e:any){ setResult(String(e.message||e)) }
+                        }} className="text-xs text-red-600 mr-2">Remover</button>
                         <Link to={`/campaigns/${c.id}`} className="text-xs text-gray-600">Ver</Link>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-sm text-gray-600">Página {page} de {Math.max(1, Math.ceil(campaigns.length / pageSize))}</div>
+                <div className="flex gap-2">
+                  <button className="px-2 py-1 border rounded" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Anterior</button>
+                  <button className="px-2 py-1 border rounded" disabled={page>=Math.ceil(campaigns.length/pageSize)} onClick={()=>setPage(p=>p+1)}>Próxima</button>
+                </div>
+              </div>
+              </>
             )
           )}
         </div>
