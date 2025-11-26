@@ -6,17 +6,48 @@ import { db, auth } from '../lib/firebase'
 export default function Settings(){
   const [testing, setTesting] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+  const [testSending, setTestSending] = useState(false)
+  const [testSuccess, setTestSuccess] = useState<boolean | null>(null)
+  const [testMessage, setTestMessage] = useState<string | null>(null)
 
   const testBrevo = async () => {
     setTesting(true); setResult(null)
     try {
-      // Use a lightweight ping endpoint instead of OPTIONS to avoid 405.
+      // Keep ping behavior for legacy; call server-side ping endpoint
       const res = await fetch('/api/ping')
       if (!res.ok) throw new Error(`status ${res.status}`)
       setResult(`Brevo endpoint reachable (status ${res.status})`)
     } catch (e: any) {
       setResult(String(e.message || e))
     } finally { setTesting(false) }
+  }
+
+  const sendTestEmailFromUI = async () => {
+    setTestSending(true)
+    setTestSuccess(null)
+    setTestMessage(null)
+    try {
+      const userEmail = auth.currentUser?.email || 'test@example.com'
+      const payload: any = {
+        tenantId: selectedTenant || undefined,
+        sender: { name: 'TurMail Test', email: `no-reply@${window.location.hostname}` },
+        to: [{ email: userEmail }],
+        subject: `Teste de envio (${selectedTenant || 'global'})`,
+        htmlContent: `<p>Teste de envio do tenant ${selectedTenant || 'global'}</p>`,
+      }
+      const resp = await fetch('/api/send-campaign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(JSON.stringify(data))
+      setTestSuccess(true)
+      setTestMessage(data && data.messageId ? `Enviado (id ${data.messageId})` : 'Enviado com sucesso')
+    } catch (err: any) {
+      setTestSuccess(false)
+      setTestMessage(String(err.message || err))
+    } finally {
+      setTestSending(false)
+    }
   }
 
   const [brevoKey, setBrevoKey] = useState('')
@@ -228,9 +259,15 @@ export default function Settings(){
             ) : null}
           </div>
           <div className="flex gap-2">
-            <button onClick={saveTenantKey} disabled={savingTenant} className="px-3 py-2 bg-indigo-600 text-white rounded">Salvar para este tenant</button>
+              <button onClick={saveTenantKey} disabled={savingTenant} className="px-3 py-2 bg-indigo-600 text-white rounded">Salvar para este tenant</button>
             <div className="text-sm text-gray-600">{savingTenant ? 'Salvando...' : null}</div>
           </div>
+            <div className="flex gap-2 items-center mt-2">
+              <button onClick={sendTestEmailFromUI} disabled={testSending} className="px-3 py-2 bg-green-600 text-white rounded">Enviar e-mail de teste</button>
+              {testSending ? <div className="text-sm text-gray-600">Enviando...</div> : null}
+              {testSuccess === true ? <div className="text-sm text-green-700">✅ {testMessage}</div> : null}
+              {testSuccess === false ? <div className="text-sm text-red-600">❌ {testMessage}</div> : null}
+            </div>
           <div className="text-xs text-gray-500">Requer que você seja membro <code>owner</code> ou <code>admin</code> do tenant; se pertencer a vários tenants, especifique manualmente.</div>
         </div>
       </div>
