@@ -5,7 +5,7 @@ import { auth, db } from '../lib/firebase'
 
 import DOMPurify from 'dompurify'
 
-import { collection, query, where, onSnapshot, orderBy, limit, getDocs, collectionGroup } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, getDocs } from 'firebase/firestore'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
