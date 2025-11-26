@@ -47,25 +47,30 @@ export default async function handler(req, res) {
 
     // If tenantId not provided, try to infer from membership docs (owner/admin)
     if (!tenantId) {
-      // collectionGroup documentId() returns full path; instead query by role and filter by doc.id === uid
-      const q = db.collectionGroup('members').where('role', 'in', ['owner', 'admin'])
-      const snaps = await q.get()
-      console.log('[tenant/set-brevo-key] membership docs found:', snaps.size)
-      if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
-      // collect matching tenantIds where doc id equals uid
-      const matching = []
-      snaps.forEach(docSnap => {
-        if (docSnap.id !== decoded.uid) return
-        const role = docSnap.data()?.role || 'member'
-        if (['owner', 'admin'].includes(role)) {
-          const tenantDoc = docSnap.ref.parent.parent
-          if (tenantDoc && tenantDoc.id) matching.push(tenantDoc.id)
-        }
-      })
-      if (matching.length === 0) return res.status(403).json({ error: 'No tenant membership with owner/admin role found' })
-      if (matching.length > 1) return res.status(409).json({ error: 'Multiple tenant memberships found; please specify tenantId', tenants: matching })
-      tenantId = matching[0]
-      console.log('[tenant/set-brevo-key] inferred tenantId', tenantId)
+      // Try to find membership documents for this uid using documentId() on the collectionGroup
+      // This avoids using `in` queries which can require additional composite indexes.
+      try {
+        const docIdField = admin.firestore.FieldPath.documentId()
+        const q = db.collectionGroup('members').where(docIdField, '==', decoded.uid)
+        const snaps = await q.get()
+        console.log('[tenant/set-brevo-key] membership docs found (by id):', snaps.size)
+        if (snaps.empty) return res.status(403).json({ error: 'Not a member of any tenant' })
+        const matching = []
+        snaps.forEach(docSnap => {
+          const role = docSnap.data()?.role || 'member'
+          if (['owner', 'admin'].includes(role)) {
+            const tenantDoc = docSnap.ref.parent.parent
+            if (tenantDoc && tenantDoc.id) matching.push(tenantDoc.id)
+          }
+        })
+        if (matching.length === 0) return res.status(403).json({ error: 'No tenant membership with owner/admin role found' })
+        if (matching.length > 1) return res.status(409).json({ error: 'Multiple tenant memberships found; please specify tenantId', tenants: matching })
+        tenantId = matching[0]
+        console.log('[tenant/set-brevo-key] inferred tenantId', tenantId)
+      } catch (qerr) {
+        console.error('[tenant/set-brevo-key] membership query failed', qerr && qerr.code, qerr && qerr.message)
+        return res.status(500).json({ error: qerr.message || String(qerr) })
+      }
     }
 
     // check membership for the resolved tenantId
@@ -87,7 +92,9 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: true })
   } catch (err) {
-    console.error('[tenant/set-brevo-key] error', err?.response?.data || err.message || err)
-    return res.status(500).json({ error: err.message || 'internal error' })
+    // Log more diagnostic info to help trace Firestore / Admin SDK failures
+    console.error('[tenant/set-brevo-key] error code=%s message=%s', err && err.code, err && err.message)
+    console.error(err && err.stack)
+    return res.status(500).json({ error: (err && err.code ? `${err.code}: ` : '') + (err && err.message ? err.message : 'internal error') })
   }
 }

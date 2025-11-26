@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { collectionGroup, query, where, getDocs } from 'firebase/firestore'
+import { collectionGroup, query, where, getDocs, documentId } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 
 export default function Settings(){
@@ -26,7 +26,8 @@ export default function Settings(){
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
-  const [, setLoadingTenants] = useState(false)
+  const [tenantOptions, setTenantOptions] = useState<Array<{ id: string, role: string }>>([])
+  const [loadingTenants, setLoadingTenants] = useState(false)
 
   const saveToVercel = async () => {
     setSaving(true); setResult(null)
@@ -145,14 +146,11 @@ export default function Settings(){
       }
       try {
         setLoadingTenants(true)
-        // collectionGroup documentId() returns the full path (tenants/{tenantId}/members/{uid}),
-        // so comparing to uid alone fails. Instead, query by role and filter by doc.id === uid.
-        const q = query(collectionGroup(db, 'members'), where('role', 'in', ['owner', 'admin']))
+        // Query membership documents by documentId == user.uid to avoid `in` queries
+        const q = query(collectionGroup(db, 'members'), where(documentId(), '==', user.uid))
         const snaps = await getDocs(q)
         const tenants: Array<{ id: string, role: string }> = []
         snaps.forEach(s => {
-          // doc id is the member uid (we create members with uid as doc id)
-          if (s.id !== user.uid) return
           const role = s.data()?.role || 'member'
           const tenantDoc = s.ref.parent.parent
           if (tenantDoc && tenantDoc.id) tenants.push({ id: tenantDoc.id, role })
@@ -160,6 +158,7 @@ export default function Settings(){
         console.log('[Settings] loaded tenant memberships for uid=%s count=%d', user.uid, tenants.length)
         if (tenants.length === 0) {
           setSelectedTenant(null)
+          setTenantOptions([])
         } else {
           // prefer owner then admin then first
           const owner = tenants.find(t => t.role === 'owner')
@@ -167,6 +166,7 @@ export default function Settings(){
           const chosen = owner ? owner.id : (admin ? admin.id : tenants[0].id)
           console.log('[Settings] selectedTenant chosen=%s from list=%o', chosen, tenants.map(t => t.id))
           setSelectedTenant(chosen)
+          setTenantOptions(tenants)
         }
       } catch (err) {
         console.error('Failed to load tenant memberships', err)
@@ -210,6 +210,22 @@ export default function Settings(){
           <div className="flex gap-2 items-center">
             <input value={tenantKey} onChange={e => setTenantKey(e.target.value)} type={showTenantKey ? 'text' : 'password'} className="flex-1 border rounded px-3 py-2" placeholder="chave Brevo do tenant" />
             <button onClick={() => setShowTenantKey(s => !s)} type="button" className="px-2 py-1 border rounded text-sm">{showTenantKey ? 'Ocultar' : 'Mostrar'}</button>
+          </div>
+          <div>
+            {loadingTenants ? (
+              <div className="text-sm text-gray-600">Carregando tenants...</div>
+            ) : tenantOptions && tenantOptions.length > 1 ? (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Selecionar tenant:</label>
+                <select value={selectedTenant ?? ''} onChange={e => setSelectedTenant(e.target.value)} className="border rounded px-2 py-1">
+                  {tenantOptions.map(t => (
+                    <option key={t.id} value={t.id}>{t.id} {t.role ? `(${t.role})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            ) : selectedTenant ? (
+              <div className="text-sm text-gray-600">Tenant selecionado: <strong>{selectedTenant}</strong></div>
+            ) : null}
           </div>
           <div className="flex gap-2">
             <button onClick={saveTenantKey} disabled={savingTenant} className="px-3 py-2 bg-indigo-600 text-white rounded">Salvar para este tenant</button>
