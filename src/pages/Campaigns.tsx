@@ -540,18 +540,7 @@ export default function Campaigns(){
                       )
                     })()}
 
-                    <div className="mt-3">
-                      <button type="button" onClick={() => {
-                        // pre-populate selections in contacts modal based on current recipientsText
-                        const emails = recipientsText.split(/[\n,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean)
-                        const map: Record<string, boolean> = {}
-                        for (const c of contacts) {
-                          if (c.email && emails.includes(String(c.email).toLowerCase())) map[c.id] = true
-                        }
-                        setSelectedContactIds(map)
-                        setShowContactsModal(true)
-                      }} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Selecionar Contatos</button>
-                    </div>
+                    
                   </div>
 
                 <div className="space-y-4">
