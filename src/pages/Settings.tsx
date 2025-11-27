@@ -214,13 +214,17 @@ export default function Settings(){
   }, [])
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Configurações</h1>
-        <Link to="/dashboard" className="text-sm text-gray-600">Voltar</Link>
+    <div className="py-6">
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Configurações</h1>
+        </div>
+        <div>
+          <Link to="/dashboard" className="text-sm text-gray-600">Voltar</Link>
+        </div>
       </header>
 
-      <div className="bg-white rounded shadow p-4 mb-4">
+      <div className="page-section mb-4">
         <h2 className="font-medium">Integração Brevo</h2>
         <p className="text-sm text-gray-500 mb-2">A chave da Brevo deve ficar no servidor (variável de ambiente <code>BREVO_API_KEY</code>). Não insira sua chave diretamente no cliente.</p>
         <div className="flex items-center gap-2 mb-3">
@@ -239,7 +243,7 @@ export default function Settings(){
         </div>
       </div>
       
-      <div className="bg-white rounded shadow p-4 mt-4">
+      <div className="page-section mt-4">
         <h2 className="font-medium">Chave Brevo por Tenant</h2>
         <p className="text-sm text-gray-500 mb-2">Cada tenant pode usar sua própria chave. Cole a chave abaixo; o sistema tentará identificar automaticamente seu tenant.</p>
         <div className="grid grid-cols-1 gap-2">
@@ -281,7 +285,7 @@ export default function Settings(){
         </div>
       </div>
 
-      <div className="bg-white rounded shadow p-4">
+      <div className="page-section">
         <h2 className="font-medium">Preferências</h2>
         <div className="text-sm text-gray-500 mt-2">Aqui você poderá ajustar preferências da conta, notificações e integrações.</div>
       </div>

@@ -22,7 +22,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <main className="w-full">
-        <Routes>
+        <div className="app-container">
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -40,7 +41,8 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/success" element={<Success />} />
-        </Routes>
+          </Routes>
+        </div>
       </main>
     </BrowserRouter>
   )
