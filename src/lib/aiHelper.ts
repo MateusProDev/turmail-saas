@@ -11,202 +11,143 @@ export type CopyOptions = {
 
 function pick<T>(arr: T[]) { return arr[Math.floor(Math.random() * arr.length)] }
 
-export function suggestCopy(opts: CopyOptions) {
-  // If company is not provided, prefer the recipient name placeholder (e.g. '{{name}}' or actual name)
+function bullets(items: string[]) {
+  return `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`
+}
+
+function mainTitleOrFallback(opts: any) {
+  if (opts && opts.mainTitle) return opts.mainTitle
+  if (opts && opts.product) return `Conheça ${opts.product}`
+  return 'Temos novidades para você'
+}
+
+function pickBenefits(opts: CopyOptions) {
+  const vert = opts.vertical || 'general'
+  const bank: Record<string, string[]> = {
+    tourism: [
+      `Roteiros personalizados para grupos e famílias`,
+      `Guias locais com conhecimento do destino`,
+      `Datas flexíveis e descontos para reservas antecipadas`,
+      `Atendimento 24/7 durante a viagem`
+    ],
+    cooperative: [
+      `Gerenciamento centralizado de reservas`,
+      `Relatórios para otimizar oferta e demanda`,
+      `Benefícios exclusivos para cooperados`,
+      `Suporte para aumentar vendas locais`
+    ],
+    taxi: [
+      `Dicas para encontrar passageiros nos horários de pico`,
+      `Otimização de rota para reduzir tempo ocioso`,
+      `Parcerias locais e promoções para aumentar corridas`,
+      `Técnicas para melhorar avaliação de passageiros`
+    ],
+    general: [
+      `Soluções simples e fáceis de aplicar`,
+      `Suporte dedicado para orientar seus próximos passos`,
+      `Melhore resultados com práticas testadas`,
+      `Benefícios exclusivos para clientes`
+    ]
+  }
+  const arr = bank[vert] || bank.general
+  const shuffled = arr.slice().sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, 3)
+}
+
+function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
   const company = opts.company || opts.namePlaceholder || 'sua empresa'
   const product = opts.product || 'nosso produto'
   const tone = opts.tone || 'friendly'
   const name = opts.namePlaceholder || '{{name}}'
+  const dest = opts.destination || ''
 
-  // base subject templates by tone — tourism-focused (agency -> clients)
-  const subjectTemplates: Record<string, string[]> = {
+  const openings: Record<string, string[]> = {
     friendly: [
-      `Novos passeios em ${opts.destination || 'sua região'} — descubra com ${company}`,
-      `${name}, roteiros especiais esperam por você`,
-      `${company} preparou experiências imperdíveis para ${name}`
+      `Olá ${name},`,
+      `Oi ${name}!`,
+      `Olá — temos novidades para quem gosta de viajar, ${name}.`
     ],
     formal: [
-      `${company} apresenta: novos roteiros e experiências`,
-      `Informações sobre reservas e opções de passeio`
+      `Olá ${name},`,
+      `Prezado(a) ${name},`
     ],
     urgent: [
-      `Últimas vagas para passeios em ${opts.destination || 'seu destino'}`,
-      `${name}, vagas limitadas — garanta já sua reserva`
+      `Atenção ${name}, vagas acabando!`,
+      `Última chamada para ${dest || 'reservas'} — ${name}`
     ],
     casual: [
-      `Ei ${name}, bora explorar ${opts.destination || 'a cidade'}?`,
-      `Olha as experiências que a ${company} montou para você`
+      `Ei ${name}, bora?`,
+      `Que tal uma escapada, ${name}?`
     ]
   }
 
-  const preheaderTemplates: Record<string, string[]> = {
-    friendly: [
-      `Roteiros personalizados, guias locais e suporte na viagem.`,
-      `Ofertas especiais para quem quer viver experiências reais.`
+  const introsByVertical: Record<string, string[]> = {
+    tourism: [
+      `Preparamos experiências em ${dest || 'vários destinos'} com guias locais e roteiros personalizados.`,
+      `Roteiros pensados para quem quer viver o melhor de ${dest || 'uma região'}.`
     ],
-    formal: [
-      `Detalhes sobre horários, inclusão e políticas de reserva.`,
-      `Informações relevantes para planejar sua visita.`
+    cooperative: [
+      `Soluções para cooperativas aumentarem reservas e organizarem melhor a operação.`,
+      `Ajudamos cooperativas a melhorar vendas e fidelização com ferramentas práticas.`
     ],
-    urgent: [
-      `Vagas limitadas — reserve agora para garantir desconto.`,
-      `Promoção por tempo limitado para reservas antecipadas.`
+    taxi: [
+      `Dicas práticas para motoristas aumentarem corrida e ganhar mais por dia.`,
+      `Ferramentas e parcerias locais para otimizar sua operação como motorista.`
     ],
-    casual: [
-      `Passeios rápidos e fáceis de reservar — confira as opções.`,
-      `Dicas e passeios locais para aproveitar sua estadia.`
+    general: [
+      `Temos novidades que podem interessar a você.`,
+      `Confira opções criadas para tornar sua experiência melhor.`
     ]
   }
 
-  // Tailor suggestions for specific verticals (tourism, cooperative, taxi)
-  if (opts.vertical === 'tourism') {
-    // Add tourism-focused prompts
-    subjectTemplates.friendly.push(`${name}, reserve agora sua próxima experiência com ${company}`)
-    subjectTemplates.friendly.push(`${company}: pacotes especiais para ${opts.destination || 'seu destino'}`)
-    subjectTemplates.urgent.push(`${name}, últimas vagas para o passeio — garanta já`)
-    subjectTemplates.urgent.push(`Promoção rápida: descontos em reservas para ${opts.destination || 'agora'}`)
-    preheaderTemplates.friendly.push(`Pacotes exclusivos e descontos para reservas antecipadas.`)
-    preheaderTemplates.friendly.push(`Escolha datas: ${opts.dateRange || 'datas flexíveis'} — reserve hoje.`)
-    preheaderTemplates.urgent.push(`Vagas limitadas para ${opts.destination || 'este destino'} — reserve agora.`)
-  }
-  if (opts.vertical === 'cooperative') {
-    subjectTemplates.friendly.push(`${company} ajuda cooperados a aumentar vendas com ${product}`)
-    subjectTemplates.formal.push(`Melhore as reservas e a eficiência da sua cooperativa com ${product}`)
-    preheaderTemplates.friendly.push(`Soluções colaborativas para aumentar reservas e fidelização.`)
-  }
-  if (opts.vertical === 'taxi') {
-    subjectTemplates.casual.push(`Motoristas: aumente corridas usando ${product}`)
-    subjectTemplates.urgent.push(`${name}, corrida extra disponível — maximize ganhos hoje`)
-    preheaderTemplates.casual.push(`Dicas rápidas para encher sua agenda de corridas.`)
-  }
+  const subjectParts = [
+    dest ? `${dest}` : null,
+    pick([`${company}`, `${product}`]),
+    pick([`ofertas`, `novidades`, `roteiros`, `experiências`])
+  ].filter(Boolean)
+  const subject = `${pick(openings[tone])} ${subjectParts.join(' — ')}`.replace(/\s+/g, ' ').trim()
 
-  const subject = pick(subjectTemplates[tone] || subjectTemplates.friendly)
-  const preheader = pick(preheaderTemplates[tone] || preheaderTemplates.friendly)
+  const preheader = pick(introsByVertical[opts.vertical || 'general']).replace(/\s+/g, ' ')
 
-  // Build a simple HTML body using the provided data and placeholders (tourism tone)
-  let html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #111;">
-      <h2>Olá ${name},</h2>
-      <p>Temos roteiros e experiências pensadas para quem visita ${opts.destination || 'a região'}. <strong>${company}</strong> organiza passeios com guias locais e suporte durante toda a viagem.</p>
-      <ul>
-        <li>Roteiros personalizados para diferentes perfis de viajante</li>
-        <li>Datas flexíveis e descontos para reservas antecipadas</li>
-        <li>Guias locais experientes e apoio durante o passeio</li>
-      </ul>
-      <p>Responda a este e-mail com suas preferências ou clique no botão abaixo para ver as opções disponíveis.</p>
-      <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Ver passeios</a></p>
-      <p style="color:#6b7280; font-size:12px; margin-top:18px;">Enviado por ${company} — apoio ao visitante.</p>
-    </div>
-  `
+  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${pick(openings[tone])} ${pick(introsByVertical[opts.vertical || 'general'])}</p>`
+  const mid = bullets(pickBenefits(opts))
+  const ctaTexts: Record<string, string> = { friendly: 'Saiba mais', formal: 'Saiba mais', urgent: 'Reserve agora', casual: 'Ver opções' }
+  const ctaLabel = opts.ctaLink ? (ctaTexts[tone] || 'Saiba mais') : (ctaTexts[tone] || 'Saiba mais')
+  const ctaHref = opts.ctaLink || '#'
+  const ctaColor = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
+  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>`
 
-  // Vertical-specific augmentations
-  if (opts.vertical === 'tourism') {
-    const dest = opts.destination ? `<strong>${opts.destination}</strong>` : 'o destino'
-    const dates = opts.dateRange ? ` (${opts.dateRange})` : ''
-    html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size:16px; color:#111;">
-        <h2>Olá ${name},</h2>
-        <p>Quer uma experiência inesquecível em ${dest}${dates}? <strong>${company}</strong> preparou roteiros exclusivos para você.</p>
-        <ul>
-          <li>Pacotes personalizados para famílias e grupos</li>
-          <li>Datas flexíveis e descontos para reservas antecipadas</li>
-          <li>Guias locais experientes e apoio em viagem</li>
-        </ul>
-        <p style="margin-top:8px;">Aproveite ofertas especiais para ${opts.destination || 'nossos destinos mais procurados'} — vagas limitadas.</p>
-        <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#059669;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Reserve sua experiência</a></p>
-        <p style="color:#6b7280; font-size:12px; margin-top:18px;">Reserve até ${opts.dateRange || 'data limitada'} e garanta benefícios exclusivos.</p>
-      </div>
-    `
-  }
-  if (opts.vertical === 'cooperative') {
-    html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size:16px; color:#111;">
-        <h2>Olá ${name},</h2>
-        <p>Aumente as reservas e a colaboração na sua cooperativa com soluções práticas de ${company}.</p>
-        <ul>
-          <li>Gerenciamento centralizado de reservas</li>
-          <li>Relatórios para otimizar oferta e demanda</li>
-          <li>Benefícios exclusivos para cooperados</li>
-        </ul>
-        <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#0ea5a4;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Saiba como aumentar reservas</a></p>
-        <p style="color:#6b7280; font-size:12px; margin-top:18px;">Trabalhe em conjunto para crescer.</p>
-      </div>
-    `
-  }
-  if (opts.vertical === 'taxi') {
-    html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; font-size:16px; color:#111;">
-        <h2>Olá ${name},</h2>
-        <p>Quer encher sua agenda? ${product} traz dicas e ferramentas para motoristas aumentarem a quantidade de corridas e otimizar ganhos.</p>
-        <ul>
-          <li>Melhore seu tempo médio por corrida</li>
-          <li>Dicas para localizar passageiros em horários de pico</li>
-          <li>Ofertas e parcerias locais</li>
-        </ul>
-        <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#ef4444;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Aumentar minhas corridas</a></p>
-        <p style="color:#6b7280; font-size:12px; margin-top:18px;">Boas práticas para maximizar ganhos.</p>
-      </div>
-    `
-  }
+  const html = `<div style="font-family: Arial, Helvetica, sans-serif; font-size:16px;color:#111;">${top}${mid}${bottom}</div>`
 
   return { subject, preheader, html }
 }
 
-export default suggestCopy
+export async function generateCopy(opts: CopyOptions & { mainTitle?: string }) {
+  const delay = 400 + Math.floor(Math.random() * 900)
+  await new Promise(r => setTimeout(r, delay))
+  return composeCopy(opts)
+}
 
-// Return multiple variant suggestions (helpful for A/B or quick choices)
-export function suggestCopyVariants(opts: CopyOptions, count = 3) {
-  const make = (toneOverride?: CopyOptions['tone'], ctaLabel?: string, ctaColor?: string, href?: string) => {
-    const merged = { ...opts } as CopyOptions
-    if (toneOverride) merged.tone = toneOverride
-    const out = suggestCopy(merged)
-    // small post-processing: replace the first CTA <a> text/color/href when present
-    if (!out.html) return out
-    let html = out.html
-    // replace href if provided
-    if (href) html = html.replace(/<a\s+href=\"?#?[^\"]*\"/i, `<a href=\"${href}\"`)
-    // replace background color in inline style if provided
-    if (ctaColor) html = html.replace(/background:\s*#[0-9a-fA-F]{3,6}/i, `background:${ctaColor}`)
-    // replace inner text of first anchor
-    if (ctaLabel) html = html.replace(/(<a[^>]*>)([\s\S]*?)(<\/a>)/i, `$1${ctaLabel}$3`)
-    return { subject: out.subject, preheader: out.preheader, html }
-  }
-
-  if (opts && opts.vertical === 'tourism') {
-    // produce three tourism-focused variants, then generate extras if `count` > 3
-    const base = [
-      make('friendly', 'Quero saber mais', '#4f46e5', opts.ctaLink || '#'),
-      make('urgent', 'Reserve agora', '#e11d48', opts.ctaLink || '#'),
-      make('casual', 'Ver experiências', '#059669', opts.ctaLink || '#')
-    ]
-
-    if (count <= base.length) return base.slice(0, count)
-
-    const extras: Array<{subject:string, preheader:string, html:string}> = []
-    const toneCycle: Array<CopyOptions['tone']> = ['friendly','urgent','casual','formal']
-    // generate additional variants by calling suggestCopy with varied tones
-    for (let i = base.length; i < count; i++) {
-      const tone = toneCycle[(i - base.length) % toneCycle.length]
-      const out = suggestCopy({ ...opts, tone })
-      // post-process CTA label/color/href according to tone
-      let html = out.html || ''
-      const href = opts.ctaLink || '#'
-      const color = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
-      const label = tone === 'urgent' ? 'Reserve agora' : tone === 'casual' ? 'Ver experiências' : 'Saiba mais'
-      html = html.replace(/<a\s+href=\"?#?[^\"]*\"/i, `<a href=\"${href}\"`)
-      html = html.replace(/background:\s*#[0-9a-fA-F]{3,6}/i, `background:${color}`)
-      html = html.replace(/(<a[^>]*>)([\s\S]*?)(<\/a>)/i, `$1${label}$3`)
-      extras.push({ subject: out.subject, preheader: out.preheader, html })
-    }
-
-    return base.concat(extras).slice(0, count)
-  }
-
-  // Generic: produce `count` variants by re-calling suggestCopy (randomized templates)
-  const res: Array<{subject:string, preheader:string, html:string}> = []
+export async function generateVariants(opts: CopyOptions & { mainTitle?: string }, count = 3) {
+  const results: Array<{subject:string, preheader:string, html:string}> = []
   for (let i = 0; i < count; i++) {
-    const out = suggestCopy(opts)
-    res.push({ subject: out.subject, preheader: out.preheader, html: out.html })
+    const tones: CopyOptions['tone'][] = ['friendly','casual','urgent','formal']
+    const tone = tones[i % tones.length]
+    const merged = { ...opts, tone }
+    await new Promise(r => setTimeout(r, 200 + Math.floor(Math.random() * 300)))
+    const out = composeCopy(merged)
+    results.push(out)
   }
+  return results
+}
+
+export function suggestCopy(opts: CopyOptions) {
+  return composeCopy(opts)
+}
+
+export function suggestCopyVariants(opts: CopyOptions, count = 3) {
+  const res: Array<{subject:string, preheader:string, html:string}> = []
+  const tones: CopyOptions['tone'][] = ['friendly','casual','urgent','formal']
+  for (let i = 0; i < count; i++) res.push(composeCopy({ ...opts, tone: tones[i % tones.length] }))
   return res
 }

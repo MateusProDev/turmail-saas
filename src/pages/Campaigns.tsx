@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
-import suggestCopy, { suggestCopyVariants } from '../lib/aiHelper'
+import { generateCopy, generateVariants } from '../lib/aiHelper'
 import formatRawToHtml, { advancedFormatRawToHtml } from '../lib/formatHelper'
 
 export default function Campaigns(){
@@ -50,6 +50,8 @@ export default function Campaigns(){
   // variants UI
   const [variants, setVariants] = useState<Array<{subject:string, preheader:string, html:string}>>([])
   const [showVariantsModal, setShowVariantsModal] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generatingVariants, setGeneratingVariants] = useState(false)
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -466,21 +468,31 @@ export default function Campaigns(){
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
-                        <button onClick={() => {
-                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination })
-                        setSubject(out.subject)
-                        setPreheader(out.preheader)
-                        setHtmlContent(out.html)
-                        setResult('Copy gerada localmente')
-                      }} className="px-3 py-2 bg-indigo-600 text-white rounded mb-2 sm:mb-0">Gerar copy</button>
+                        <button onClick={async () => {
+                          setGenerating(true)
+                          try {
+                            const out = await generateCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle })
+                            setSubject(out.subject)
+                            setPreheader(out.preheader)
+                            setHtmlContent(out.html)
+                            setResult('Copy gerada localmente')
+                          } catch (e:any) { console.warn(e); setResult('Erro ao gerar copy') }
+                          setGenerating(false)
+                        }} className={`px-3 py-2 ${generating ? 'bg-indigo-400' : 'bg-indigo-600'} text-white rounded mb-2 sm:mb-0`} disabled={generating}>
+                          {generating ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>IA pensando...</span></span>) : 'Gerar copy'}
+                        </button>
 
-                      <button onClick={() => {
+                      <button onClick={async () => {
+                        setGeneratingVariants(true)
                         try {
-                          const out = suggestCopyVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination }, 10)
+                          const out = await generateVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle }, 10)
                           setVariants(out as any)
                           setShowVariantsModal(true)
                         } catch (e:any) { console.warn(e); setResult('Erro ao gerar variações') }
-                      }} className="px-3 py-2 bg-amber-500 text-white rounded">Gerar 10 variações</button>
+                        setGeneratingVariants(false)
+                      }} className={`px-3 py-2 ${generatingVariants ? 'bg-amber-300' : 'bg-amber-500'} text-white rounded`} disabled={generatingVariants}>
+                        {generatingVariants ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>Gerando variações...</span></span>) : 'Gerar 10 variações'}
+                      </button>
                     </div>
 
                     <div className="text-xs text-slate-500">A geração ocorre no navegador usando apenas os dados desta campanha (privado).</div>
