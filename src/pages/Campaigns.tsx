@@ -6,7 +6,9 @@ import { auth, db } from '../lib/firebase'
 import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
 
-import { collection, query, where, onSnapshot, orderBy, limit, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
+import suggestCopy from '../lib/aiHelper'
+import formatRawToHtml, { advancedFormatRawToHtml } from '../lib/formatHelper'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
@@ -26,6 +28,12 @@ export default function Campaigns(){
   const [scheduledAt, setScheduledAt] = useState('')
   // const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [templateId, setTemplateId] = useState<string>('')
+  const [companyName, setCompanyName] = useState('')
+  const [productName, setProductName] = useState('')
+  const [mainTitle, setMainTitle] = useState('')
+  const [ctaLink, setCtaLink] = useState('')
+  const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
+  const [vertical, setVertical] = useState<'general'|'tourism'|'cooperative'|'taxi'>('general')
   const [availableTemplates] = useState<Array<{id:string, name:string, subject?:string, html:string}>>([{
     id: 'tpl_welcome', name: 'Welcome — Simple', subject: 'Bem-vindo!', html: '<h2>Bem-vindo a {{company}}</h2><p>Olá {{name}},<br/>Obrigado por se juntar a nós.</p><p>Atenciosamente,<br/>Equipe {{company}}</p>'
   },{
@@ -154,6 +162,33 @@ export default function Campaigns(){
         const data = await resp.json()
         if (!resp.ok) throw new Error(JSON.stringify(data))
         setResult(`Campanha criada: ${data.id}`)
+        // store a lightweight summary for the user's AI helper / dashboard
+        try {
+          if (user && data && data.id) {
+            // format the body for storage (use advanced formatter when possible to capture CTA and title)
+            const adv = advancedFormatRawToHtml(htmlContent, { destination: companyName, dateRange: '', ctaLink, mainTitle })
+            const formattedBody = adv && adv.html ? adv.html : formatRawToHtml(htmlContent)
+
+            const summary: any = {
+              campaignId: data.id,
+              subject: subject || null,
+              templateId: payload.templateId || null,
+              vertical: (typeof vertical !== 'undefined' ? vertical : 'general'),
+              companyName: companyName || null,
+              productName: productName || null,
+              mainTitle: mainTitle || null,
+              ctaLink: ctaLink || null,
+              tone: tone || null,
+              recipientsCount: recipients.length,
+              createdAt: serverTimestamp(),
+              ownerUid: user.uid,
+              rawBody: htmlContent || null,
+              formattedBody: formattedBody || null
+            }
+            await addDoc(collection(doc(db, 'users', user.uid), 'ai_campaigns'), summary)
+            console.log('[Campaigns] ai_campaign summary saved', { id: data.id })
+          }
+        } catch (e:any) { console.warn('[Campaigns] failed saving ai summary', e) }
       }
 
       setShowForm(false)
@@ -365,6 +400,40 @@ export default function Campaigns(){
                     </button>
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Assistente de Copy (executa no navegador)</label>
+                    <div className="space-y-3">
+                    <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Nome da empresa (opcional)" className="w-full px-3 py-2 border rounded" />
+                    <input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="Produto/serviço (opcional)" className="w-full px-3 py-2 border rounded" />
+                    <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal (H1) — opcional" className="w-full px-3 py-2 border rounded" />
+                    <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="Link do botão CTA (https://...) — opcional" className="w-full px-3 py-2 border rounded" />
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm">Tom:</label>
+                      <select value={tone} onChange={e=>setTone(e.target.value as any)} className="px-3 py-2 border rounded">
+                        <option value="friendly">Amigável</option>
+                        <option value="formal">Formal</option>
+                        <option value="urgent">Urgente</option>
+                        <option value="casual">Casual</option>
+                      </select>
+                      <label className="text-sm">Vertente:</label>
+                      <select value={vertical} onChange={e=>setVertical(e.target.value as any)} className="px-3 py-2 border rounded">
+                        <option value="general">Geral</option>
+                        <option value="tourism">Turismo</option>
+                        <option value="cooperative">Cooperativa</option>
+                        <option value="taxi">Táxi / Motoristas</option>
+                      </select>
+                      <button onClick={() => {
+                        // generate copy using local data only, including chosen vertical
+                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical })
+                        setSubject(out.subject)
+                        setPreheader(out.preheader)
+                        setHtmlContent(out.html)
+                        setResult('Copy gerada localmente')
+                      }} className="ml-2 px-3 py-2 bg-indigo-600 text-white rounded">Gerar copy</button>
+                    </div>
+                    <div className="text-xs text-slate-500">A geração ocorre no navegador usando apenas os dados desta campanha (privado).</div>
+                  </div>
+                </div>
                 <div className="flex items-end">
                   <button 
                     onClick={() => { 
@@ -434,6 +503,36 @@ export default function Campaigns(){
                     >
                       {'{{name}}'}
                     </button>
+                  </div>
+
+                  <div className="mt-3 flex items-center space-x-3">
+                    <button type="button" onClick={() => {
+                      // Simple format
+                      try {
+                        const formatted = formatRawToHtml(htmlContent)
+                        if (formatted) {
+                          setHtmlContent(formatted)
+                          setResult('Conteúdo formatado com sucesso')
+                        } else {
+                          setResult('Nada para formatar')
+                        }
+                      } catch (e:any) { setResult('Erro ao formatar: ' + (e.message || e)) }
+                    }} className="px-4 py-2 bg-emerald-600 text-white rounded-xl">Formatar copy</button>
+
+                    <button type="button" onClick={() => {
+                      // Advanced structure improvement
+                      try {
+                        const out = advancedFormatRawToHtml(htmlContent, { destination: companyName, dateRange: '', ctaLink, mainTitle })
+                        if (out && out.html) {
+                          setHtmlContent(out.html)
+                          setResult(out.cta ? 'Conteúdo reestruturado com CTA extraído' : 'Conteúdo reestruturado')
+                        } else {
+                          setResult('Nada para reestruturar')
+                        }
+                      } catch (e:any) { setResult('Erro ao reestruturar: ' + (e.message || e)) }
+                    }} className="px-4 py-2 bg-indigo-600 text-white rounded-xl">Melhorar estrutura</button>
+
+                    <button type="button" onClick={() => { setShowPreview(true); setResult('Preview atualizado com o conteúdo formatado') }} className="px-4 py-2 border rounded-xl">Atualizar Preview</button>
                   </div>
 
                   <textarea 
