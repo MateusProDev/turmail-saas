@@ -15,35 +15,28 @@ export default function Contacts(){
   const [editing, setEditing] = useState<any | null>(null)
 
   useEffect(() => {
+    // show only contacts owned by the current user in real-time
     if (!user) return
     try {
+      console.log('[Contacts] starting listener', { ownerUid: user.uid })
       const cRef = collection(db, 'contacts')
-      const qByOwner = query(cRef, where('ownerUid', '==', user.uid), orderBy('name'))
-      const qByEmail = query(cRef, where('email', '==', user.email || ''), orderBy('name'))
-
-      const handleSnap = (snap: any, destMap: Map<string, any>) => {
-        for (const d of snap.docs) destMap.set(d.id, { id: d.id, ...d.data() })
-      }
-
-      const map = new Map<string, any>()
-      const unsubOwner = onSnapshot(qByOwner, (snap) => {
-        // rebuild map entries from owner query and (if present) email query kept elsewhere
-        map.clear()
-        handleSnap(snap, map)
-        setContacts(Array.from(map.values()))
-      }, (err) => console.error('contacts (owner) snapshot error', err))
-
-      const unsubEmail = onSnapshot(qByEmail, (snap) => {
-        // merge into existing map so that contacts matching either appear
-        for (const d of snap.docs) map.set(d.id, { id: d.id, ...d.data() })
-        setContacts(Array.from(map.values()))
-      }, (err) => console.error('contacts (email) snapshot error', err))
-
-      return () => {
-        try { unsubOwner && unsubOwner() } catch(_) {}
-        try { unsubEmail && unsubEmail() } catch(_) {}
-      }
-    } catch (e) { console.error(e) }
+      const q = query(cRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'))
+      const unsub = onSnapshot(q, (snap) => {
+        console.log('[Contacts] onSnapshot start', { ownerUid: user.uid, size: snap.size, empty: snap.empty, fromCache: snap.metadata?.fromCache, hasPendingWrites: snap.metadata?.hasPendingWrites })
+        try {
+          const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          console.debug('[Contacts] docs', docs)
+          setContacts(docs)
+          console.log('[Contacts] state updated', { contactsCount: docs.length })
+        } catch (e) {
+          console.error('[Contacts] error processing snapshot docs', e)
+        }
+      }, (err) => {
+        console.error('[Contacts] snapshot error', err)
+        setResult('Erro ao carregar contatos: ' + (err && err.message ? err.message : String(err)))
+      })
+      return () => { console.log('[Contacts] unsubscribing listener'); unsub() }
+    } catch (e) { console.error('contacts listener error', e) }
   }, [user])
 
   const saveContact = async () => {
@@ -58,13 +51,19 @@ export default function Contacts(){
         if (name && name.trim()) updates.name = name.trim()
         if (email && email.trim()) updates.email = email.trim()
         if (phone && phone.trim()) updates.phone = phone.trim()
-        if (Object.keys(updates).length > 0) await updateDoc(d, updates)
+        if (Object.keys(updates).length > 0) {
+          await updateDoc(d, updates)
+          console.log('[Contacts] updated', { id: editing.id, updates })
+        } else {
+          console.log('[Contacts] update called but no updates to apply', { id: editing.id })
+        }
         setResult('Contato atualizado')
       } else {
         const payload: any = { ownerUid: user.uid, email: email.trim(), createdAt: new Date() }
         if (name && name.trim()) payload.name = name.trim()
         if (phone && phone.trim()) payload.phone = phone.trim()
-        await addDoc(collection(db, 'contacts'), payload)
+        const ref = await addDoc(collection(db, 'contacts'), payload)
+        console.log('[Contacts] added', { id: ref.id, payload })
         setResult('Contato adicionado')
       }
       setName(''); setEmail(''); setPhone(''); setEditing(null)
@@ -74,7 +73,14 @@ export default function Contacts(){
 
   const removeContact = async (id: string) => {
     if (!confirm('Remover contato?')) return
-    try { await deleteDoc(doc(db, 'contacts', id)); setResult('Contato removido') } catch (e:any) { setResult(String(e.message || e)) }
+    try {
+      await deleteDoc(doc(db, 'contacts', id))
+      console.log('[Contacts] removed', { id })
+      setResult('Contato removido')
+    } catch (e:any) {
+      console.error('[Contacts] remove failed', e)
+      setResult(String(e.message || e))
+    }
   }
 
   return (

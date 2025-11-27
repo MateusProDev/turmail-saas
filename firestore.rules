@@ -66,7 +66,8 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
-    // Contacts: allow tenant or owner-based access
+    // Contacts: allow tenant or owner-based access. Also allow read by matching email
+    // so contacts created without ownerUid but with the same email are visible to that user.
     match /contacts/{contactId} {
       allow create: if request.auth != null && (
         // owner set in request.resource
@@ -76,6 +77,7 @@ service cloud.firestore {
       );
       allow read: if request.auth != null && (
         (resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.email != null && request.auth.token != null && resource.data.email == request.auth.token.email) ||
         (resource.data.tenantId != null && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)) && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/members/$(request.auth.uid)).data.role in ['owner','admin'])
       );
       allow update, delete: if request.auth != null && (
