@@ -17,17 +17,20 @@ export default async function handler(req, res) {
     // Generate an idempotency key for this campaign so retries use the same key
     const idempotencyKey = body.idempotencyKey || `camp-${id}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
     const docRef = db.collection('campaigns').doc(id)
+    // build document only with provided fields to avoid creating empty/null fields
     const doc = {
-      tenantId: tenantId || null,
       subject,
       htmlContent,
-      to: to || null,
       idempotencyKey,
       status: 'queued',
       attempts: 0,
-      ownerUid: ownerUid || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      scheduledAt: scheduledAt ? admin.firestore.Timestamp.fromDate(new Date(scheduledAt)) : admin.firestore.FieldValue.serverTimestamp(),
+    }
+    if (tenantId) doc.tenantId = tenantId
+    if (ownerUid) doc.ownerUid = ownerUid
+    if (to) doc.to = to
+    if (scheduledAt) {
+      doc.scheduledAt = admin.firestore.Timestamp.fromDate(new Date(scheduledAt))
     }
 
     await docRef.set(doc)

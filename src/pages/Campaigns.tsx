@@ -37,6 +37,10 @@ export default function Campaigns(){
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
+  // contacts selection for recipients
+  const [contacts, setContacts] = useState<any[]>([])
+  const [showContactsModal, setShowContactsModal] = useState(false)
+  const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -92,6 +96,17 @@ export default function Campaigns(){
       console.error('campaigns listener error', e)
       setLoading(false)
     }
+  }, [user])
+
+  // load contacts for selection modal
+  useEffect(() => {
+    if (!user) return
+    try {
+      const cRef = collection(db, 'contacts')
+      const qc = query(cRef, where('ownerUid', '==', user.uid), orderBy('name'))
+      const unsubC = onSnapshot(qc, (snap) => setContacts(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error('contacts snapshot error', err))
+      return () => unsubC()
+    } catch (e) { console.error('contacts listener error', e) }
   }, [user])
 
 
@@ -236,6 +251,42 @@ export default function Campaigns(){
                   </div>
                 </div>
               </div>
+
+              {/* Contacts Selection Modal */}
+              {showContactsModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowContactsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
+                    <div className="max-h-64 overflow-auto space-y-2">
+                      {contacts.length === 0 ? (
+                        <div className="text-sm text-slate-500">Nenhum contato disponível</div>
+                      ) : (
+                        contacts.map(c => (
+                          <label key={c.id} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
+                            <div>
+                              <div className="font-medium text-slate-900">{c.name || c.email}</div>
+                              <div className="text-xs text-slate-500">{c.email}</div>
+                            </div>
+                            <input type="checkbox" checked={!!selectedContactIds[c.id]} onChange={(e) => setSelectedContactIds(prev => ({ ...prev, [c.id]: e.target.checked }))} />
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button onClick={() => setShowContactsModal(false)} className="px-4 py-2 border rounded">Cancelar</button>
+                      <button onClick={() => {
+                        const selected = contacts.filter(c => selectedContactIds[c.id])
+                        const emails = selected.map(s => s.email).filter(Boolean)
+                        const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
+                        const merged = Array.from(new Set([...existing, ...emails]))
+                        setRecipientsText(merged.join('\n'))
+                        setShowContactsModal(false)
+                      }} className="px-4 py-2 bg-indigo-600 text-white rounded">Adicionar Selecionados</button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -399,6 +450,9 @@ export default function Campaigns(){
                     className="w-full h-32 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
                     placeholder="email1@exemplo.com&#10;email2@exemplo.com"
                   />
+                  <div className="mt-3">
+                    <button type="button" onClick={() => { setSelectedContactIds({}); setShowContactsModal(true) }} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Selecionar Contatos</button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
