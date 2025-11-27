@@ -217,10 +217,11 @@ export default function Campaigns(){
         {showForm && (
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">
+              <div className="flex-1"></div>
+              <h2 className="text-xl font-semibold text-slate-900 flex-1 text-center">
                 {editingCampaign ? 'Editar Campanha' : 'Criar Nova Campanha'}
               </h2>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 justify-end flex-1">
                 <div className="flex items-center space-x-2">
                   <label className="text-sm text-slate-600 font-medium">Preview</label>
                   <div className="relative inline-block w-12 h-6">
@@ -472,7 +473,7 @@ export default function Campaigns(){
 
         {/* Campaigns List */}
         <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200/60">
+          <div className="px-6 py-4 border-b border-slate-200/60 text-center">
             <h2 className="text-xl font-semibold text-slate-900">Campanhas Recentes</h2>
             <p className="text-slate-600 text-sm mt-1">Lista das suas campanhas de email</p>
           </div>
