@@ -31,6 +31,14 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
+    // Allow authenticated users to manage their own subcollections (ai_patterns, ai_campaigns, etc.)
+    match /users/{uid}/{subCollection}/{docId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Subscriptions: only server (Admin SDK) can write.
     // Clients may read if they are the owner (ownerUid) OR if the subscription
     // document's email matches the authenticated user's email.

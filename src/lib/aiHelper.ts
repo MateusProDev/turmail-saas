@@ -238,7 +238,7 @@ export async function generateVariants(opts: CopyOptions & { mainTitle?: string 
 // Firestore helpers to persist/load user patterns (optional). These are thin wrappers
 // and require `db` from your project's Firebase client. Importing here keeps patterns
 // accessible to other modules but does not change the generator behavior if not used.
-import { collection, getDocs, addDoc } from 'firebase/firestore'
+import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from './firebase'
 
 export async function loadUserPatterns(uid: string) {
@@ -253,10 +253,27 @@ export async function loadUserPatterns(uid: string) {
   }
 }
 
-export async function saveUserPattern(uid: string, pattern: string) {
+export async function saveUserPattern(uid: string, patternOrData: string | Record<string, any>) {
   if (!uid) throw new Error('uid required')
   try {
-    await addDoc(collection(db, 'users', uid, 'ai_patterns'), { pattern, createdAt: new Date().toISOString() })
+    const payload: Record<string, any> = typeof patternOrData === 'string' ? { pattern: patternOrData } : { ...patternOrData }
+    const patternText = String(payload.pattern || '').trim()
+    if (!patternText) throw new Error('pattern required')
+
+    const doc = {
+      pattern: patternText,
+      ownerUid: uid,
+      // use server timestamp when available so createdAt is consistent
+      createdAt: serverTimestamp(),
+      source: payload.source || 'client',
+      tone: payload.tone || null,
+      vertical: payload.vertical || null,
+      mainTitle: payload.mainTitle || null,
+      ctaLink: payload.ctaLink || null,
+      description: payload.description || null
+    }
+
+    await addDoc(collection(db, 'users', uid, 'ai_patterns'), doc)
     return true
   } catch (e) {
     console.warn('[aiHelper] saveUserPattern error', e)
