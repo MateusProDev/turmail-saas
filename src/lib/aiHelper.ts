@@ -65,38 +65,48 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
     friendly: [
       `Olá ${name},`,
       `Oi ${name}!`,
-      `Olá — temos novidades para quem gosta de viajar, ${name}.`
+      `Boas notícias, ${name}:`,
+      `Olá — temos novidades para quem gosta de viajar, ${name}.`,
+      `Saudações ${name},`
     ],
     formal: [
       `Olá ${name},`,
-      `Prezado(a) ${name},`
+      `Prezado(a) ${name},`,
+      `Caro(a) ${name},`
     ],
     urgent: [
       `Atenção ${name}, vagas acabando!`,
-      `Última chamada para ${dest || 'reservas'} — ${name}`
+      `Última chamada para ${dest || 'reservas'} — ${name}`,
+      `Promoção urgente para ${dest || 'reservas'} — não perca!`
     ],
     casual: [
       `Ei ${name}, bora?`,
-      `Que tal uma escapada, ${name}?`
+      `Que tal uma escapada, ${name}?`,
+      `Partiu viagem, ${name}?`
     ]
   }
 
   const introsByVertical: Record<string, string[]> = {
     tourism: [
       `Preparamos experiências em ${dest || 'vários destinos'} com guias locais e roteiros personalizados.`,
-      `Roteiros pensados para quem quer viver o melhor de ${dest || 'uma região'}.`
+      `Roteiros pensados para quem quer viver o melhor de ${dest || 'uma região'}.`,
+      `Seleções de passeios especialmente montadas para ${dest || 'sua próxima viagem'}.`,
+      `Opções com foco em cultura, gastronomia e aventura em ${dest || 'o destino'}.`
     ],
     cooperative: [
       `Soluções para cooperativas aumentarem reservas e organizarem melhor a operação.`,
-      `Ajudamos cooperativas a melhorar vendas e fidelização com ferramentas práticas.`
+      `Ajudamos cooperativas a melhorar vendas e fidelização com ferramentas práticas.`,
+      `Ferramentas para simplificar gestão e comunicação entre cooperados.`
     ],
     taxi: [
       `Dicas práticas para motoristas aumentarem corrida e ganhar mais por dia.`,
-      `Ferramentas e parcerias locais para otimizar sua operação como motorista.`
+      `Ferramentas e parcerias locais para otimizar sua operação como motorista.`,
+      `Táticas para reduzir tempo ocioso e aumentar corridas em horários chave.`
     ],
     general: [
       `Temos novidades que podem interessar a você.`,
-      `Confira opções criadas para tornar sua experiência melhor.`
+      `Confira opções criadas para tornar sua experiência melhor.`,
+      `Soluções pensadas para melhorar sua rotina e resultados.`
     ]
   }
 
@@ -115,7 +125,8 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
   const ctaLabel = opts.ctaLink ? (ctaTexts[tone] || 'Saiba mais') : (ctaTexts[tone] || 'Saiba mais')
   const ctaHref = opts.ctaLink || '#'
   const ctaColor = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
-  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>`
+  const unsubscribe = `<p style="font-size:11px;color:#9ca3af;margin-top:10px">Se você não deseja receber estes e-mails, ignore esta mensagem.</p>`
+  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>${unsubscribe}`
 
   const html = `<div style="font-family: Arial, Helvetica, sans-serif; font-size:16px;color:#111;">${top}${mid}${bottom}</div>`
 
@@ -130,13 +141,23 @@ export async function generateCopy(opts: CopyOptions & { mainTitle?: string }) {
 
 export async function generateVariants(opts: CopyOptions & { mainTitle?: string }, count = 3) {
   const results: Array<{subject:string, preheader:string, html:string}> = []
-  for (let i = 0; i < count; i++) {
+  const seen = new Set<string>()
+  const maxAttempts = Math.max(200, count * 12)
+  let attempts = 0
+  while (results.length < count && attempts < maxAttempts) {
+    attempts++
     const tones: CopyOptions['tone'][] = ['friendly','casual','urgent','formal']
-    const tone = tones[i % tones.length]
-    const merged = { ...opts, tone }
-    await new Promise(r => setTimeout(r, 200 + Math.floor(Math.random() * 300)))
-    const out = composeCopy(merged)
-    results.push(out)
+    const tone = pick(tones)
+    const jitterOpts = { ...opts, tone }
+    // small jitter delay
+    await new Promise(r => setTimeout(r, 80 + Math.floor(Math.random() * 240)))
+    const out = composeCopy(jitterOpts)
+    // use a short fingerprint to detect duplicates
+    const fingerprint = `${out.subject}|||${out.preheader}|||${out.html.slice(0,180)}`
+    if (!seen.has(fingerprint)) {
+      seen.add(fingerprint)
+      results.push(out)
+    }
   }
   return results
 }
