@@ -31,6 +31,7 @@ export default function Campaigns(){
   const [productName, setProductName] = useState('')
   const [mainTitle, setMainTitle] = useState('')
   const [ctaLink, setCtaLink] = useState('')
+  const [destination, setDestination] = useState('')
   const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
   const [vertical, setVertical] = useState<'general'|'tourism'|'cooperative'|'taxi'>('general')
   
@@ -164,7 +165,7 @@ export default function Campaigns(){
         try {
           if (user && data && data.id) {
             // format the body for storage (use advanced formatter when possible to capture CTA and title)
-            const adv = advancedFormatRawToHtml(htmlContent, { destination: companyName, dateRange: '', ctaLink, mainTitle })
+            const adv = advancedFormatRawToHtml(htmlContent, { destination: destination || companyName, dateRange: '', ctaLink, mainTitle })
             const formattedBody = adv && adv.html ? adv.html : formatRawToHtml(htmlContent)
 
             const summary: any = {
@@ -173,6 +174,7 @@ export default function Campaigns(){
               templateId: null,
               vertical: (typeof vertical !== 'undefined' ? vertical : 'general'),
               companyName: companyName || null,
+              destination: destination || null,
               productName: productName || null,
               mainTitle: mainTitle || null,
               ctaLink: ctaLink || null,
@@ -432,9 +434,10 @@ export default function Campaigns(){
                 <label className="block text-sm font-medium text-slate-700 mb-2">Assistente de Copy (executa no navegador)</label>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {/* Left column: inputs */}
-                  <div className="space-y-3">
+                    <div className="space-y-3">
                     <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Nome da empresa (opcional)" className="w-full px-3 py-2 border rounded" />
                     <input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="Produto/serviço (opcional)" className="w-full px-3 py-2 border rounded" />
+                    <input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Destino / público / local (opcional)" className="w-full px-3 py-2 border rounded" />
                     <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal (H1) — opcional" className="w-full px-3 py-2 border rounded" />
                     <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="Link do botão CTA (https://...) — opcional" className="w-full px-3 py-2 border rounded" />
                   </div>
@@ -463,8 +466,8 @@ export default function Campaigns(){
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
-                      <button onClick={() => {
-                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink })
+                        <button onClick={() => {
+                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination })
                         setSubject(out.subject)
                         setPreheader(out.preheader)
                         setHtmlContent(out.html)
@@ -473,7 +476,7 @@ export default function Campaigns(){
 
                       <button onClick={() => {
                         try {
-                          const out = suggestCopyVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination: '' }, 10)
+                          const out = suggestCopyVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination }, 10)
                           setVariants(out as any)
                           setShowVariantsModal(true)
                         } catch (e:any) { console.warn(e); setResult('Erro ao gerar variações') }
