@@ -6,53 +6,55 @@ export type CopyOptions = {
   vertical?: 'general' | 'tourism' | 'cooperative' | 'taxi'
   destination?: string
   dateRange?: string
+  ctaLink?: string
 }
 
 function pick<T>(arr: T[]) { return arr[Math.floor(Math.random() * arr.length)] }
 
 export function suggestCopy(opts: CopyOptions) {
-  const company = opts.company || 'sua empresa'
+  // If company is not provided, prefer the recipient name placeholder (e.g. '{{name}}' or actual name)
+  const company = opts.company || opts.namePlaceholder || 'sua empresa'
   const product = opts.product || 'nosso produto'
   const tone = opts.tone || 'friendly'
   const name = opts.namePlaceholder || '{{name}}'
 
-  // base subject templates by tone — will be augmented for verticals below
+  // base subject templates by tone — tourism-focused (agency -> clients)
   const subjectTemplates: Record<string, string[]> = {
     friendly: [
-      `Uma novidade para ${name} — experimente ${product}`,
-      `${name}, veja como ${product} pode ajudar você`,
-      `${product} chegou na ${company} — aproveite, ${name}`
+      `Novos passeios em ${opts.destination || 'sua região'} — descubra com ${company}`,
+      `${name}, roteiros especiais esperam por você`,
+      `${company} preparou experiências imperdíveis para ${name}`
     ],
     formal: [
-      `${company} apresenta: ${product}`,
-      `Informações importantes sobre ${product}`
+      `${company} apresenta: novos roteiros e experiências`,
+      `Informações sobre reservas e opções de passeio`
     ],
     urgent: [
-      `Última chance: oferta ${product} para ${name}`,
-      `${name}, estoque limitado de ${product}`
+      `Últimas vagas para passeios em ${opts.destination || 'seu destino'}`,
+      `${name}, vagas limitadas — garanta já sua reserva`
     ],
     casual: [
-      `Ei ${name}, confere isso sobre ${product}`,
-      `Dá uma olhada no ${product} da ${company}`
+      `Ei ${name}, bora explorar ${opts.destination || 'a cidade'}?`,
+      `Olha as experiências que a ${company} montou para você`
     ]
   }
 
   const preheaderTemplates: Record<string, string[]> = {
     friendly: [
-      `Veja como ${product} pode facilitar sua rotina.`,
-      `Um presente da ${company} para você.`
+      `Roteiros personalizados, guias locais e suporte na viagem.`,
+      `Ofertas especiais para quem quer viver experiências reais.`
     ],
     formal: [
-      `Mais detalhes e instruções sobre ${product}.`,
-      `Informações importantes da ${company}.`
+      `Detalhes sobre horários, inclusão e políticas de reserva.`,
+      `Informações relevantes para planejar sua visita.`
     ],
     urgent: [
-      `Oferta por tempo limitado — não perca.`,
-      `Promoção válida até hoje.`
+      `Vagas limitadas — reserve agora para garantir desconto.`,
+      `Promoção por tempo limitado para reservas antecipadas.`
     ],
     casual: [
-      `Curtiu? A gente te mostra como usar.`,
-      `Rápido e fácil — experimente agora.`
+      `Passeios rápidos e fáceis de reservar — confira as opções.`,
+      `Dicas e passeios locais para aproveitar sua estadia.`
     ]
   }
 
@@ -81,19 +83,19 @@ export function suggestCopy(opts: CopyOptions) {
   const subject = pick(subjectTemplates[tone] || subjectTemplates.friendly)
   const preheader = pick(preheaderTemplates[tone] || preheaderTemplates.friendly)
 
-  // Build a simple HTML body using the provided data and placeholders
+  // Build a simple HTML body using the provided data and placeholders (tourism tone)
   let html = `
     <div style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #111;">
       <h2>Olá ${name},</h2>
-      <p>Queremos apresentar <strong>${product}</strong> da ${company} — uma solução pensada para você.</p>
+      <p>Temos roteiros e experiências pensadas para quem visita ${opts.destination || 'a região'}. <strong>${company}</strong> organiza passeios com guias locais e suporte durante toda a viagem.</p>
       <ul>
-        <li>Benefício 1: rapidez e facilidade de uso</li>
-        <li>Benefício 2: melhora resultados rapidamente</li>
-        <li>Benefício 3: suporte dedicado</li>
+        <li>Roteiros personalizados para diferentes perfis de viajante</li>
+        <li>Datas flexíveis e descontos para reservas antecipadas</li>
+        <li>Guias locais experientes e apoio durante o passeio</li>
       </ul>
-      <p>Se quiser, responda a este email ou clique no botão abaixo para saber mais.</p>
-      <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Quero saber mais</a></p>
-      <p style="color:#6b7280; font-size:12px; margin-top:18px;">Mensagem enviada por ${company}.</p>
+      <p>Responda a este e-mail com suas preferências ou clique no botão abaixo para ver as opções disponíveis.</p>
+      <p style="text-align:center; margin-top:18px;"><a href="#" style="background:#4f46e5;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">Ver passeios</a></p>
+      <p style="color:#6b7280; font-size:12px; margin-top:18px;">Enviado por ${company} — apoio ao visitante.</p>
     </div>
   `
 
@@ -151,3 +153,60 @@ export function suggestCopy(opts: CopyOptions) {
 }
 
 export default suggestCopy
+
+// Return multiple variant suggestions (helpful for A/B or quick choices)
+export function suggestCopyVariants(opts: CopyOptions, count = 3) {
+  const make = (toneOverride?: CopyOptions['tone'], ctaLabel?: string, ctaColor?: string, href?: string) => {
+    const merged = { ...opts } as CopyOptions
+    if (toneOverride) merged.tone = toneOverride
+    const out = suggestCopy(merged)
+    // small post-processing: replace the first CTA <a> text/color/href when present
+    if (!out.html) return out
+    let html = out.html
+    // replace href if provided
+    if (href) html = html.replace(/<a\s+href=\"?#?[^\"]*\"/i, `<a href=\"${href}\"`)
+    // replace background color in inline style if provided
+    if (ctaColor) html = html.replace(/background:\s*#[0-9a-fA-F]{3,6}/i, `background:${ctaColor}`)
+    // replace inner text of first anchor
+    if (ctaLabel) html = html.replace(/(<a[^>]*>)([\s\S]*?)(<\/a>)/i, `$1${ctaLabel}$3`)
+    return { subject: out.subject, preheader: out.preheader, html }
+  }
+
+  if (opts && opts.vertical === 'tourism') {
+    // produce three tourism-focused variants, then generate extras if `count` > 3
+    const base = [
+      make('friendly', 'Quero saber mais', '#4f46e5', opts.ctaLink || '#'),
+      make('urgent', 'Reserve agora', '#e11d48', opts.ctaLink || '#'),
+      make('casual', 'Ver experiências', '#059669', opts.ctaLink || '#')
+    ]
+
+    if (count <= base.length) return base.slice(0, count)
+
+    const extras: Array<{subject:string, preheader:string, html:string}> = []
+    const toneCycle: Array<CopyOptions['tone']> = ['friendly','urgent','casual','formal']
+    // generate additional variants by calling suggestCopy with varied tones
+    for (let i = base.length; i < count; i++) {
+      const tone = toneCycle[(i - base.length) % toneCycle.length]
+      const out = suggestCopy({ ...opts, tone })
+      // post-process CTA label/color/href according to tone
+      let html = out.html || ''
+      const href = opts.ctaLink || '#'
+      const color = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
+      const label = tone === 'urgent' ? 'Reserve agora' : tone === 'casual' ? 'Ver experiências' : 'Saiba mais'
+      html = html.replace(/<a\s+href=\"?#?[^\"]*\"/i, `<a href=\"${href}\"`)
+      html = html.replace(/background:\s*#[0-9a-fA-F]{3,6}/i, `background:${color}`)
+      html = html.replace(/(<a[^>]*>)([\s\S]*?)(<\/a>)/i, `$1${label}$3`)
+      extras.push({ subject: out.subject, preheader: out.preheader, html })
+    }
+
+    return base.concat(extras).slice(0, count)
+  }
+
+  // Generic: produce `count` variants by re-calling suggestCopy (randomized templates)
+  const res: Array<{subject:string, preheader:string, html:string}> = []
+  for (let i = 0; i < count; i++) {
+    const out = suggestCopy(opts)
+    res.push({ subject: out.subject, preheader: out.preheader, html: out.html })
+  }
+  return res
+}

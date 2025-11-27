@@ -82,7 +82,6 @@ export default formatRawToHtml
 export function advancedFormatRawToHtml(raw: string, opts?: { destination?: string, dateRange?: string, ctaLink?: string, mainTitle?: string }) {
   if (!raw) return { html: '', cta: null }
   // First, run the simple formatter to get baseline blocks
-  const baseHtml = formatRawToHtml(raw)
   // We'll work on the raw text for heuristics
   const norm = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   const paragraphs = norm.split(/\n{2,}/).map(p => p.trim()).filter(Boolean)

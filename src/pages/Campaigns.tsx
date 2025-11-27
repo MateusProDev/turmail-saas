@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
-import suggestCopy from '../lib/aiHelper'
+import suggestCopy, { suggestCopyVariants } from '../lib/aiHelper'
 import formatRawToHtml, { advancedFormatRawToHtml } from '../lib/formatHelper'
 
 export default function Campaigns(){
@@ -27,18 +27,13 @@ export default function Campaigns(){
   const [preheader, setPreheader] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
   // const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
-  const [templateId, setTemplateId] = useState<string>('')
   const [companyName, setCompanyName] = useState('')
   const [productName, setProductName] = useState('')
   const [mainTitle, setMainTitle] = useState('')
   const [ctaLink, setCtaLink] = useState('')
   const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
   const [vertical, setVertical] = useState<'general'|'tourism'|'cooperative'|'taxi'>('general')
-  const [availableTemplates] = useState<Array<{id:string, name:string, subject?:string, html:string}>>([{
-    id: 'tpl_welcome', name: 'Welcome — Simple', subject: 'Bem-vindo!', html: '<h2>Bem-vindo a {{company}}</h2><p>Olá {{name}},<br/>Obrigado por se juntar a nós.</p><p>Atenciosamente,<br/>Equipe {{company}}</p>'
-  },{
-    id: 'tpl_news', name: 'Newsletter — Two column', subject: 'Novidades da semana', html: '<h2>Novidades</h2><p>Olá {{name}}, confira as novidades:</p><ul><li>Item 1</li><li>Item 2</li></ul><p>Saudações, {{company}}</p>'
-  }])
+  
   const [showPreview, setShowPreview] = useState(true)
   
   const [sendImmediate, setSendImmediate] = useState(true)
@@ -51,6 +46,9 @@ export default function Campaigns(){
   const [showContactsModal, setShowContactsModal] = useState(false)
   const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
   const [showRecipientsModal, setShowRecipientsModal] = useState(false)
+  // variants UI
+  const [variants, setVariants] = useState<Array<{subject:string, preheader:string, html:string}>>([])
+  const [showVariantsModal, setShowVariantsModal] = useState(false)
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -138,7 +136,7 @@ export default function Campaigns(){
 
   // Test send helper removed — tests are handled during create/send flows
   const createCampaign = async () => {
-    if (!subject || (!htmlContent && !templateId)) { setResult('Assunto e conteúdo ou template são obrigatórios'); return }
+    if (!subject || !htmlContent) { setResult('Assunto e conteúdo são obrigatórios'); return }
     // parse recipients and basic validation
     const recipients = recipientsText.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
     if (recipients.length === 0) { setResult('Adicione ao menos 1 destinatário'); return }
@@ -148,12 +146,12 @@ export default function Campaigns(){
 
     const to = recipients.map(email => ({ email }))
     const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, preheader, to, ownerUid: user?.uid, sendImmediate }
-    if (templateId) payload.templateId = Number(templateId)
+    // template selection removed — payload.templateId omitted
     if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
 
     try {
       if (editingCampaign && editingCampaign.id) {
-        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt, templateId: payload.templateId }) })
+        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt }) })
         const data = await resp.json()
         if (!resp.ok) throw new Error(JSON.stringify(data))
         setResult('Campanha atualizada')
@@ -172,7 +170,7 @@ export default function Campaigns(){
             const summary: any = {
               campaignId: data.id,
               subject: subject || null,
-              templateId: payload.templateId || null,
+              templateId: null,
               vertical: (typeof vertical !== 'undefined' ? vertical : 'general'),
               companyName: companyName || null,
               productName: productName || null,
@@ -347,6 +345,61 @@ export default function Campaigns(){
                   </div>
                 </div>
               )}
+              {/* Variants Modal */}
+              {showVariantsModal && (
+                <div className="fixed inset-0 z-60 flex items-start justify-center pt-20">
+                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowVariantsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[80vh]">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Variações Geradas</h3>
+                      <div className="flex items-center space-x-2">
+                        <button onClick={() => {
+                          try {
+                            const data = JSON.stringify(variants, null, 2)
+                            const blob = new Blob([data], { type: 'application/json' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${companyName || 'variantes'}.json`
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          } catch (e:any) { console.warn(e); setResult('Erro ao exportar JSON') }
+                        }} className="px-3 py-2 border rounded">Exportar JSON</button>
+                        <button onClick={() => setShowVariantsModal(false)} className="px-3 py-2 bg-slate-100 rounded">Fechar</button>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      {variants.length === 0 ? (
+                        <div className="text-sm text-slate-500">Nenhuma variação gerada.</div>
+                      ) : (
+                        variants.map((v, idx) => (
+                          <div key={idx} className="p-3 border rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="font-medium">#{idx+1} — {v.subject}</div>
+                                <div className="text-sm text-slate-500">{v.preheader}</div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button onClick={() => {
+                                  setSubject(v.subject)
+                                  setPreheader(v.preheader)
+                                  setHtmlContent(v.html)
+                                  setResult('Variação inserida no editor')
+                                  setShowVariantsModal(false)
+                                }} className="px-3 py-2 bg-indigo-600 text-white rounded">Inserir</button>
+                                <button onClick={async () => {
+                                  try { await navigator.clipboard.writeText(v.html); setResult('HTML copiado para a área de transferência') } catch (e:any) { setResult('Falha ao copiar') }
+                                }} className="px-3 py-2 border rounded">Copiar HTML</button>
+                              </div>
+                            </div>
+                            <div className="mt-3 prose max-w-none text-sm border-t pt-3" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(v.html || '<p>Nenhum</p>', v.subject || '', v.preheader || '')) }} />
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -374,76 +427,61 @@ export default function Campaigns(){
 
               {/* Tenant selection is intentionally hidden — using global configuration */}
 
-              {/* Template Selection */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Template</label>
-                  <div className="flex space-x-3">
-                    <select 
-                      value={templateId} 
-                      onChange={e => setTemplateId(e.target.value)} 
-                      className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    >
-                      <option value="">(Escolher template)</option>
-                      {availableTemplates.map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                    <button 
-                      onClick={() => {
-                        const t = availableTemplates.find(x => x.id === templateId)
-                        if (t) { setHtmlContent(t.html); if (t.subject) setSubject(t.subject) }
-                      }} 
-                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
-                    >
-                      Inserir
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Assistente de Copy (executa no navegador)</label>
-                    <div className="space-y-3">
+              {/* Assistente de Copy (executa no navegador) - moved to be directly under Assunto / Preheader */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Assistente de Copy (executa no navegador)</label>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {/* Left column: inputs */}
+                  <div className="space-y-3">
                     <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Nome da empresa (opcional)" className="w-full px-3 py-2 border rounded" />
                     <input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="Produto/serviço (opcional)" className="w-full px-3 py-2 border rounded" />
                     <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal (H1) — opcional" className="w-full px-3 py-2 border rounded" />
                     <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="Link do botão CTA (https://...) — opcional" className="w-full px-3 py-2 border rounded" />
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm">Tom:</label>
-                      <select value={tone} onChange={e=>setTone(e.target.value as any)} className="px-3 py-2 border rounded">
-                        <option value="friendly">Amigável</option>
-                        <option value="formal">Formal</option>
-                        <option value="urgent">Urgente</option>
-                        <option value="casual">Casual</option>
-                      </select>
-                      <label className="text-sm">Vertente:</label>
-                      <select value={vertical} onChange={e=>setVertical(e.target.value as any)} className="px-3 py-2 border rounded">
-                        <option value="general">Geral</option>
-                        <option value="tourism">Turismo</option>
-                        <option value="cooperative">Cooperativa</option>
-                        <option value="taxi">Táxi / Motoristas</option>
-                      </select>
+                  </div>
+
+                  {/* Right column: controls */}
+                  <div className="space-y-3 flex flex-col justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <label className="text-sm">Tom:</label>
+                        <select value={tone} onChange={e=>setTone(e.target.value as any)} className="px-3 py-2 border rounded">
+                          <option value="friendly">Amigável</option>
+                          <option value="formal">Formal</option>
+                          <option value="urgent">Urgente</option>
+                          <option value="casual">Casual</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <label className="text-sm">Vertente:</label>
+                        <select value={vertical} onChange={e=>setVertical(e.target.value as any)} className="px-3 py-2 border rounded">
+                          <option value="general">Geral</option>
+                          <option value="tourism">Turismo</option>
+                          <option value="cooperative">Cooperativa</option>
+                          <option value="taxi">Táxi / Motoristas</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
                       <button onClick={() => {
-                        // generate copy using local data only, including chosen vertical
-                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical })
+                        const out = suggestCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink })
                         setSubject(out.subject)
                         setPreheader(out.preheader)
                         setHtmlContent(out.html)
                         setResult('Copy gerada localmente')
-                      }} className="ml-2 px-3 py-2 bg-indigo-600 text-white rounded">Gerar copy</button>
+                      }} className="px-3 py-2 bg-indigo-600 text-white rounded mb-2 sm:mb-0">Gerar copy</button>
+
+                      <button onClick={() => {
+                        try {
+                          const out = suggestCopyVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination: '' }, 10)
+                          setVariants(out as any)
+                          setShowVariantsModal(true)
+                        } catch (e:any) { console.warn(e); setResult('Erro ao gerar variações') }
+                      }} className="px-3 py-2 bg-amber-500 text-white rounded">Gerar 10 variações</button>
                     </div>
+
                     <div className="text-xs text-slate-500">A geração ocorre no navegador usando apenas os dados desta campanha (privado).</div>
                   </div>
-                </div>
-                <div className="flex items-end">
-                  <button 
-                    onClick={() => { 
-                      setHtmlContent('<p>Olá {{name}},</p><p>Seu conteúdo aqui...</p>'); 
-                      setSubject(subject || 'Nova campanha') 
-                    }} 
-                    className="px-6 py-3 bg-blue-100 text-blue-700 rounded-xl font-medium hover:bg-blue-200 transition-colors"
-                  >
-                    Usar Modelo Básico
-                  </button>
                 </div>
               </div>
 
@@ -505,35 +543,7 @@ export default function Campaigns(){
                     </button>
                   </div>
 
-                  <div className="mt-3 flex items-center space-x-3">
-                    <button type="button" onClick={() => {
-                      // Simple format
-                      try {
-                        const formatted = formatRawToHtml(htmlContent)
-                        if (formatted) {
-                          setHtmlContent(formatted)
-                          setResult('Conteúdo formatado com sucesso')
-                        } else {
-                          setResult('Nada para formatar')
-                        }
-                      } catch (e:any) { setResult('Erro ao formatar: ' + (e.message || e)) }
-                    }} className="px-4 py-2 bg-emerald-600 text-white rounded-xl">Formatar copy</button>
-
-                    <button type="button" onClick={() => {
-                      // Advanced structure improvement
-                      try {
-                        const out = advancedFormatRawToHtml(htmlContent, { destination: companyName, dateRange: '', ctaLink, mainTitle })
-                        if (out && out.html) {
-                          setHtmlContent(out.html)
-                          setResult(out.cta ? 'Conteúdo reestruturado com CTA extraído' : 'Conteúdo reestruturado')
-                        } else {
-                          setResult('Nada para reestruturar')
-                        }
-                      } catch (e:any) { setResult('Erro ao reestruturar: ' + (e.message || e)) }
-                    }} className="px-4 py-2 bg-indigo-600 text-white rounded-xl">Melhorar estrutura</button>
-
-                    <button type="button" onClick={() => { setShowPreview(true); setResult('Preview atualizado com o conteúdo formatado') }} className="px-4 py-2 border rounded-xl">Atualizar Preview</button>
-                  </div>
+                  {/* Editor actions removed: Formatar copy / Melhorar estrutura / Atualizar Preview (per user request) */}
 
                   <textarea 
                     id="campaign-html" 
