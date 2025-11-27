@@ -18,9 +18,31 @@ export default function Contacts(){
     if (!user) return
     try {
       const cRef = collection(db, 'contacts')
-      const q = query(cRef, where('ownerUid', '==', user.uid), orderBy('name'))
-      const unsub = onSnapshot(q, snap => setContacts(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-      return () => unsub()
+      const qByOwner = query(cRef, where('ownerUid', '==', user.uid), orderBy('name'))
+      const qByEmail = query(cRef, where('email', '==', user.email || ''), orderBy('name'))
+
+      const handleSnap = (snap: any, destMap: Map<string, any>) => {
+        for (const d of snap.docs) destMap.set(d.id, { id: d.id, ...d.data() })
+      }
+
+      const map = new Map<string, any>()
+      const unsubOwner = onSnapshot(qByOwner, (snap) => {
+        // rebuild map entries from owner query and (if present) email query kept elsewhere
+        map.clear()
+        handleSnap(snap, map)
+        setContacts(Array.from(map.values()))
+      }, (err) => console.error('contacts (owner) snapshot error', err))
+
+      const unsubEmail = onSnapshot(qByEmail, (snap) => {
+        // merge into existing map so that contacts matching either appear
+        for (const d of snap.docs) map.set(d.id, { id: d.id, ...d.data() })
+        setContacts(Array.from(map.values()))
+      }, (err) => console.error('contacts (email) snapshot error', err))
+
+      return () => {
+        try { unsubOwner && unsubOwner() } catch(_) {}
+        try { unsubEmail && unsubEmail() } catch(_) {}
+      }
     } catch (e) { console.error(e) }
   }, [user])
 
