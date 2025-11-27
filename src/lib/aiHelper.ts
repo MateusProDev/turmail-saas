@@ -7,6 +7,11 @@ export type CopyOptions = {
   destination?: string
   dateRange?: string
   ctaLink?: string
+  description?: string
+  // previousExperience indicates this is a returning customer and optional last trip name/date
+  previousExperience?: { trip?: string, date?: string }
+  // optional user-saved patterns loaded from Firestore
+  userPatterns?: string[]
 }
 
 function pick<T>(arr: T[]) { return arr[Math.floor(Math.random() * arr.length)] }
@@ -56,7 +61,6 @@ function pickBenefits(opts: CopyOptions) {
 
 function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
   const company = opts.company || opts.namePlaceholder || 'sua empresa'
-  const product = opts.product || 'nosso produto'
   const tone = opts.tone || 'friendly'
   const name = opts.namePlaceholder || '{{name}}'
   const dest = opts.destination || ''
@@ -110,17 +114,55 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
     ]
   }
 
-  const subjectParts = [
-    dest ? `${dest}` : null,
-    pick([`${company}`, `${product}`]),
-    pick([`ofertas`, `novidades`, `roteiros`, `experiências`])
-  ].filter(Boolean)
-  const subject = `${pick(openings[tone])} ${subjectParts.join(' — ')}`.replace(/\s+/g, ' ').trim()
+  // subject bank — separate from greeting/opening to avoid repeating the same phrase
+  const subjectBank: Record<string, string[]> = {
+    friendly: [
+      `${company} tem novas experiências para você`,
+      `Novidades e pacotes em ${dest || 'vários destinos'}`,
+      `Ofertas especiais de ${company} para sua próxima viagem`
+    ],
+    formal: [
+      `${company}: informações sobre novos roteiros`,
+      `Oportunidades de reserva para ${dest || 'seu destino'}`
+    ],
+    urgent: [
+      `Vagas limitadas para ${dest || 'reservas'} — garanta já`,
+      `Promoção relâmpago em pacotes para ${dest || 'o destino'}`
+    ],
+    casual: [
+      `Novos rolês em ${dest || 'sua cidade'} — confira`,
+      `Passeios e experiências que você vai curtir em ${dest || 'perto'}`
+    ]
+  }
 
-  const preheader = pick(introsByVertical[opts.vertical || 'general']).replace(/\s+/g, ' ')
+  // helper: pick an item that is not equal to any in avoid (fallbacks to pick)
+  function uniquePick(arr: string[], avoid: Set<string>) {
+    const candidates = arr.filter(a => !avoid.has(a))
+    return candidates.length ? pick(candidates) : pick(arr)
+  }
 
-  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${pick(openings[tone])} ${pick(introsByVertical[opts.vertical || 'general'])}</p>`
-  const mid = bullets(pickBenefits(opts))
+  const subject = `${uniquePick(subjectBank[tone] || subjectBank.friendly, new Set())}`.replace(/\s+/g, ' ').trim()
+
+  // pick opening and preheader ensuring they don't repeat the subject or each other
+  const opening = uniquePick(openings[tone] || openings.friendly, new Set([subject]))
+  const preheader = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening])).replace(/\s+/g, ' ')
+
+  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${opening} ${uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening]))}</p>`
+  // inject description or previous experience tailored line when provided
+  const benefits = pickBenefits(opts)
+  if (opts.description) {
+    // add a custom descriptive sentence into the benefits list if present (keeps it specific)
+    benefits.unshift(opts.description)
+  }
+  if (opts.previousExperience && opts.previousExperience.trip) {
+    benefits.unshift(`Como você já viajou conosco em ${opts.previousExperience.trip}, selecionamos opções que complementam sua experiência anterior.`)
+  }
+  // if user-saved patterns exist, include one random pattern to make the tone/profile consistent
+  if (opts.userPatterns && opts.userPatterns.length > 0) {
+    const p = pick(opts.userPatterns)
+    if (p && !benefits.includes(p)) benefits.splice(1, 0, p)
+  }
+  const mid = bullets(benefits)
   const ctaTexts: Record<string, string> = { friendly: 'Saiba mais', formal: 'Saiba mais', urgent: 'Reserve agora', casual: 'Ver opções' }
   const ctaLabel = opts.ctaLink ? (ctaTexts[tone] || 'Saiba mais') : (ctaTexts[tone] || 'Saiba mais')
   const ctaHref = opts.ctaLink || '#'
@@ -160,6 +202,35 @@ export async function generateVariants(opts: CopyOptions & { mainTitle?: string 
     }
   }
   return results
+}
+
+// Firestore helpers to persist/load user patterns (optional). These are thin wrappers
+// and require `db` from your project's Firebase client. Importing here keeps patterns
+// accessible to other modules but does not change the generator behavior if not used.
+import { collection, getDocs, addDoc } from 'firebase/firestore'
+import { db } from './firebase'
+
+export async function loadUserPatterns(uid: string) {
+  if (!uid) return [] as string[]
+  try {
+    const c = collection(db, 'users', uid, 'ai_patterns')
+    const snap = await getDocs(c)
+    return snap.docs.map(d => (d.data() as any).pattern).filter(Boolean)
+  } catch (e) {
+    console.warn('[aiHelper] loadUserPatterns error', e)
+    return [] as string[]
+  }
+}
+
+export async function saveUserPattern(uid: string, pattern: string) {
+  if (!uid) throw new Error('uid required')
+  try {
+    await addDoc(collection(db, 'users', uid, 'ai_patterns'), { pattern, createdAt: new Date().toISOString() })
+    return true
+  } catch (e) {
+    console.warn('[aiHelper] saveUserPattern error', e)
+    return false
+  }
 }
 
 export function suggestCopy(opts: CopyOptions) {

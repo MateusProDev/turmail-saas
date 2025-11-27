@@ -32,6 +32,10 @@ export default function Campaigns(){
   const [mainTitle, setMainTitle] = useState('')
   const [ctaLink, setCtaLink] = useState('')
   const [destination, setDestination] = useState('')
+  const [description, setDescription] = useState('')
+  const [returningCustomer, setReturningCustomer] = useState(false)
+  const [previousTrip, setPreviousTrip] = useState('')
+  const [userPatterns, setUserPatterns] = useState<string[]>([])
   const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
   const [vertical, setVertical] = useState<'general'|'tourism'|'cooperative'|'taxi'>('general')
   
@@ -118,6 +122,20 @@ export default function Campaigns(){
       const unsubC = onSnapshot(qc, (snap) => setContacts(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error('contacts snapshot error', err))
       return () => unsubC()
     } catch (e) { console.error('contacts listener error', e) }
+  }, [user])
+
+  // load user patterns for the assistant
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      if (!user) return
+      try {
+        const patterns = await (await import('../lib/aiHelper')).loadUserPatterns(user.uid)
+        if (mounted) setUserPatterns(patterns || [])
+      } catch (e) { console.warn('failed loading user patterns', e) }
+    }
+    load()
+    return () => { mounted = false }
   }, [user])
 
 
@@ -442,6 +460,14 @@ export default function Campaigns(){
                     <input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Destino / público / local (opcional)" className="w-full px-3 py-2 border rounded" />
                     <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal (H1) — opcional" className="w-full px-3 py-2 border rounded" />
                     <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="Link do botão CTA (https://...) — opcional" className="w-full px-3 py-2 border rounded" />
+                    <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Descrição específica para este público (ex: clientes que já viajaram com a agência) — opcional" className="w-full px-3 py-2 border rounded h-20" />
+                    <div className="flex items-center space-x-3">
+                      <label className="inline-flex items-center space-x-2">
+                        <input type="checkbox" checked={returningCustomer} onChange={e=>setReturningCustomer(e.target.checked)} className="form-checkbox" />
+                        <span className="text-sm">Público: clientes anteriores</span>
+                      </label>
+                      <input value={previousTrip} onChange={e=>setPreviousTrip(e.target.value)} placeholder="Última viagem (ex: 'Rota das Serras')" className="px-3 py-2 border rounded flex-1" />
+                    </div>
                   </div>
 
                   {/* Right column: controls */}
@@ -471,7 +497,7 @@ export default function Campaigns(){
                         <button onClick={async () => {
                           setGenerating(true)
                           try {
-                            const out = await generateCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle })
+                            const out = await generateCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle, description: description || undefined, previousExperience: returningCustomer ? { trip: previousTrip || undefined } : undefined, userPatterns: userPatterns })
                             setSubject(out.subject)
                             setPreheader(out.preheader)
                             setHtmlContent(out.html)
@@ -482,10 +508,11 @@ export default function Campaigns(){
                           {generating ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>IA pensando...</span></span>) : 'Gerar copy'}
                         </button>
 
+                      <div className="flex items-center space-x-2">
                       <button onClick={async () => {
                         setGeneratingVariants(true)
                         try {
-                          const out = await generateVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle }, 10)
+                          const out = await generateVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle, description: description || undefined, previousExperience: returningCustomer ? { trip: previousTrip || undefined } : undefined, userPatterns: userPatterns }, 10)
                           setVariants(out as any)
                           setShowVariantsModal(true)
                         } catch (e:any) { console.warn(e); setResult('Erro ao gerar variações') }
@@ -493,6 +520,20 @@ export default function Campaigns(){
                       }} className={`px-3 py-2 ${generatingVariants ? 'bg-amber-300' : 'bg-amber-500'} text-white rounded`} disabled={generatingVariants}>
                         {generatingVariants ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>Gerando variações...</span></span>) : 'Gerar 10 variações'}
                       </button>
+
+                      <button onClick={async () => {
+                        if (!user) { setResult('Faça login para salvar padrões'); return }
+                        try {
+                          const { saveUserPattern } = await import('../lib/aiHelper')
+                          const pattern = description || `${companyName} - ${productName} - ${destination}`
+                          const ok = await saveUserPattern(user.uid, pattern)
+                          if (ok) {
+                            setUserPatterns(prev => [pattern, ...prev])
+                            setResult('Padrão salvo')
+                          } else setResult('Falha ao salvar padrão')
+                        } catch (e:any) { console.warn(e); setResult('Erro ao salvar padrão') }
+                      }} className="px-3 py-2 border rounded">Salvar padrão</button>
+                      </div>
                     </div>
 
                     <div className="text-xs text-slate-500">A geração ocorre no navegador usando apenas os dados desta campanha (privado).</div>
