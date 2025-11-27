@@ -11,7 +11,7 @@ import { collection, query, where, onSnapshot, orderBy, limit, getDocs } from 'f
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
   const [result, setResult] = useState<string | null>(null)
-  const [, setSending] = useState(false)
+  // removed test-send state (tests are sent on create/send)
 
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -37,6 +37,22 @@ export default function Campaigns(){
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
+
+  // helpers for delivery metrics
+  const getDeliveredCount = (c: any) => {
+    return c?.metrics?.delivered ?? c?.delivered ?? c?.stats?.delivered ?? null
+  }
+  const getSentCount = (c: any) => {
+    return c?.metrics?.sent ?? c?.sent ?? c?.sentCount ?? (c?.to || []).length ?? 0
+  }
+  const getDeliverRateDisplay = (c: any) => {
+    const sent = Number(getSentCount(c) || 0)
+    const delivered = Number(getDeliveredCount(c) || 0)
+    if (!sent) return '—'
+    // if sent but no delivered recorded, show 100% per preference
+    if (delivered === 0) return '100%'
+    return `${Math.round((delivered / sent) * 10000) / 100}%`
+  }
 
   // Simple campaigns listener: campaigns where ownerUid == user.uid
   useEffect(() => {
@@ -95,28 +111,7 @@ export default function Campaigns(){
     } catch (e) { console.error(e) }
   }
 
-  const sendTestForCampaign = async (c: any) => {
-    setSending(true)
-    setResult(null)
-    try {
-      const payload = {
-        tenantId: c.tenantId || undefined,
-        sender: c.sender || { name: 'TurMail Test', email: `no-reply@${window.location.hostname}` },
-        to: c.to || [{ email: (user && user.email) || 'test@example.com' }],
-        subject: c.subject || 'Teste',
-        htmlContent: c.htmlContent || '<p>Teste</p>',
-        preheader: c.preheader || '',
-      }
-      const resp = await fetch('/api/send-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(JSON.stringify(data))
-      setResult(data && data.messageId ? `✅ Enviado (id ${data.messageId})` : '✅ Enviado')
-    } catch (e: any) {
-      setResult(`❌ ${String(e.message || e)}`)
-    } finally {
-      setSending(false)
-    }
-  }
+  // Test send helper removed — tests are handled during create/send flows
   const createCampaign = async () => {
     if (!subject || (!htmlContent && !templateId)) { setResult('Assunto e conteúdo ou template são obrigatórios'); return }
     // parse recipients and basic validation
@@ -513,6 +508,7 @@ export default function Campaigns(){
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Título</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Enviadas</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Entrega com Sucesso</th>
                       {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aberturas</th> */}
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Criado</th>
@@ -527,6 +523,9 @@ export default function Campaigns(){
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-slate-600">{c.metrics?.sent ?? c.sent ?? (c.to || []).length}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-600">{getDeliverRateDisplay(c)}</div>
                         </td>
                         {/* <td className="px-6 py-4">
                           <div className="text-sm text-slate-600">{getOpenRateDisplay(c)}</div>
@@ -554,15 +553,7 @@ export default function Campaigns(){
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => sendTestForCampaign(c)} 
-                              className="inline-flex items-center space-x-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-200 transition-colors"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>Teste</span>
-                            </button>
+                            {/* 'Teste' action removed: tests are sent on create/send or scheduled sends */}
                             <button 
                               onClick={async () => {
                                 try {
@@ -614,16 +605,7 @@ export default function Campaigns(){
                               </svg>
                               <span>Remover</span>
                             </button>
-                            <Link 
-                              to={`/campaigns/${c.id}`} 
-                              className="inline-flex items-center space-x-1 px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span>Ver</span>
-                            </Link>
+                            {/* 'Ver' removed — use 'Editar' to view/edit and 'Reenviar' to resend */}
                           </div>
                         </td>
                       </tr>
