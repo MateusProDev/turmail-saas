@@ -30,33 +30,46 @@ function pickBenefits(opts: CopyOptions) {
   const vert = opts.vertical || 'general'
   const bank: Record<string, string[]> = {
     tourism: [
-      `Roteiros personalizados para grupos e famílias`,
-      `Guias locais com conhecimento do destino`,
-      `Datas flexíveis e descontos para reservas antecipadas`,
-      `Atendimento 24/7 durante a viagem`
+      `Roteiros personalizados para famílias, casais e grupos de amigos`,
+      `Guias locais experientes com roteiros exclusivos e dicas de quem mora na região`,
+      `Pacotes complementares para quem já viajou conosco — experiências que expandem sua última rota`,
+      `Descontos especiais para clientes que retornam e condições flexíveis de remarcação`,
+      `Experiências autênticas: visitas a produtores locais, passeios gastronômicos e trilhas guiadas`
     ],
     cooperative: [
-      `Gerenciamento centralizado de reservas`,
-      `Relatórios para otimizar oferta e demanda`,
-      `Benefícios exclusivos para cooperados`,
-      `Suporte para aumentar vendas locais`
+      `Gestão de reservas adaptada para cooperativas e produtores locais`,
+      `Relatórios práticos para ajustar oferta conforme demanda sazonal`,
+      `Programas de benefícios e parcerias entre cooperados`,
+      `Treinamentos e suporte para melhorar a experiência do visitante`
     ],
     taxi: [
-      `Dicas para encontrar passageiros nos horários de pico`,
-      `Otimização de rota para reduzir tempo ocioso`,
-      `Parcerias locais e promoções para aumentar corridas`,
-      `Técnicas para melhorar avaliação de passageiros`
+      `Rotas e pontos estratégicos para aumentar corridas em horários chave`,
+      `Táticas para reduzir tempo ocioso e aumentar ganhos diários`,
+      `Parcerias com pousadas e restaurantes para captar passageiros locais`,
+      `Melhore sua avaliação com dicas práticas de atendimento e segurança`
     ],
     general: [
-      `Soluções simples e fáceis de aplicar`,
-      `Suporte dedicado para orientar seus próximos passos`,
-      `Melhore resultados com práticas testadas`,
-      `Benefícios exclusivos para clientes`
+      `Experiências selecionadas por especialistas locais`,
+      `Opções com reservas flexíveis e facilidade de pagamento`,
+      `Descontos exclusivos para clientes que já viajaram conosco`,
+      `Atendimento personalizado para montar seu próximo roteiro`
     ]
   }
   const arr = bank[vert] || bank.general
   const shuffled = arr.slice().sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, 3)
+  // If the user is a returning customer, prefer benefits that reference return offers
+  const selected = shuffled.slice(0, 3)
+  if (opts.previousExperience && opts.previousExperience.trip) {
+    const returningExtras = [
+      `Ofertas exclusivas para quem já viajou em ${opts.previousExperience.trip}`,
+      `Passeios pensados como complemento à sua experiência em ${opts.previousExperience.trip}`
+    ]
+    // ensure at least one returning-specific benefit is included when possible
+    if (!selected.some(s => returningExtras.some(r => s.includes(r) || r.includes(s)))) {
+      selected[2] = returningExtras[0]
+    }
+  }
+  return selected
 }
 
 function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
@@ -119,7 +132,10 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
     friendly: [
       `${company} tem novas experiências para você`,
       `Novidades e pacotes em ${dest || 'vários destinos'}`,
-      `Ofertas especiais de ${company} para sua próxima viagem`
+      `Ofertas especiais de ${company} para sua próxima viagem`,
+      // returning-customer oriented templates
+      opts.previousExperience && opts.previousExperience.trip ? `Novos passeios complementares a ${opts.previousExperience.trip}` : '',
+      opts.previousExperience && opts.previousExperience.trip ? `Como você gostou de ${opts.previousExperience.trip}, veja as novidades` : ''
     ],
     formal: [
       `${company}: informações sobre novos roteiros`,
@@ -141,13 +157,29 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
     return candidates.length ? pick(candidates) : pick(arr)
   }
 
-  const subject = `${uniquePick(subjectBank[tone] || subjectBank.friendly, new Set())}`.replace(/\s+/g, ' ').trim()
+  // If this is a returning customer for tourism, prefer templates that reference the previous trip
+  let subject = uniquePick(subjectBank[tone] || subjectBank.friendly, new Set())
+  if (opts.vertical === 'tourism' && opts.previousExperience && opts.previousExperience.trip) {
+    const returningTemplates = [
+      `Novas experiências pensadas para quem viajou em ${opts.previousExperience.trip}`,
+      `Passeios complementares a ${opts.previousExperience.trip} — descubra agora`,
+      `Relembrando ${opts.previousExperience.trip}: novas opções para sua próxima viagem`
+    ]
+    subject = uniquePick([...returningTemplates, subject], new Set())
+  }
+  subject = `${String(subject).replace(/\s+/g, ' ').trim()}`
 
   // pick opening and preheader ensuring they don't repeat the subject or each other
-  const opening = uniquePick(openings[tone] || openings.friendly, new Set([subject]))
-  const preheader = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening])).replace(/\s+/g, ' ')
+  // For tourism + returning customers, craft openings/preheaders that reference the past trip or next-steps
+  let opening = uniquePick(openings[tone] || openings.friendly, new Set([subject]))
+  let intro = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening]))
+  if (opts.vertical === 'tourism' && opts.previousExperience && opts.previousExperience.trip) {
+    opening = uniquePick([`Olá ${name}, lembramos da sua viagem a ${opts.previousExperience.trip}.`, `Oi ${name}, temos novidades que complementam ${opts.previousExperience.trip}.`, opening], new Set([subject]))
+    intro = uniquePick([`Selecionamos passeios que combinam com o que você já viveu em ${opts.previousExperience.trip}.`, intro], new Set([subject, opening]))
+  }
 
-  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${opening} ${uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening]))}</p>`
+  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${opening} ${intro}</p>`
+  const preheader = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening, intro])).replace(/\s+/g, ' ')
   // inject description or previous experience tailored line when provided
   const benefits = pickBenefits(opts)
   if (opts.description) {
@@ -167,8 +199,7 @@ function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
   const ctaLabel = opts.ctaLink ? (ctaTexts[tone] || 'Saiba mais') : (ctaTexts[tone] || 'Saiba mais')
   const ctaHref = opts.ctaLink || '#'
   const ctaColor = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
-  const unsubscribe = `<p style="font-size:11px;color:#9ca3af;margin-top:10px">Se você não deseja receber estes e-mails, ignore esta mensagem.</p>`
-  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>${unsubscribe}`
+  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>`
 
   const html = `<div style="font-family: Arial, Helvetica, sans-serif; font-size:16px;color:#111;">${top}${mid}${bottom}</div>`
 
