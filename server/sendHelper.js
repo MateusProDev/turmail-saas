@@ -3,6 +3,7 @@ import admin from './firebaseAdmin.js'
 import crypto from 'crypto'
 import nodemailer from 'nodemailer'
 import { sendEmail } from './brevoMail.js'
+import { renderTemplate } from './templateHelper.js'
 
 const db = admin.firestore()
 const ENC_KEY = process.env.TENANT_ENCRYPTION_KEY || ''
@@ -90,6 +91,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
   // ensure payload.sender exists and has a valid email; otherwise fallback
   payload = payload || {}
   payload.sender = payload.sender || {}
+  // Wrap HTML content into canonical template (adds preheader, responsive styles)
+  try {
+    payload.htmlContent = renderTemplate(payload.htmlContent || payload.html || '', payload.subject || '', payload.preheader || '')
+  } catch (e) {
+    if (debug) console.warn('[sendHelper] template render failed, using raw html', e && (e.message || e))
+    payload.htmlContent = payload.htmlContent || payload.html || ''
+  }
   if (!isValidEmail(payload.sender.email)) {
     if (isValidEmail(defaultFromEmail)) {
       if (debug) console.log('[sendHelper] using DEFAULT_FROM_EMAIL fallback')

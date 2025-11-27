@@ -9,4 +9,4 @@ export default function Terms() {
       <Link to="/" className="link-back">Voltar para Início</Link>
     </div>
   )
-}
+} 

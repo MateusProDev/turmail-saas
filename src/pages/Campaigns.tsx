@@ -4,6 +4,7 @@ import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 
 import DOMPurify from 'dompurify'
+import { renderTemplate } from '../lib/templateHelper'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs } from 'firebase/firestore'
 
@@ -20,6 +21,7 @@ export default function Campaigns(){
   const [subject, setSubject] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
   const [recipientsText, setRecipientsText] = useState('')
+  const [preheader, setPreheader] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
   const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [templateId, setTemplateId] = useState<string>('')
@@ -101,6 +103,7 @@ export default function Campaigns(){
         to: c.to || [{ email: (user && user.email) || 'test@example.com' }],
         subject: c.subject || 'Teste',
         htmlContent: c.htmlContent || '<p>Teste</p>',
+        preheader: c.preheader || '',
       }
       const resp = await fetch('/api/send-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       const data = await resp.json()
@@ -121,13 +124,13 @@ export default function Campaigns(){
     setResult(null)
 
     const to = recipients.map(email => ({ email }))
-    const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, to, ownerUid: user?.uid, sendImmediate }
+    const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, preheader, to, ownerUid: user?.uid, sendImmediate }
     if (templateId) payload.templateId = Number(templateId)
     if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
 
     try {
       if (editingCampaign && editingCampaign.id) {
-        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, to, scheduledAt: payload.scheduledAt, templateId: payload.templateId }) })
+        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt, templateId: payload.templateId }) })
         const data = await resp.json()
         if (!resp.ok) throw new Error(JSON.stringify(data))
         setResult('Campanha atualizada')
@@ -168,8 +171,9 @@ export default function Campaigns(){
       {showForm && (
         <div className="bg-white rounded shadow p-4 mb-6">
           <h2 className="font-medium">Criar nova campanha</h2>
-          <div className="grid gap-2 mt-3">
-            <input value={subject} onChange={e => setSubject(e.target.value)} className="border rounded px-3 py-2" placeholder="Assunto" />
+            <div className="grid gap-2 mt-3">
+              <input value={subject} onChange={e => setSubject(e.target.value)} className="border rounded px-3 py-2" placeholder="Assunto" />
+              <input value={preheader} onChange={e => setPreheader(e.target.value)} className="border rounded px-3 py-2" placeholder="Preheader (texto curto exibido na caixa de entrada)" />
             <select value={selectedTenant ?? ''} onChange={e => setSelectedTenant(e.target.value || null)} className="border rounded px-3 py-2">
               <option value="">(usar global)</option>
               {tenantOptions.map(t => (<option key={t.id} value={t.id}>{t.id} {t.role ? `(${t.role})` : ''}</option>))}
@@ -227,7 +231,7 @@ export default function Campaigns(){
               {showPreview && (
                 <div className="w-1/3 border rounded p-3 bg-gray-50">
                   <div className="text-xs text-gray-500 mb-2">Preview (sanitizado)</div>
-                  <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent || '<p>Sem conteúdo</p>') }} />
+                      <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(htmlContent || '<p>Sem conteúdo</p>', subject, preheader)) }} />
                 </div>
               )}
 
@@ -278,7 +282,7 @@ export default function Campaigns(){
                             setResult('Reenvio iniciado')
                           } catch (e:any) { setResult(String(e.message || e)) }
                         }} className="px-2 py-1 border rounded text-xs mr-2">Reenviar</button>
-                        <button onClick={() => { setShowForm(true); setEditingCampaign(c); setSubject(c.subject||''); setHtmlContent(c.htmlContent||''); setRecipientsText((c.to||[]).map((t:any)=>t.email).join('\n')); setSelectedTenant(c.tenantId||'') }} className="text-xs text-gray-600 mr-2">Editar</button>
+                        <button onClick={() => { setShowForm(true); setEditingCampaign(c); setSubject(c.subject||''); setHtmlContent(c.htmlContent||''); setPreheader(c.preheader||''); setRecipientsText((c.to||[]).map((t:any)=>t.email).join('\n')); setSelectedTenant(c.tenantId||'') }} className="text-xs text-gray-600 mr-2">Editar</button>
                         <button onClick={async ()=>{
                           if (!confirm('Confirma remover esta campanha?')) return
                           try { const resp = await fetch('/api/delete-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: c.id }) }); const j = await resp.json(); if (!resp.ok) throw new Error(JSON.stringify(j)); setCampaigns(prev=>prev.filter(x=>x.id!==c.id)); setResult('Campanha removida') } catch (e:any){ setResult(String(e.message||e)) }
