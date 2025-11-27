@@ -21,6 +21,7 @@ export default function Campaigns(){
   const [subject, setSubject] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
   const [recipientsText, setRecipientsText] = useState('')
+  const [recipientInput, setRecipientInput] = useState('')
   const [preheader, setPreheader] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
   // const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
@@ -41,6 +42,7 @@ export default function Campaigns(){
   const [contacts, setContacts] = useState<any[]>([])
   const [showContactsModal, setShowContactsModal] = useState(false)
   const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
+  const [showRecipientsModal, setShowRecipientsModal] = useState(false)
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -281,8 +283,31 @@ export default function Campaigns(){
                         const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
                         const merged = Array.from(new Set([...existing, ...emails]))
                         setRecipientsText(merged.join('\n'))
+                          // keep selectedContactIds so modal reflects selection if reopened
                         setShowContactsModal(false)
                       }} className="px-4 py-2 bg-indigo-600 text-white rounded">Adicionar Selecionados</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Recipients 'Ver todos' modal */}
+              {showRecipientsModal && (
+                <div className="fixed inset-0 z-60 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowRecipientsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Todos os Destinatários</h3>
+                    <div className="max-h-64 overflow-auto space-y-2">
+                      {recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).length === 0 ? (
+                        <div className="text-sm text-slate-500">Nenhum destinatário</div>
+                      ) : (
+                        recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).map((r, i) => (
+                          <div key={i} className="p-2 rounded border border-slate-100">{r}</div>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <button onClick={() => setShowRecipientsModal(false)} className="px-4 py-2 border rounded">Fechar</button>
                     </div>
                   </div>
                 </div>
@@ -440,20 +465,94 @@ export default function Campaigns(){
 
               {/* Recipients and Settings */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Destinatários * (um por linha ou separados por vírgula)
-                  </label>
-                  <textarea 
-                    value={recipientsText} 
-                    onChange={e => setRecipientsText(e.target.value)} 
-                    className="w-full h-32 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                    placeholder="email1@exemplo.com&#10;email2@exemplo.com"
-                  />
-                  <div className="mt-3">
-                    <button type="button" onClick={() => { setSelectedContactIds({}); setShowContactsModal(true) }} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Selecionar Contatos</button>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Destinatários * (adicione emails e pressione Enter ou clique em "Adicionar")
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        value={recipientInput}
+                        onChange={e => setRecipientInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            // trigger add
+                            const raw = recipientInput.trim()
+                            if (!raw) return
+                            const parts = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+                            const invalid = parts.find(p => !/^\S+@\S+\.\S+$/.test(p))
+                            if (invalid) { setResult(`Endereço inválido: ${invalid}`); return }
+                            const existing = recipientsText.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+                            const merged = Array.from(new Set([...existing, ...parts]))
+                            setRecipientsText(merged.join('\n'))
+                            setRecipientInput('')
+                          }
+                        }}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        placeholder="adicione@exemplo.com"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const raw = recipientInput.trim()
+                          if (!raw) return
+                          const parts = raw.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+                          const invalid = parts.find(p => !/^\S+@\S+\.\S+$/.test(p))
+                          if (invalid) { setResult(`Endereço inválido: ${invalid}`); return }
+                          const existing = recipientsText.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+                          const merged = Array.from(new Set([...existing, ...parts]))
+                          setRecipientsText(merged.join('\n'))
+                          setRecipientInput('')
+                        }}
+                        className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                      >Adicionar</button>
+                      <button type="button" onClick={() => {
+                        const emails = recipientsText.split(/[\n,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean)
+                        const map: Record<string, boolean> = {}
+                        for (const c of contacts) {
+                          if (c.email && emails.includes(String(c.email).toLowerCase())) map[c.id] = true
+                        }
+                        setSelectedContactIds(map)
+                        setShowContactsModal(true)
+                      }} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Selecionar Contatos</button>
+                    </div>
+
+                    {/* Recipient tags preview */}
+                    {(() => {
+                      const parsed = recipientsText.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+                      if (parsed.length === 0) return null
+                      const maxVisible = 5
+                      const visible = parsed.slice(0, maxVisible)
+                      const hiddenCount = parsed.length - visible.length
+                      return (
+                        <div className="mt-3">
+                          <div className="flex flex-wrap gap-2">
+                            {visible.map((r, i) => (
+                              <div key={i} className="px-3 py-1 bg-slate-100 text-slate-800 rounded-full text-sm max-w-xs truncate">
+                                {r}
+                              </div>
+                            ))}
+                            {hiddenCount > 0 && (
+                              <button onClick={() => setShowRecipientsModal(true)} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">+{hiddenCount} Ver todos</button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    <div className="mt-3">
+                      <button type="button" onClick={() => {
+                        // pre-populate selections in contacts modal based on current recipientsText
+                        const emails = recipientsText.split(/[\n,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean)
+                        const map: Record<string, boolean> = {}
+                        for (const c of contacts) {
+                          if (c.email && emails.includes(String(c.email).toLowerCase())) map[c.id] = true
+                        }
+                        setSelectedContactIds(map)
+                        setShowContactsModal(true)
+                      }} className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Selecionar Contatos</button>
+                    </div>
                   </div>
-                </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">

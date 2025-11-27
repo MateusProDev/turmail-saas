@@ -12,7 +12,7 @@ import TenantMembers from './pages/TenantMembers'
 import Features from './pages/Features'
 import Templates from './pages/Templates'
 import About from './pages/About'
-import Contact from './pages/Contact'
+// import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import Demo from './pages/Demo'
@@ -36,7 +36,7 @@ export default function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
+          {/* <Route path="/contact" element={<Contact />} /> */}
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/demo" element={<Demo />} />
