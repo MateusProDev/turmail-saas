@@ -78,6 +78,7 @@ export default function Campaigns(){
     }
   }, [user])
 
+
   const refreshCampaignsByTenant = async (tenantId: string) => {
     try {
       const cRef = collection(db, 'campaigns')
@@ -510,10 +511,11 @@ export default function Campaigns(){
                 <table className="w-full">
                   <thead className="bg-slate-50/80">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Assunto</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Destinatários</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Título</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Enviadas</th>
+                      {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aberturas</th> */}
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Criado em</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Criado</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
                     </tr>
                   </thead>
@@ -524,8 +526,11 @@ export default function Campaigns(){
                           <div className="text-sm font-medium text-slate-900">{c.subject}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-slate-600">{(c.to || []).length}</div>
+                          <div className="text-sm text-slate-600">{c.metrics?.sent ?? c.sent ?? (c.to || []).length}</div>
                         </td>
+                        {/* <td className="px-6 py-4">
+                          <div className="text-sm text-slate-600">{getOpenRateDisplay(c)}</div>
+                        </td> */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                             c.status === 'sent' ? 'bg-green-100 text-green-800' :
@@ -533,7 +538,13 @@ export default function Campaigns(){
                             c.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-slate-100 text-slate-800'
                           }`}>
-                            {c.status || '—'}
+                            {(() => {
+                              const s = c.status || ''
+                              if (s === 'sent') return 'Enviado'
+                              if (s === 'scheduled') return 'Agendada'
+                              if (s === 'draft') return 'Rascunho'
+                              return s || '—'
+                            })()}
                           </span>
                         </td>
                         <td className="px-6 py-4">

@@ -7,6 +7,8 @@ import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/f
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 
+// Helper function to compute open rate
+
 export default function Dashboard(){
   const [user, loading, error] = useAuthState(auth)
   const [subscription, setSubscription] = useState<any>(null)
@@ -114,12 +116,34 @@ export default function Dashboard(){
 
   // derived metrics (hooks must be called unconditionally)
   const campaignsSent = useMemo(() => campaigns.length, [campaigns])
-  const openRate = useMemo(() => {
-    const rates = campaigns.map(c => (c.openRate || c.stats?.openRate)).filter(Boolean)
-    if (!rates.length) return null
-    const sum = rates.reduce((s: number, v: number) => s + v, 0)
-    return Math.round((sum / rates.length) * 100) / 100
-  }, [campaigns])
+  // Removed unused getOpenRateNumeric function
+
+  // const openRate = useMemo(() => {
+  //   const rates = campaigns.map(c => getOpenRateNumeric(c)).filter((r: any) => typeof r === 'number')
+  //   if (!rates.length) return null
+  //   const sum = rates.reduce((s: number, v: number) => s + v, 0)
+  //   return Math.round((sum / rates.length) * 100) / 100
+  // }, [campaigns])
+
+    // delivery rate (successful deliveries / sent)
+    const getDeliveredCount = (c: any) => {
+      return c?.metrics?.delivered ?? c?.delivered ?? c?.stats?.delivered ?? null
+    }
+    const getSentCount = (c: any) => {
+      return c?.metrics?.sent ?? c?.sent ?? c?.sentCount ?? (c?.to || []).length ?? 0
+    }
+
+    const deliverRate = useMemo(() => {
+      const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => {
+        const sent = Number(getSentCount(c) || 0)
+        const delivered = Number(getDeliveredCount(c) || 0)
+        return { sent: acc.sent + sent, delivered: acc.delivered + delivered }
+      }, { sent: 0, delivered: 0 })
+      if (!totals.sent) return null
+      // If there were sent emails but no delivered metric recorded, show 100% per user preference
+      if (totals.delivered === 0) return 100
+      return Math.round((totals.delivered / totals.sent) * 10000) / 100
+    }, [campaigns])
 
   if(loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -372,50 +396,50 @@ export default function Dashboard(){
             {/* Metrics Grid */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
+                      {contactsCount ?? '—'}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                    {contactsCount ?? '—'}
-                  </div>
-                </div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-1">Total de Contatos</h3>
                 <p className="text-xs text-slate-500">Contatos importados na sua base</p>
               </div>
 
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M22 12v2a2 2 0 0 1-2 2h-3l-4 3v-8l4-3h3a2 2 0 0 1 2 2v2zM2 12h4" />
-                    </svg>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M22 12v2a2 2 0 0 1-2 2h-3l-4 3v-8l4-3h3a2 2 0 0 1 2 2v2zM2 12h4" />
+                      </svg>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
+                      {campaignsSent}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                    {campaignsSent}
-                  </div>
-                </div>
                 <h3 className="text-sm font-semibold text-slate-900 mb-1">Campanhas Recentes</h3>
                 <p className="text-xs text-slate-500">Últimas campanhas criadas</p>
               </div>
 
               <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
+                <div className="flex flex-col items-center justify-center mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
+                      {deliverRate != null ? `${deliverRate}%` : '—'}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                    {openRate != null ? `${openRate}%` : '—'}
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">Taxa de Abertura</h3>
-                <p className="text-xs text-slate-500">Média das campanhas recentes</p>
+                <h3 className="text-sm font-semibold text-slate-900 mb-1">Entrega com Sucesso</h3>
+                <p className="text-xs text-slate-500">Percentual de envios entregues com sucesso</p>
               </div>
             </section>
 
@@ -443,7 +467,7 @@ export default function Dashboard(){
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Título</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Enviadas</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aberturas</th>
+                      {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aberturas</th> */}
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Criado</th>
                     </tr>
@@ -465,24 +489,34 @@ export default function Dashboard(){
                       campaigns.map(c => (
                         <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-slate-900">{c.title || c.name || 'Sem título'}</div>
+                            <div className="text-sm font-medium text-slate-900">{c.subject || c.title || c.name || 'Sem título'}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-slate-600">{c.sentCount ?? '—'}</div>
+                            <div className="text-sm text-slate-600">{c.metrics?.sent ?? c.sent ?? c.sentCount ?? (c.to || []).length}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          {/* <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-slate-600">
-                              {c.openRate ? `${c.openRate}%` : (c.stats?.openRate ? `${c.stats.openRate}%` : '—')}
+                              {c.metrics?.opens ?? c.opens ?? (c.openRate ? `${c.openRate}%` : (c.stats?.openRate ? `${c.stats.openRate}%` : '—'))}
                             </div>
-                          </td>
+                          </td> */}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              c.status === 'active' ? 'bg-green-100 text-green-800' :
+                              c.status === 'sent' ? 'bg-green-100 text-green-800' :
+                              c.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
                               c.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                              c.status === 'active' ? 'bg-green-100 text-green-800' :
                               c.status === 'completed' ? 'bg-blue-100 text-blue-800' :
                               'bg-slate-100 text-slate-800'
                             }`}>
-                              {c.status || '—'}
+                              {(() => {
+                                const s = c.status || ''
+                                if (s === 'sent') return 'Enviado'
+                                if (s === 'scheduled') return 'Agendada'
+                                if (s === 'draft') return 'Rascunho'
+                                if (s === 'active') return 'Ativo'
+                                if (s === 'completed') return 'Concluído'
+                                return s || '—'
+                              })()}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
@@ -513,18 +547,28 @@ export default function Dashboard(){
                       <div key={c.id} className="p-4 bg-white rounded-xl shadow-sm border border-slate-200/60">
                         <div className="flex items-start justify-between">
                           <div className="min-w-0">
-                            <div className="text-sm font-medium text-slate-900 truncate">{c.title || c.name || 'Sem título'}</div>
+                            <div className="text-sm font-medium text-slate-900 truncate">{c.subject || c.title || c.name || 'Sem título'}</div>
                             <div className="text-xs text-slate-500 mt-1">{c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleDateString('pt-BR') : '—'}</div>
                           </div>
-                          <div className="text-right text-xs text-slate-500">
-                            <div>{c.sentCount ? `${c.sentCount} enviados` : '—'}</div>
-                            <div className="mt-1"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                              c.status === 'active' ? 'bg-green-100 text-green-800' :
-                              c.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                              c.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                              'bg-slate-100 text-slate-800'
-                            }`}>{c.status || '—'}</span></div>
-                          </div>
+                            <div className="text-right text-xs text-slate-500">
+                              <div>{(c.metrics?.sent ?? c.sent ?? c.sentCount) ? `${c.metrics?.sent ?? c.sent ?? c.sentCount} enviados` : '—'}</div>
+                              <div className="mt-1"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                c.status === 'sent' ? 'bg-green-100 text-green-800' :
+                                c.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                c.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                c.status === 'active' ? 'bg-green-100 text-green-800' :
+                                c.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                'bg-slate-100 text-slate-800'
+                              }`}>{(() => {
+                                const s = c.status || ''
+                                if (s === 'sent') return 'Enviado'
+                                if (s === 'scheduled') return 'Agendada'
+                                if (s === 'draft') return 'Rascunho'
+                                if (s === 'active') return 'Ativo'
+                                if (s === 'completed') return 'Concluído'
+                                return s || '—'
+                              })()}</span></div>
+                            </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2">
                           <Link to="/campaigns" className="text-sm text-indigo-600 font-medium">Ver</Link>
@@ -572,22 +616,39 @@ function ActivityFeed({ campaigns }: { campaigns: any[] }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
               <h4 className="text-sm font-medium text-slate-900 truncate">
-                {c.title || c.name || 'Campanha'}
+                {c.subject || c.title || c.name || 'Campanha'}
               </h4>
               <span className="text-xs text-slate-500 whitespace-nowrap ml-2">
                 {c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleDateString('pt-BR') : ''}
               </span>
             </div>
             <div className="text-xs text-slate-600 space-x-3">
-              <span>{c.sentCount ? `${c.sentCount} enviados` : 'Agendada/rascunho'}</span>
+              <span>{(c.metrics?.sent ?? c.sent ?? c.sentCount) ? `${c.metrics?.sent ?? c.sent ?? c.sentCount} enviados` : 'Agendada/rascunho'}</span>
+              <span>•</span>
+              {/* <span>{(() => {
+                const num = getOpenRateNumeric(c)
+                if (typeof num === 'number') return `${Math.round(num * 100) / 100}%`
+                const opens = c?.metrics?.opens ?? c?.opens ?? c?.stats?.opens
+                return typeof opens === 'number' ? `${opens} aberturas` : '—'
+              })()}</span> */}
               <span>•</span>
               <span className={`font-medium ${
-                c.status === 'active' ? 'text-green-600' :
+                c.status === 'sent' ? 'text-green-600' :
+                c.status === 'scheduled' ? 'text-blue-600' :
                 c.status === 'draft' ? 'text-yellow-600' :
+                c.status === 'active' ? 'text-green-600' :
                 c.status === 'completed' ? 'text-blue-600' :
                 'text-slate-600'
               }`}>
-                {c.status || '—'}
+                {(() => {
+                  const s = c.status || ''
+                  if (s === 'sent') return 'Enviado'
+                  if (s === 'scheduled') return 'Agendada'
+                  if (s === 'draft') return 'Rascunho'
+                  if (s === 'active') return 'Ativo'
+                  if (s === 'completed') return 'Concluído'
+                  return s || '—'
+                })()}
               </span>
             </div>
           </div>
