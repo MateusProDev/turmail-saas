@@ -3,7 +3,7 @@ import './Login.css'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../lib/firebase'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import makeInitialUserData from '../lib/initUser'
 
 export default function Login() {
