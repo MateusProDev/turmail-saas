@@ -38,19 +38,17 @@ export default function Login() {
           } catch (trialErr) {
             console.error('failed to start trial on signup', trialErr)
           }
-          // Create a tenant for this user automatically (tenant_{uid}) and set user as owner
+          // Create tenant server-side to avoid Firestore rules issues
           try {
-            const tenantId = `tenant_${userCred.user.uid}`
-            const tenantRef = doc(db, 'tenants', tenantId)
-            await setDoc(tenantRef, { createdAt: serverTimestamp(), ownerUid: userCred.user.uid, name: companyName || `Account ${userCred.user.uid}` }, { merge: true })
-            const memberRef = doc(db, 'tenants', tenantId, 'members', userCred.user.uid)
-            await setDoc(memberRef, { role: 'owner', createdAt: serverTimestamp() }, { merge: true })
-            // initialize empty secrets doc so UI can read it later
-            const secretsRef = doc(db, 'tenants', tenantId, 'settings', 'secrets')
-            await setDoc(secretsRef, { brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
-            console.log('[signup] created tenant', tenantId)
+            const token = await userCred.user.getIdToken()
+            await fetch('/api/tenant/create-tenant', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ name: companyName || `Account ${userCred.user.uid}` }),
+            })
+            console.log('[signup] requested server-side tenant creation for', userCred.user.uid)
           } catch (tenantErr) {
-            console.error('failed to create tenant on signup', tenantErr)
+            console.error('failed to request tenant creation on signup', tenantErr)
           }
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
