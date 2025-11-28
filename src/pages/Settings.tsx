@@ -65,6 +65,7 @@ export default function Settings(){
   const [loadingTenants, setLoadingTenants] = useState(false)
   const [showTenantSelect, setShowTenantSelect] = useState(false)
   const [modalTenantId, setModalTenantId] = useState('')
+  const [autoCreateAttempted, setAutoCreateAttempted] = useState(false)
   const [tenantKeys, setTenantKeys] = useState<Array<any>>([])
   const [loadingKeys, setLoadingKeys] = useState(false)
   const [companyName, setCompanyName] = useState('')
@@ -243,6 +244,29 @@ export default function Settings(){
         if (tenants.length === 0) {
           setSelectedTenant(null)
           setTenantOptions([])
+          // If no tenant exists for this user, attempt to create one automatically (idempotent)
+          try {
+            if (!autoCreateAttempted) {
+              setAutoCreateAttempted(true)
+              const createResp = await fetch('/api/tenant/create-tenant', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: companyName || undefined }) })
+              const createJson = await createResp.json()
+              if (createResp.ok && createJson && createJson.tenantId) {
+                // reload tenants after create
+                const reload = await fetch('/api/my-tenants', { method: 'GET', headers: { Authorization: `Bearer ${token}` } })
+                const reloadJson = await reload.json()
+                const newTenants: Array<{ id: string, role: string }> = (reloadJson.tenants || []).map((t: any) => ({ id: t.tenantId, role: t.role }))
+                if (newTenants.length > 0) {
+                  const owner = newTenants.find(t => t.role === 'owner')
+                  const admin = newTenants.find(t => t.role === 'admin')
+                  const chosen = owner ? owner.id : (admin ? admin.id : newTenants[0].id)
+                  setSelectedTenant(chosen)
+                  setTenantOptions(newTenants)
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('[Settings] auto-create tenant failed', e)
+          }
         } else {
           const owner = tenants.find(t => t.role === 'owner')
           const admin = tenants.find(t => t.role === 'admin')
