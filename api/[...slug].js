@@ -20,21 +20,22 @@ export default async function handler(req, res) {
 
     // Build possible module path in server/api-handlers
     // e.g. /api/tenant/set-brevo-key -> server/api-handlers/tenant/set-brevo-key.js
-    const modulePath = `../../server/api-handlers/${segments.join('/')}.js`
+    // Note: this file lives under /api, so server/api-handlers is one level up (../server/...)
+    const modulePath = `../server/api-handlers/${segments.join('/')}.js`
 
     let mod
-    try {
-      mod = await import(modulePath)
-    } catch (e) {
-      // try fallback to index.js in the folder
       try {
-        const folderModule = `../../server/api-handlers/${segments.join('/')}/index.js`
-        mod = await import(folderModule)
-      } catch (e2) {
-        console.error('[api catch-all] handler import failed for', modulePath, e)
-        return res.status(404).json({ error: 'Handler not found', detail: String(e) })
+        mod = await import(modulePath)
+      } catch (e) {
+        // try fallback to index.js in the folder (same parent path)
+        try {
+          const folderModule = `../server/api-handlers/${segments.join('/')}/index.js`
+          mod = await import(folderModule)
+        } catch (e2) {
+          console.error('[api catch-all] handler import failed for', modulePath, e)
+          return res.status(404).json({ error: 'Handler not found', detail: String(e) })
+        }
       }
-    }
 
     const fn = mod && (mod.default || mod.handler || mod)
     if (typeof fn !== 'function') {
