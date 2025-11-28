@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         // Normalize recipients before sending
         let normalizedTo = to
         try {
-          const { normalizeRecipients } = await import('../server/sendHelper.js')
+          const { normalizeRecipients } = await import('../sendHelper.js')
           normalizedTo = normalizeRecipients(to)
         } catch (e) {
           console.warn('[create-campaign] failed to normalize recipients', e)
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: body.sender || defaultSender, idempotencyKey }
         let sendUsingBrevoOrSmtp
         try {
-          const sh = await import('../server/sendHelper.js')
+          const sh = await import('../sendHelper.js')
           sendUsingBrevoOrSmtp = sh.sendUsingBrevoOrSmtp || sh.default?.sendUsingBrevoOrSmtp || sh.default
         } catch (e) {
           console.error('[create-campaign] failed to import send helper', e)

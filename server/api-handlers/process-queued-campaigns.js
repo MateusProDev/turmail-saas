@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
     let sendUsingBrevoOrSmtp
     try {
-      const sh = await import('../server/sendHelper.js')
+      const sh = await import('../sendHelper.js')
       sendUsingBrevoOrSmtp = sh.sendUsingBrevoOrSmtp || sh.default?.sendUsingBrevoOrSmtp || sh.default
     } catch (e) {
       console.error('[process-queued-campaigns] failed to import sendHelper', e)

@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   // Basic validation: must have either `to` or `templateId` and a sender email
   // Normalize recipients early for validation and logging
   try {
-    const { normalizeRecipients } = await import('../server/sendHelper.js')
+    const { normalizeRecipients } = await import('../sendHelper.js')
     payload.to = normalizeRecipients(payload.to)
   } catch (e) {
     if (debug) console.warn('[send-campaign] failed to normalize recipients', e)
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
     // Lazy-import send helper to avoid Admin SDK initialization at module import time
     let sendUsingBrevoOrSmtp
     try {
-      const sh = await import('../server/sendHelper.js')
+      const sh = await import('../sendHelper.js')
       sendUsingBrevoOrSmtp = sh.sendUsingBrevoOrSmtp || sh.default?.sendUsingBrevoOrSmtp || sh.default
     } catch (e) {
       console.error('[send-campaign] failed to import send helper', e)
