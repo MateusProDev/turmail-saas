@@ -1,4 +1,4 @@
-import admin from '../../server/firebaseAdmin.js'
+import admin from '../../firebaseAdmin.js'
 
 const db = admin.firestore()
 

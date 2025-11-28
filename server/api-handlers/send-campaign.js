@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   let db
   if (campaignId) {
     try {
-      admin = (await import('../server/firebaseAdmin.js')).default
+      admin = (await import('../firebaseAdmin.js')).default
       db = admin.firestore()
       docRef = db.collection('campaigns').doc(campaignId)
       const docSnap = await docRef.get()

@@ -1,4 +1,4 @@
-import admin from '../server/firebaseAdmin.js'
+import admin from '../firebaseAdmin.js'
 import axios from 'axios'
 import crypto from 'crypto'
 

@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-import { db } from '../server/firebaseAdmin.js'
+import { db } from '../firebaseAdmin.js'
 
 async function getRawBody(req) {
   return new Promise((resolve, reject) => {

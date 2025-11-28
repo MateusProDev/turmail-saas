@@ -1,4 +1,4 @@
-import admin from '../server/firebaseAdmin.js'
+import admin from '../firebaseAdmin.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end('Method not allowed')

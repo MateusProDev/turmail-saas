@@ -1,4 +1,4 @@
-import admin from '../server/firebaseAdmin.js'
+import admin from '../firebaseAdmin.js'
 import { nanoid } from 'nanoid'
 // send helper will be lazy-imported when needed to avoid Admin SDK init on import
 
