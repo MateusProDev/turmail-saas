@@ -29,15 +29,17 @@ export default function Campaigns(){
   // const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [companyName, setCompanyName] = useState('')
   const [productName, setProductName] = useState('')
-  const [mainTitle, setMainTitle] = useState('')
-  const [ctaLink, setCtaLink] = useState('')
-  const [destination, setDestination] = useState('')
-  const [description, setDescription] = useState('')
-  const [returningCustomer, setReturningCustomer] = useState(false)
-  const [previousTrip, setPreviousTrip] = useState('')
+  const [mainTitle] = useState('')
+  const [ctaLink] = useState('')
+  const [destination] = useState('')
+  const [description] = useState('')
+  // Removed unused returningCustomer state
   const [userPatterns, setUserPatterns] = useState<string[]>([])
   const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
   const [vertical, setVertical] = useState<'general'|'tourism'|'cooperative'|'taxi'>('general')
+  const [audience, setAudience] = useState<string>('')
+  const [benefitInput, setBenefitInput] = useState<string>('')
+  const [keyBenefits, setKeyBenefits] = useState<string[]>([])
   
   const [showPreview, setShowPreview] = useState(true)
   
@@ -52,10 +54,11 @@ export default function Campaigns(){
   const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
   const [showRecipientsModal, setShowRecipientsModal] = useState(false)
   // variants UI
-  const [variants, setVariants] = useState<Array<{subject:string, preheader:string, html:string}>>([])
+  const [variants, setVariants] = useState<any[]>([])
   const [showVariantsModal, setShowVariantsModal] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [generatingVariants, setGeneratingVariants] = useState(false)
+  const [copyHistory, setCopyHistory] = useState<any[]>([])
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -394,28 +397,60 @@ export default function Campaigns(){
                       {variants.length === 0 ? (
                         <div className="text-sm text-slate-500">Nenhuma variação gerada.</div>
                       ) : (
-                        variants.map((v, idx) => (
-                          <div key={idx} className="p-3 border rounded-lg">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="font-medium">#{idx+1} — {v.subject}</div>
-                                <div className="text-sm text-slate-500">{v.preheader}</div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button onClick={() => {
-                                  setSubject(v.subject)
-                                  setPreheader(v.preheader)
-                                  setHtmlContent(v.html)
-                                  setResult('Variação inserida no editor')
-                                  setShowVariantsModal(false)
-                                }} className="px-3 py-2 bg-indigo-600 text-white rounded">Inserir</button>
-                                <button onClick={async () => {
-                                  try { await navigator.clipboard.writeText(v.html); setResult('HTML copiado para a área de transferência') } catch (e:any) { setResult('Falha ao copiar') }
-                                }} className="px-3 py-2 border rounded">Copiar HTML</button>
-                              </div>
-                            </div>
-                            <div className="mt-3 prose max-w-none text-sm border-t pt-3" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(v.html || '<p>Nenhum</p>', v.subject || '', v.preheader || '')) }} />
-                          </div>
+                        variants.map((variant, idx) => (
+                          <div key={idx} className="p-4 border rounded-lg bg-white">
+    <div className="flex items-start justify-between mb-3">
+      <div className="flex-1">
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="font-semibold text-lg">#{idx + 1} - {variant.subject}</div>
+          <div className={`px-2 py-1 rounded text-xs font-medium ${
+            (variant.score || 0) >= 80 ? 'bg-green-100 text-green-800' :
+            (variant.score || 0) >= 60 ? 'bg-yellow-100 text-yellow-800' :
+            'bg-red-100 text-red-800'
+          }`}>
+            Score: {variant.score}/100
+          </div>
+        </div>
+        <div className="text-sm text-slate-600 mb-1">{variant.preheader}</div>
+        <div className="flex space-x-2 text-xs text-slate-500">
+          <span>Tom: {variant.tone}</span>
+          <span>•</span>
+          <span>Leitura: {variant.metadata?.readingLevel}</span>
+          <span>•</span>
+          <span>Palavras: {variant.metadata?.wordCount}</span>
+        </div>
+      </div>
+      <div className="flex space-x-2 ml-4">
+        <button 
+          onClick={() => {
+            setSubject(variant.subject)
+            setPreheader(variant.preheader)
+            setHtmlContent(variant.html)
+            setResult(`✅ Variação #${idx + 1} inserida`)
+            setShowVariantsModal(false)
+          }}
+          className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+        >
+          Usar
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(variant.html)
+              setResult('📋 HTML copiado')
+            } catch {
+              setResult('❌ Erro ao copiar')
+            }
+          }}
+          className="px-3 py-2 border border-slate-300 rounded text-sm hover:bg-slate-50"
+        >
+          Copiar
+        </button>
+      </div>
+    </div>
+    <div className="mt-3 prose max-w-none text-sm border-t pt-3" 
+         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(variant.html, variant.subject, variant.preheader)) }} />
+  </div>
                         ))
                       )}
                     </div>
@@ -449,97 +484,245 @@ export default function Campaigns(){
 
               {/* Tenant selection is intentionally hidden — using global configuration */}
 
-              {/* Assistente de Copy (executa no navegador) - moved to be directly under Assunto / Preheader */}
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Assistente de Copy (executa no navegador)</label>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {/* Left column: inputs */}
-                    <div className="space-y-3">
-                    <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Nome da empresa (opcional)" className="w-full px-3 py-2 border rounded" />
-                    <input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="Produto/serviço (opcional)" className="w-full px-3 py-2 border rounded" />
-                    <input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Destino / público / local (opcional)" className="w-full px-3 py-2 border rounded" />
-                    <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal (H1) — opcional" className="w-full px-3 py-2 border rounded" />
-                    <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="Link do botão CTA (https://...) — opcional" className="w-full px-3 py-2 border rounded" />
-                    <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Descrição específica para este público (ex: clientes que já viajaram com a agência) — opcional" className="w-full px-3 py-2 border rounded h-20" />
-                    <div className="flex items-center space-x-3">
-                      <label className="inline-flex items-center space-x-2">
-                        <input type="checkbox" checked={returningCustomer} onChange={e=>setReturningCustomer(e.target.checked)} className="form-checkbox" />
-                        <span className="text-sm">Público: clientes anteriores</span>
-                      </label>
-                      <input value={previousTrip} onChange={e=>setPreviousTrip(e.target.value)} placeholder="Última viagem (ex: 'Rota das Serras')" className="px-3 py-2 border rounded flex-1" />
-                    </div>
-                  </div>
+              {/* Assistente de Copy Profissional */}
+              <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+  <label className="block text-sm font-semibold text-slate-800 mb-4">
+    🚀 Assistente de Copy Profissional
+    <span className="text-xs font-normal text-slate-600 ml-2">(Processamento local - 100% privado)</span>
+  </label>
+  
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Coluna 1: Inputs principais */}
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Empresa</label>
+        <input 
+          value={companyName} 
+          onChange={e => setCompanyName(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          placeholder="Nome da sua empresa"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Produto/Serviço</label>
+        <input 
+          value={productName} 
+          onChange={e => setProductName(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          placeholder="O que você oferece?"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Público-alvo</label>
+        <input 
+          value={audience} 
+          onChange={e => setAudience(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          placeholder="ex: clientes premium, jovens..."
+        />
+      </div>
+    </div>
 
-                  {/* Right column: controls */}
-                  <div className="space-y-3 flex flex-col justify-between">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
-                      <div className="flex items-center space-x-2">
-                        <label className="text-sm">Tom:</label>
-                        <select value={tone} onChange={e=>setTone(e.target.value as any)} className="px-3 py-2 border rounded">
-                          <option value="friendly">Amigável</option>
-                          <option value="formal">Formal</option>
-                          <option value="urgent">Urgente</option>
-                          <option value="casual">Casual</option>
-                        </select>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <label className="text-sm">Vertente:</label>
-                        <select value={vertical} onChange={e=>setVertical(e.target.value as any)} className="px-3 py-2 border rounded">
-                          <option value="general">Geral</option>
-                          <option value="tourism">Turismo</option>
-                          <option value="cooperative">Cooperativa</option>
-                          <option value="taxi">Táxi / Motoristas</option>
-                        </select>
-                      </div>
-                    </div>
+    {/* Coluna 2: Configurações */}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Tom</label>
+          <select 
+            value={tone} 
+            onChange={e => setTone(e.target.value as any)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="friendly">Amigável</option>
+            <option value="professional">Profissional</option>
+            <option value="formal">Formal</option>
+            <option value="casual">Casual</option>
+            <option value="urgent">Urgente</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Vertente</label>
+          <select 
+            value={vertical} 
+            onChange={e => setVertical(e.target.value as any)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="general">Geral</option>
+            <option value="tourism">Turismo</option>
+            <option value="ecommerce">E-commerce</option>
+            <option value="services">Serviços</option>
+            <option value="cooperative">Cooperativa</option>
+            <option value="taxi">Táxi/Motoristas</option>
+          </select>
+        </div>
+      </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
-                        <button onClick={async () => {
-                          setGenerating(true)
-                          try {
-                            const out = await generateCopy({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle, description: description || undefined, previousExperience: returningCustomer ? { trip: previousTrip || undefined } : undefined, userPatterns: userPatterns })
-                            setSubject(out.subject)
-                            setPreheader(out.preheader)
-                            setHtmlContent(out.html)
-                            setResult('Copy gerada localmente')
-                          } catch (e:any) { console.warn(e); setResult('Erro ao gerar copy') }
-                          setGenerating(false)
-                        }} className={`px-3 py-2 ${generating ? 'bg-indigo-400' : 'bg-indigo-600'} text-white rounded mb-2 sm:mb-0`} disabled={generating}>
-                          {generating ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>IA pensando...</span></span>) : 'Gerar copy'}
-                        </button>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Benefícios principais</label>
+        <div className="flex space-x-2 mb-2">
+          <input
+            value={benefitInput}
+            onChange={e => setBenefitInput(e.target.value)}
+            onKeyPress={e => {
+              if (e.key === 'Enter' && benefitInput.trim()) {
+                setKeyBenefits(prev => [...prev, benefitInput.trim()])
+                setBenefitInput('')
+              }
+            }}
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Adicione um benefício e pressione Enter"
+          />
+          <button
+            onClick={() => {
+              if (benefitInput.trim()) {
+                setKeyBenefits(prev => [...prev, benefitInput.trim()])
+                setBenefitInput('')
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            +
+          </button>
+        </div>
+        
+        {keyBenefits.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {keyBenefits.map((benefit, index) => (
+              <span key={index} className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                {benefit}
+                <button
+                  onClick={() => setKeyBenefits(prev => prev.filter((_, i) => i !== index))}
+                  className="ml-2 text-blue-600 hover:text-blue-800"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
 
-                      <div className="flex items-center space-x-2">
-                      <button onClick={async () => {
-                        setGeneratingVariants(true)
-                        try {
-                          const out = await generateVariants({ company: companyName, product: productName, tone, namePlaceholder: '{{name}}', vertical, ctaLink, destination, mainTitle, description: description || undefined, previousExperience: returningCustomer ? { trip: previousTrip || undefined } : undefined, userPatterns: userPatterns }, 10)
-                          setVariants(out as any)
-                          setShowVariantsModal(true)
-                        } catch (e:any) { console.warn(e); setResult('Erro ao gerar variações') }
-                        setGeneratingVariants(false)
-                      }} className={`px-3 py-2 ${generatingVariants ? 'bg-amber-300' : 'bg-amber-500'} text-white rounded`} disabled={generatingVariants}>
-                        {generatingVariants ? (<span className="flex items-center space-x-2"><span className="w-3 h-3 rounded-full bg-white animate-pulse inline-block"/> <span>Gerando variações...</span></span>) : 'Gerar 10 variações'}
-                      </button>
+    {/* Coluna 3: Ações */}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={async () => {
+            setGenerating(true)
+            try {
+              const copy = await generateCopy({
+                company: companyName,
+                product: productName,
+                tone,
+                vertical,
+                destination,
+                ctaLink,
+                mainTitle,
+                description,
+                previousExperience: undefined,
+                userPatterns,
+                audience,
+                keyBenefits
+              })
+              
+              setSubject(copy.subject)
+              setPreheader(copy.preheader)
+              setHtmlContent(copy.html)
+              setCopyHistory(prev => [copy, ...prev.slice(0, 9)]) // Manter últimas 10
+              
+              setResult(`✅ Copy gerada (Score: ${copy.score}/100)`)
+            } catch (error) {
+              setResult('❌ Erro ao gerar copy')
+            }
+            setGenerating(false)
+          }}
+          disabled={generating}
+          className={`py-3 px-4 rounded-lg font-medium ${
+            generating 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          }`}
+        >
+          {generating ? '🔄 Gerando...' : '✨ Gerar Copy'}
+        </button>
 
-                      <button onClick={async () => {
-                        if (!user) { setResult('Faça login para salvar padrões'); return }
-                        try {
-                          const { saveUserPattern } = await import('../lib/aiHelper')
-                          const pattern = description || `${companyName} - ${productName} - ${destination}`
-                          const ok = await saveUserPattern(user.uid, pattern)
-                          if (ok) {
-                            setUserPatterns(prev => [pattern, ...prev])
-                            setResult('Padrão salvo')
-                          } else setResult('Falha ao salvar padrão')
-                        } catch (e:any) { console.warn(e); setResult('Erro ao salvar padrão') }
-                      }} className="px-3 py-2 border rounded">Salvar padrão</button>
-                      </div>
-                    </div>
+        <button
+          onClick={async () => {
+            setGeneratingVariants(true)
+            try {
+              const variants = await generateVariants({
+                company: companyName,
+                product: productName,
+                vertical,
+                destination,
+                ctaLink,
+                mainTitle,
+                description,
+                previousExperience: undefined,
+                userPatterns,
+                audience,
+                keyBenefits
+              }, 5)
+              
+              setVariants(variants)
+              setShowVariantsModal(true)
+              setResult(`✅ ${variants.length} variações geradas`)
+            } catch (error) {
+              setResult('❌ Erro ao gerar variações')
+            }
+            setGeneratingVariants(false)
+          }}
+          disabled={generatingVariants}
+          className={`py-3 px-4 rounded-lg font-medium ${
+            generatingVariants
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+          }`}
+        >
+          {generatingVariants ? '🔄 Gerando...' : '🎨 5 Variações'}
+        </button>
+      </div>
 
-                    <div className="text-xs text-slate-500">A geração ocorre no navegador usando apenas os dados desta campanha (privado).</div>
-                  </div>
-                </div>
-              </div>
+      <button
+        onClick={async () => {
+          if (!user) {
+            setResult('⚠️ Faça login para salvar padrões')
+            return
+          }
+          
+          const patternData = {
+            pattern: description || `${companyName} - ${productName} - ${destination}`,
+            tone,
+            vertical,
+            mainTitle,
+            ctaLink,
+            description,
+            audience
+          }
+          
+          // dynamic import to avoid SSR/import cycles
+          const { saveUserPattern } = await import('../lib/aiHelper')
+          const success = await saveUserPattern(user.uid, patternData)
+          setResult(success ? '✅ Padrão salvo' : '❌ Erro ao salvar')
+        }}
+        className="w-full py-2 px-4 border border-slate-300 rounded-lg hover:bg-slate-50"
+      >
+        💾 Salvar Padrão
+      </button>
+
+      {copyHistory.length > 0 && (
+        <div className="text-xs text-slate-600">
+          📊 Última copy: {copyHistory[0]?.score}/100 - 
+          {copyHistory[0]?.metadata?.readingLevel} - 
+          {copyHistory[0]?.metadata?.emotionalTone.join(', ')}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
               {/* Content Editor */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

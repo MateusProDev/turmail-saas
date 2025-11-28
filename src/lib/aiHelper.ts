@@ -1,293 +1,576 @@
+import { collection, getDocs, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore'
+import { db } from './firebase'
+
 export type CopyOptions = {
   company?: string
   product?: string
-  tone?: 'friendly' | 'formal' | 'urgent' | 'casual'
+  tone?: 'friendly' | 'formal' | 'urgent' | 'casual' | 'professional'
   namePlaceholder?: string
-  vertical?: 'general' | 'tourism' | 'cooperative' | 'taxi'
+  vertical?: 'general' | 'tourism' | 'cooperative' | 'taxi' | 'ecommerce' | 'services'
   destination?: string
   dateRange?: string
   ctaLink?: string
   description?: string
-  // previousExperience indicates this is a returning customer and optional last trip name/date
-  previousExperience?: { trip?: string, date?: string }
-  // optional user-saved patterns loaded from Firestore
+  mainTitle?: string
+  previousExperience?: { trip?: string; date?: string }
   userPatterns?: string[]
+  audience?: string
+  keyBenefits?: string[]
+  constraints?: string[]
 }
 
-function pick<T>(arr: T[]) { return arr[Math.floor(Math.random() * arr.length)] }
-
-function bullets(items: string[]) {
-  return `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`
-}
-
-function mainTitleOrFallback(opts: any) {
-  if (opts && opts.mainTitle) return opts.mainTitle
-  if (opts && opts.product) return `Conheça ${opts.product}`
-  return 'Temos novidades para você'
-}
-
-function pickBenefits(opts: CopyOptions) {
-  const vert = opts.vertical || 'general'
-  const bank: Record<string, string[]> = {
-    tourism: [
-      `Roteiros personalizados para famílias, casais e grupos de amigos`,
-      `Guias locais experientes com roteiros exclusivos e dicas de quem mora na região`,
-      `Pacotes complementares para quem já viajou conosco — experiências que expandem sua última rota`,
-      `Descontos especiais para clientes que retornam e condições flexíveis de remarcação`,
-      `Experiências autênticas: visitas a produtores locais, passeios gastronômicos e trilhas guiadas`
-    ],
-    cooperative: [
-      `Gestão de reservas adaptada para cooperativas e produtores locais`,
-      `Relatórios práticos para ajustar oferta conforme demanda sazonal`,
-      `Programas de benefícios e parcerias entre cooperados`,
-      `Treinamentos e suporte para melhorar a experiência do visitante`
-    ],
-    taxi: [
-      `Rotas e pontos estratégicos para aumentar corridas em horários chave`,
-      `Táticas para reduzir tempo ocioso e aumentar ganhos diários`,
-      `Parcerias com pousadas e restaurantes para captar passageiros locais`,
-      `Melhore sua avaliação com dicas práticas de atendimento e segurança`
-    ],
-    general: [
-      `Experiências selecionadas por especialistas locais`,
-      `Opções com reservas flexíveis e facilidade de pagamento`,
-      `Descontos exclusivos para clientes que já viajaram conosco`,
-      `Atendimento personalizado para montar seu próximo roteiro`
-    ]
+export type GeneratedCopy = {
+  subject: string
+  preheader: string
+  html: string
+  tone: string
+  vertical: string
+  score?: number
+  metadata?: {
+    wordCount: number
+    readingLevel: string
+    emotionalTone: string[]
   }
-  const arr = bank[vert] || bank.general
-  const shuffled = arr.slice().sort(() => Math.random() - 0.5)
-  // If the user is a returning customer, prefer benefits that reference return offers
-  const selected = shuffled.slice(0, 3)
-  if (opts.previousExperience && opts.previousExperience.trip) {
-    const returningExtras = [
-      `Ofertas exclusivas para quem já viajou em ${opts.previousExperience.trip}`,
-      `Passeios pensados como complemento à sua experiência em ${opts.previousExperience.trip}`
-    ]
-    // ensure at least one returning-specific benefit is included when possible
-    if (!selected.some(s => returningExtras.some(r => s.includes(r) || r.includes(s)))) {
-      selected[2] = returningExtras[0]
+}
+
+// Sistema de templates hierárquico
+const TEMPLATE_SYSTEM = {
+  tones: {
+    friendly: {
+      openings: [
+        `Olá {name},`,
+        `Oi {name}!`, 
+        `Boas notícias, {name}:`,
+        `Olá — temos novidades para você, {name}.`,
+        `Saudações {name},`
+      ],
+      closings: [
+        `Abraços,<br>{company}`,
+        `Até breve!<br>Equipe {company}`,
+        `Com carinho,<br>{company}`
+      ],
+      ctaTexts: ['Saiba mais', 'Ver opções', 'Descubra agora', 'Conferir']
+    },
+    formal: {
+      openings: [
+        `Prezado(a) {name},`,
+        `Caro(a) {name},`,
+        `Ilustríssimo(a) {name},`,
+        `Senhor(a) {name},`
+      ],
+      closings: [
+        `Atenciosamente,<br>Equipe {company}`,
+        `Cordialmente,<br>{company}`,
+        `Respeitosamente,<br>Diretoria {company}`
+      ],
+      ctaTexts: ['Saiba mais', 'Conhecer detalhes', 'Solicitar informações']
+    },
+    professional: {
+      openings: [
+        `Caro(a) {name},`,
+        `Prezado(a) {name},`,
+        `Olá {name},`,
+        `Estimado(a) {name},`
+      ],
+      closings: [
+        `Atenciosamente,<br>Equipe {company}`,
+        `Melhores cumprimentos,<br>{company}`,
+        `Saudações profissionais,<br>{company}`
+      ],
+      ctaTexts: ['Acessar agora', 'Conhecer solução', 'Iniciar teste']
+    },
+    urgent: {
+      openings: [
+        `Atenção {name}!`,
+        `Última oportunidade, {name}!`,
+        `Alerta importante, {name}:`,
+        `Não perca, {name}:`
+      ],
+      closings: [
+        `Não deixe para depois!<br>{company}`,
+        `Oferta por tempo limitado<br>{company}`,
+        `Agende agora!<br>{company}`
+      ],
+      ctaTexts: ['Garantir agora', 'Reservar já', 'Não perder']
+    },
+    casual: {
+      openings: [
+        `Ei {name}, bora?`,
+        `E aí {name}!`,
+        `Fala, {name}!`,
+        `Olha só, {name}:`
+      ],
+      closings: [
+        `Valeu!<br>{company}`,
+        `Até mais!<br>Equipe {company}`,
+        `Abraço!<br>{company}`
+      ],
+      ctaTexts: ['Bora ver', 'Conferir', 'Partiu']
+    }
+  },
+
+  verticals: {
+    tourism: {
+      subjects: [
+        '{company} tem novas experiências em {destination}',
+        'Descubra {destination} com {company}',
+        'Pacotes exclusivos para {destination}',
+        'Sua próxima aventura em {destination} começa aqui'
+      ],
+      intros: [
+        'Preparamos roteiros únicos para você viver o melhor de {destination}.',
+        'Selecionamos as melhores experiências em {destination} pensando em você.',
+        'Descubra {destination} como nunca antes com nossos pacotes exclusivos.'
+      ],
+      benefits: [
+        'Guias locais especializados e roteiros personalizados',
+        'Experiências autênticas que vão além do turismo convencional',
+        'Condições flexíveis e atendimento dedicado',
+        'Opções para todos os tipos de viajante'
+      ]
+    },
+    ecommerce: {
+      subjects: [
+        'Novos produtos {company} disponíveis',
+        'Ofertas especiais {company}',
+        'Lançamento {company} - {product}'
+      ],
+      intros: [
+        'Temos novidades incríveis que combinam perfeitamente com você.',
+        'Selecionamos produtos especiais pensando no seu estilo.',
+        'Confira nossas últimas novidades e ofertas exclusivas.'
+      ],
+      benefits: [
+        'Produtos de alta qualidade com garantia',
+        'Entrega rápida e opções de pagamento flexíveis',
+        'Atendimento especializado para tirar suas dúvidas',
+        'Condições especiais para clientes frequentes'
+      ]
+    },
+    services: {
+      subjects: [
+        '{company} - Soluções para {product}',
+        'Melhore seus resultados com {company}',
+        '{company}: Profissionais especializados em {product}'
+      ],
+      intros: [
+        'Oferecemos soluções profissionais para otimizar seus resultados.',
+        'Nossa equipe especializada está pronta para ajudar você.',
+        'Descubra como podemos fazer a diferença no seu dia a dia.'
+      ],
+      benefits: [
+        'Profissionais qualificados e experientes',
+        'Soluções personalizadas para suas necessidades',
+        'Suporte contínuo e acompanhamento',
+        'Resultados mensuráveis e garantia de qualidade'
+      ]
+    },
+    general: {
+      subjects: [
+        'Novidades {company}',
+        '{company} tem novidades para você',
+        'Oportunidades exclusivas {company}'
+      ],
+      intros: [
+        'Temos novidades que podem fazer a diferença para você.',
+        'Selecionamos oportunidades especiais pensando no seu perfil.',
+        'Confira o que preparamos especialmente para você.'
+      ],
+      benefits: [
+        'Soluções testadas e aprovadas',
+        'Condições especiais e vantagens exclusivas',
+        'Suporte dedicado e atendimento personalizado',
+        'Resultados comprovados e satisfação garantida'
+      ]
     }
   }
-  return selected
 }
 
-function composeCopy(opts: CopyOptions & { mainTitle?: string }) {
-  const company = opts.company || opts.namePlaceholder || 'sua empresa'
-  const tone = opts.tone || 'friendly'
-  const name = opts.namePlaceholder || '{{name}}'
-  const dest = opts.destination || ''
-
-  const openings: Record<string, string[]> = {
-    friendly: [
-      `Olá ${name},`,
-      `Oi ${name}!`,
-      `Boas notícias, ${name}:`,
-      `Olá — temos novidades para quem gosta de viajar, ${name}.`,
-      `Saudações ${name},`
-    ],
-    formal: [
-      `Olá ${name},`,
-      `Prezado(a) ${name},`,
-      `Caro(a) ${name},`
-    ],
-    urgent: [
-      `Atenção ${name}, vagas acabando!`,
-      `Última chamada para ${dest || 'reservas'} — ${name}`,
-      `Promoção urgente para ${dest || 'reservas'} — não perca!`
-    ],
-    casual: [
-      `Ei ${name}, bora?`,
-      `Que tal uma escapada, ${name}?`,
-      `Partiu viagem, ${name}?`
-    ]
+// Sistema de análise e scoring
+class CopyAnalyzer {
+  static calculateReadability(text: string): string {
+    const words = text.split(/\s+/).length
+    const sentences = text.split(/[.!?]+/).length
+    const avgWordsPerSentence = words / sentences
+    
+    if (avgWordsPerSentence < 12) return 'fácil'
+    if (avgWordsPerSentence < 18) return 'médio'
+    return 'complexo'
   }
 
-  const introsByVertical: Record<string, string[]> = {
-    tourism: [
-      `Preparamos experiências em ${dest || 'vários destinos'} com guias locais e roteiros personalizados.`,
-      `Roteiros pensados para quem quer viver o melhor de ${dest || 'uma região'}.`,
-      `Seleções de passeios especialmente montadas para ${dest || 'sua próxima viagem'}.`,
-      `Opções com foco em cultura, gastronomia e aventura em ${dest || 'o destino'}.`
-    ],
-    cooperative: [
-      `Soluções para cooperativas aumentarem reservas e organizarem melhor a operação.`,
-      `Ajudamos cooperativas a melhorar vendas e fidelização com ferramentas práticas.`,
-      `Ferramentas para simplificar gestão e comunicação entre cooperados.`
-    ],
-    taxi: [
-      `Dicas práticas para motoristas aumentarem corrida e ganhar mais por dia.`,
-      `Ferramentas e parcerias locais para otimizar sua operação como motorista.`,
-      `Táticas para reduzir tempo ocioso e aumentar corridas em horários chave.`
-    ],
-    general: [
-      `Temos novidades que podem interessar a você.`,
-      `Confira opções criadas para tornar sua experiência melhor.`,
-      `Soluções pensadas para melhorar sua rotina e resultados.`
-    ]
+  static detectEmotionalTone(text: string): string[] {
+    const tones = []
+    const positiveWords = ['incrível', 'especial', 'exclusiv', 'únic', 'melhor', 'fantástic', 'maravilh']
+    const urgentWords = ['urgente', 'limitado', 'última', 'rápido', 'agora', 'hoje']
+    const friendlyWords = ['olá', 'oi', 'fala', 'e aí', 'valeu', 'abraço']
+    
+    const lowerText = text.toLowerCase()
+    
+    if (positiveWords.some(word => lowerText.includes(word))) tones.push('positivo')
+    if (urgentWords.some(word => lowerText.includes(word))) tones.push('urgente')
+    if (friendlyWords.some(word => lowerText.includes(word))) tones.push('amigável')
+    if (!tones.length) tones.push('neutro')
+    
+    return tones
   }
 
-  // subject bank — separate from greeting/opening to avoid repeating the same phrase
-  const subjectBank: Record<string, string[]> = {
-    friendly: [
-      `${company} tem novas experiências para você`,
-      `Novidades e pacotes em ${dest || 'vários destinos'}`,
-      `Ofertas especiais de ${company} para sua próxima viagem`,
-      // returning-customer oriented templates
-      opts.previousExperience && opts.previousExperience.trip ? `Novos passeios complementares a ${opts.previousExperience.trip}` : '',
-      opts.previousExperience && opts.previousExperience.trip ? `Como você gostou de ${opts.previousExperience.trip}, veja as novidades` : ''
-    ],
-    formal: [
-      `${company}: informações sobre novos roteiros`,
-      `Oportunidades de reserva para ${dest || 'seu destino'}`
-    ],
-    urgent: [
-      `Vagas limitadas para ${dest || 'reservas'} — garanta já`,
-      `Promoção relâmpago em pacotes para ${dest || 'o destino'}`
-    ],
-    casual: [
-      `Novos rolês em ${dest || 'sua cidade'} — confira`,
-      `Passeios e experiências que você vai curtir em ${dest || 'perto'}`
-    ]
+  static calculateScore(copy: GeneratedCopy): number {
+    let score = 50 // Base score
+    
+    // Subject length optimization
+    const subjectLength = copy.subject.length
+    if (subjectLength >= 30 && subjectLength <= 60) score += 20
+    else if (subjectLength > 0 && subjectLength < 100) score += 10
+    
+    // Preheader length
+    const preheaderLength = copy.preheader.length
+    if (preheaderLength >= 40 && preheaderLength <= 100) score += 15
+    
+    // HTML content quality
+    const hasPersonalization = copy.html.includes('{name}') ? 10 : 0
+    const hasCTA = /<a[^>]*>.*?<\/a>/.test(copy.html) ? 15 : 0
+    const hasStructure = /<(h1|h2|ul|ol)>/.test(copy.html) ? 10 : 0
+    
+    score += hasPersonalization + hasCTA + hasStructure
+    
+    return Math.min(100, score)
   }
-
-  // helper: pick an item that is not equal to any in avoid (fallbacks to pick)
-  function uniquePick(arr: string[], avoid: Set<string>) {
-    const candidates = arr.filter(a => !avoid.has(a))
-    return candidates.length ? pick(candidates) : pick(arr)
-  }
-
-  // If this is a returning customer for tourism, prefer templates that reference the previous trip
-  let subject = uniquePick(subjectBank[tone] || subjectBank.friendly, new Set())
-  if (opts.vertical === 'tourism' && opts.previousExperience && opts.previousExperience.trip) {
-    const returningTemplates = [
-      `Novas experiências pensadas para quem viajou em ${opts.previousExperience.trip}`,
-      `Passeios complementares a ${opts.previousExperience.trip} — descubra agora`,
-      `Relembrando ${opts.previousExperience.trip}: novas opções para sua próxima viagem`
-    ]
-    subject = uniquePick([...returningTemplates, subject], new Set())
-  }
-  subject = `${String(subject).replace(/\s+/g, ' ').trim()}`
-
-  // pick opening and preheader ensuring they don't repeat the subject or each other
-  // For tourism + returning customers, craft openings/preheaders that reference the past trip or next-steps
-  let opening = uniquePick(openings[tone] || openings.friendly, new Set([subject]))
-  let intro = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening]))
-  if (opts.vertical === 'tourism' && opts.previousExperience && opts.previousExperience.trip) {
-    opening = uniquePick([`Olá ${name}, lembramos da sua viagem a ${opts.previousExperience.trip}.`, `Oi ${name}, temos novidades que complementam ${opts.previousExperience.trip}.`, opening], new Set([subject]))
-    intro = uniquePick([`Selecionamos passeios que combinam com o que você já viveu em ${opts.previousExperience.trip}.`, intro], new Set([subject, opening]))
-  }
-
-  const top = `<h2>${mainTitleOrFallback(opts)}</h2><p>${opening} ${intro}</p>`
-  const preheader = uniquePick(introsByVertical[opts.vertical || 'general'] || introsByVertical.general, new Set([subject, opening, intro])).replace(/\s+/g, ' ')
-  // inject description or previous experience tailored line when provided
-  const benefits = pickBenefits(opts)
-  if (opts.description) {
-    // add a custom descriptive sentence into the benefits list if present (keeps it specific)
-    benefits.unshift(opts.description)
-  }
-  if (opts.previousExperience && opts.previousExperience.trip) {
-    benefits.unshift(`Como você já viajou conosco em ${opts.previousExperience.trip}, selecionamos opções que complementam sua experiência anterior.`)
-  }
-  // if user-saved patterns exist, include one random pattern to make the tone/profile consistent
-  if (opts.userPatterns && opts.userPatterns.length > 0) {
-    const p = pick(opts.userPatterns)
-    if (p && !benefits.includes(p)) benefits.splice(1, 0, p)
-  }
-  const mid = bullets(benefits)
-  const ctaTexts: Record<string, string> = { friendly: 'Saiba mais', formal: 'Saiba mais', urgent: 'Reserve agora', casual: 'Ver opções' }
-  const ctaLabel = opts.ctaLink ? (ctaTexts[tone] || 'Saiba mais') : (ctaTexts[tone] || 'Saiba mais')
-  const ctaHref = opts.ctaLink || '#'
-  const ctaColor = tone === 'urgent' ? '#e11d48' : tone === 'casual' ? '#059669' : '#4f46e5'
-  const bottom = `<p style="margin-top:10px;text-align:center"><a href="${ctaHref}" style="background:${ctaColor};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;">${ctaLabel}</a></p><p style="color:#6b7280;font-size:12px;margin-top:12px;">Enviado por ${company}</p>`
-
-  const html = `<div style="font-family: Arial, Helvetica, sans-serif; font-size:16px;color:#111;">${top}${mid}${bottom}</div>`
-
-  return { subject, preheader, html }
 }
 
-export async function generateCopy(opts: CopyOptions & { mainTitle?: string }) {
-  const delay = 400 + Math.floor(Math.random() * 900)
-  await new Promise(r => setTimeout(r, delay))
-  return composeCopy(opts)
+// Gerador principal melhorado
+class ProfessionalCopyGenerator {
+  static generate(opts: CopyOptions): GeneratedCopy {
+    const tone = opts.tone || 'friendly'
+    const vertical = opts.vertical || 'general'
+    const company = opts.company || 'nossa empresa'
+    const name = opts.namePlaceholder || '{name}'
+    const destination = opts.destination || ''
+    const product = opts.product || ''
+    
+    // Seleção de templates baseados no tom e vertical
+    const toneTemplates = TEMPLATE_SYSTEM.tones[tone as keyof typeof TEMPLATE_SYSTEM.tones] || TEMPLATE_SYSTEM.tones.friendly
+    const verticalTemplates = TEMPLATE_SYSTEM.verticals[vertical as keyof typeof TEMPLATE_SYSTEM.verticals] || TEMPLATE_SYSTEM.verticals.general
+    
+    // Geração do subject
+    const subject = this.generateSubject(verticalTemplates.subjects, company, destination, product)
+    
+    // Geração do preheader
+    const preheader = this.generatePreheader(verticalTemplates.intros, company, destination, product)
+    
+    // Geração do conteúdo HTML
+    const html = this.generateHTML({
+      toneTemplates,
+      verticalTemplates,
+      company,
+      name,
+      destination,
+      product,
+      opts
+    })
+    
+    const copy: GeneratedCopy = {
+      subject,
+      preheader,
+      html,
+      tone,
+      vertical,
+      metadata: {
+        wordCount: html.split(/\s+/).length,
+        readingLevel: CopyAnalyzer.calculateReadability(html),
+        emotionalTone: CopyAnalyzer.detectEmotionalTone(html)
+      }
+    }
+    
+    copy.score = CopyAnalyzer.calculateScore(copy)
+    
+    return copy
+  }
+  
+  private static generateSubject(
+    subjects: string[], 
+    company: string, 
+    destination: string, 
+    product: string
+  ): string {
+    let template = this.pickRandom(subjects)
+    
+    // Aplicar substituições
+    template = template
+      .replace(/{company}/g, company)
+      .replace(/{destination}/g, destination)
+      .replace(/{product}/g, product)
+    
+    // Otimização para mobile (30-60 caracteres)
+    if (template.length < 30) {
+      template = this.enhanceSubject(template)
+    } else if (template.length > 60) {
+      template = this.shortenSubject(template)
+    }
+    
+    return template
+  }
+  
+  private static generatePreheader(
+    intros: string[], 
+    company: string, 
+    destination: string, 
+    product: string
+  ): string {
+    let preheader = this.pickRandom(intros)
+      .replace(/{company}/g, company)
+      .replace(/{destination}/g, destination)
+      .replace(/{product}/g, product)
+    
+    // Garantir comprimento ideal (40-100 caracteres)
+    if (preheader.length > 100) {
+      preheader = preheader.substring(0, 97) + '...'
+    }
+    
+    return preheader
+  }
+  
+  private static generateHTML(params: {
+    toneTemplates: any
+    verticalTemplates: any
+    company: string
+    name: string
+    destination: string
+    product: string
+    opts: CopyOptions
+  }): string {
+    const { toneTemplates, verticalTemplates, company, name, destination, product, opts } = params
+    
+    const opening = this.pickRandom(toneTemplates.openings).replace(/{name}/g, name)
+    const closing = this.pickRandom(toneTemplates.closings).replace(/{company}/g, company)
+    const ctaText = this.pickRandom(toneTemplates.ctaTexts)
+    
+    // Título principal
+    const mainTitle = opts.mainTitle || this.generateMainTitle(company, product, destination, opts)
+    
+    // Benefícios personalizados
+    const benefits = this.generateBenefits(verticalTemplates.benefits, opts)
+    
+    // CTA personalizado
+    const ctaHTML = this.generateCTA(ctaText, opts.ctaLink)
+    
+    return `
+<div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <h1 style="color: #2c5aa0; font-size: 24px; margin-bottom: 16px;">${mainTitle}</h1>
+  
+  <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+    ${opening} ${this.pickRandom(verticalTemplates.intros)
+      .replace(/{company}/g, company)
+      .replace(/{destination}/g, destination)
+      .replace(/{product}/g, product)}
+  </p>
+  
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h2 style="color: #2c5aa0; font-size: 18px; margin-bottom: 12px;">Principais benefícios:</h2>
+    ${benefits}
+  </div>
+  
+  ${ctaHTML}
+  
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666;">
+    ${closing}
+  </div>
+</div>
+    `.trim()
+  }
+  
+  private static generateMainTitle(company: string, product: string, destination: string, opts: CopyOptions): string {
+    if (opts.previousExperience?.trip) {
+      return `De volta às aventuras! Novas experiências após ${opts.previousExperience.trip}`
+    }
+    
+    const titles = [
+      `Descubra ${product || destination || 'novas possibilidades'} com ${company}`,
+      `${company} apresenta: ${product || 'Oportunidades exclusivas'}`,
+      `Sua próxima experiência ${destination ? `em ${destination}` : 'está aqui'}`
+    ]
+    
+    return this.pickRandom(titles)
+  }
+  
+  private static generateBenefits(baseBenefits: string[], opts: CopyOptions): string {
+    let benefits = [...baseBenefits]
+    
+    // Adicionar benefícios personalizados do usuário
+    if (opts.keyBenefits && opts.keyBenefits.length > 0) {
+      benefits = [...opts.keyBenefits, ...benefits]
+    }
+    
+    // Adicionar benefícios para clientes recorrentes
+    if (opts.previousExperience?.trip) {
+      benefits.unshift(`Vantagens exclusivas para quem já viveu ${opts.previousExperience.trip}`)
+    }
+    
+    // Adicionar padrões do usuário
+    if (opts.userPatterns && opts.userPatterns.length > 0) {
+      const userPattern = this.pickRandom(opts.userPatterns)
+      if (userPattern && !benefits.includes(userPattern)) {
+        benefits.splice(1, 0, userPattern)
+      }
+    }
+    
+    // Selecionar 3-4 benefícios mais relevantes
+    const selectedBenefits = benefits.slice(0, 4)
+    
+    return `
+<ul style="margin: 0; padding-left: 20px;">
+  ${selectedBenefits.map(benefit => 
+    `<li style="margin-bottom: 8px; line-height: 1.4;">${benefit}</li>`
+  ).join('')}
+</ul>
+    `.trim()
+  }
+  
+  private static generateCTA(text: string, link?: string): string {
+    const href = link || '#'
+    const colors = {
+      primary: '#2c5aa0',
+      hover: '#1e3f73'
+    }
+    
+    return `
+<div style="text-align: center; margin: 30px 0;">
+  <a href="${href}" 
+     style="background: ${colors.primary}; 
+            color: white; 
+            padding: 12px 30px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.3s;">
+    ${text}
+  </a>
+  <style>
+    a:hover { background: ${colors.hover} !important; }
+  </style>
+</div>
+    `.trim()
+  }
+  
+  private static enhanceSubject(subject: string): string {
+    const enhancements = [
+      `🔥 ${subject}`,
+      `⭐ ${subject}`,
+      `🚀 ${subject}`,
+      `${subject} |`,
+      `${subject} - Confira!`
+    ]
+    return this.pickRandom(enhancements)
+  }
+  
+  private static shortenSubject(subject: string): string {
+    if (subject.length <= 60) return subject
+    
+    // Tentativas de encurtamento
+    const shortened = subject
+      .replace(/\s*\|.*$/, '')
+      .replace(/\s*\-.*$/, '')
+      .substring(0, 57) + '...'
+    
+    return shortened.length <= 60 ? shortened : shortened.substring(0, 57) + '...'
+  }
+  
+  private static pickRandom(array: any[]): any {
+    return array[Math.floor(Math.random() * array.length)]
+  }
 }
 
-export async function generateVariants(opts: CopyOptions & { mainTitle?: string }, count = 3) {
-  const results: Array<{subject:string, preheader:string, html:string}> = []
-  const seen = new Set<string>()
-  const maxAttempts = Math.max(200, count * 12)
-  let attempts = 0
-  while (results.length < count && attempts < maxAttempts) {
-    attempts++
-    const tones: CopyOptions['tone'][] = ['friendly','casual','urgent','formal']
-    const tone = pick(tones)
-    const jitterOpts = { ...opts, tone }
-    // small jitter delay
-    await new Promise(r => setTimeout(r, 80 + Math.floor(Math.random() * 240)))
-    const out = composeCopy(jitterOpts)
-    // use a short fingerprint to detect duplicates
-    const fingerprint = `${out.subject}|||${out.preheader}|||${out.html.slice(0,180)}`
-    if (!seen.has(fingerprint)) {
-      seen.add(fingerprint)
-      results.push(out)
+// Funções de export mantendo compatibilidade
+export async function generateCopy(opts: CopyOptions): Promise<GeneratedCopy> {
+  // Simular delay de processamento
+  await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 600))
+  return ProfessionalCopyGenerator.generate(opts)
+}
+
+export async function generateVariants(opts: CopyOptions, count = 5): Promise<GeneratedCopy[]> {
+  const variants: GeneratedCopy[] = []
+  const seenSubjects = new Set<string>()
+  
+  const tones: Array<CopyOptions['tone']> = ['friendly', 'professional', 'formal', 'casual', 'urgent']
+  
+  for (let i = 0; i < count * 2; i++) {
+    if (variants.length >= count) break
+    
+    const tone = tones[i % tones.length]
+    const variantOpts = { ...opts, tone }
+    
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 400))
+    
+    const variant = ProfessionalCopyGenerator.generate(variantOpts)
+    
+    // Evitar duplicatas
+    if (!seenSubjects.has(variant.subject)) {
+      seenSubjects.add(variant.subject)
+      variants.push(variant)
     }
   }
-  return results
+  
+  // Ordenar por score
+  return variants.sort((a, b) => (b.score || 0) - (a.score || 0))
 }
 
-// Firestore helpers to persist/load user patterns (optional). These are thin wrappers
-// and require `db` from your project's Firebase client. Importing here keeps patterns
-// accessible to other modules but does not change the generator behavior if not used.
-import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from './firebase'
-
-export async function loadUserPatterns(uid: string) {
-  if (!uid) return [] as string[]
+// Sistema de padrões do usuário (mantido para compatibilidade)
+export async function loadUserPatterns(uid: string): Promise<string[]> {
+  if (!uid) return []
+  
   try {
-    const c = collection(db, 'users', uid, 'ai_patterns')
-    const snap = await getDocs(c)
-    return snap.docs.map(d => (d.data() as any).pattern).filter(Boolean)
-  } catch (e) {
-    console.warn('[aiHelper] loadUserPatterns error', e)
-    return [] as string[]
+    const patternsRef = collection(db, 'users', uid, 'ai_patterns')
+    const q = query(patternsRef, orderBy('createdAt', 'desc'), limit(50))
+    const snapshot = await getDocs(q)
+    
+    return snapshot.docs
+      .map(doc => doc.data().pattern)
+      .filter(pattern => pattern && typeof pattern === 'string')
+  } catch (error) {
+    console.warn('[AI Helper] Erro ao carregar padrões:', error)
+    return []
   }
 }
 
-export async function saveUserPattern(uid: string, patternOrData: string | Record<string, any>) {
-  if (!uid) throw new Error('uid required')
+export async function saveUserPattern(uid: string, patternData: string | Record<string, any>): Promise<boolean> {
+  if (!uid) return false
+  
   try {
-    const payload: Record<string, any> = typeof patternOrData === 'string' ? { pattern: patternOrData } : { ...patternOrData }
-    const patternText = String(payload.pattern || '').trim()
-    if (!patternText) throw new Error('pattern required')
-
-    const doc = {
-      pattern: patternText,
+    const pattern = typeof patternData === 'string' ? patternData : patternData.pattern
+    if (!pattern?.trim()) return false
+    
+    const patternDoc = {
+      pattern: pattern.trim(),
       ownerUid: uid,
-      // use server timestamp when available so createdAt is consistent
       createdAt: serverTimestamp(),
-      source: payload.source || 'client',
-      tone: payload.tone || null,
-      vertical: payload.vertical || null,
-      mainTitle: payload.mainTitle || null,
-      ctaLink: payload.ctaLink || null,
-      description: payload.description || null
+      source: 'campaign_generator',
+      ...(typeof patternData === 'object' ? patternData : {})
     }
-
-    await addDoc(collection(db, 'users', uid, 'ai_patterns'), doc)
+    
+    await addDoc(collection(db, 'users', uid, 'ai_patterns'), patternDoc)
     return true
-  } catch (e) {
-    console.warn('[aiHelper] saveUserPattern error', e)
+  } catch (error) {
+    console.warn('[AI Helper] Erro ao salvar padrão:', error)
     return false
   }
 }
 
-export function suggestCopy(opts: CopyOptions) {
-  return composeCopy(opts)
+// Funções de compatibilidade
+export function suggestCopy(opts: CopyOptions): GeneratedCopy {
+  return ProfessionalCopyGenerator.generate(opts)
 }
 
-export function suggestCopyVariants(opts: CopyOptions, count = 3) {
-  const res: Array<{subject:string, preheader:string, html:string}> = []
-  const tones: CopyOptions['tone'][] = ['friendly','casual','urgent','formal']
-  for (let i = 0; i < count; i++) res.push(composeCopy({ ...opts, tone: tones[i % tones.length] }))
-  return res
+export function suggestCopyVariants(opts: CopyOptions, count = 3): GeneratedCopy[] {
+  const variants: GeneratedCopy[] = []
+  const tones: Array<CopyOptions['tone']> = ['friendly', 'professional', 'formal']
+  
+  for (let i = 0; i < count; i++) {
+    const variant = ProfessionalCopyGenerator.generate({
+      ...opts,
+      tone: tones[i % tones.length]
+    })
+    variants.push(variant)
+  }
+  
+  return variants
 }
