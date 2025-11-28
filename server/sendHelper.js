@@ -111,6 +111,28 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     }
   }
 
+  // If sender name is missing, try to infer from tenant owner or payload ownerUid
+  if (!payload.sender.name || String(payload.sender.name).trim() === '') {
+    try {
+      let ownerUid = null
+      if (tenantId) {
+        const tenantDoc = await db.collection('tenants').doc(tenantId).get()
+        if (tenantDoc.exists) ownerUid = tenantDoc.data()?.ownerUid || null
+      }
+      if (!ownerUid && payload && payload.ownerUid) ownerUid = payload.ownerUid
+      if (ownerUid) {
+        const userDoc = await db.collection('users').doc(ownerUid).get()
+        if (userDoc.exists) {
+          const u = userDoc.data() || {}
+          const companyName = (u.company && u.company.name) || u.companyName || u.displayName || ''
+          if (companyName) payload.sender.name = companyName
+        }
+      }
+    } catch (e) {
+      if (debug) console.warn('[sendHelper] failed to infer sender name from tenant/user', e)
+    }
+  }
+
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
     if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)')
     let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null

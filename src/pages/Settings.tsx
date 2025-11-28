@@ -63,6 +63,8 @@ export default function Settings(){
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
   const [tenantOptions, setTenantOptions] = useState<Array<{ id: string, role: string }>>([])
   const [loadingTenants, setLoadingTenants] = useState(false)
+  const [companyName, setCompanyName] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
 
   /*
   const saveToVercel = async () => {
@@ -183,6 +185,18 @@ export default function Settings(){
         setSelectedTenant(null)
         return
       }
+      // load user profile company name
+      try {
+        const { db } = await import('../lib/firebase')
+        const { getDoc, doc } = await import('firebase/firestore')
+        const uDoc = await getDoc(doc(db, 'users', user.uid))
+        if (uDoc && uDoc.exists()) {
+          const data = uDoc.data() || {}
+          setCompanyName((data.company && data.company.name) || data.companyName || '')
+        }
+      } catch (e) {
+        // ignore
+      }
       try {
         setLoadingTenants(true)
         // Query membership documents by role and filter by doc id (member uid)
@@ -216,6 +230,21 @@ export default function Settings(){
     })
     return () => unsub && unsub()
   }, [])
+
+  const saveProfile = async () => {
+    setSavingProfile(true)
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
+      if (!token) throw new Error('Not authenticated')
+      const body: any = { company: { name: companyName } }
+      const resp = await fetch('/api/user/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(JSON.stringify(data))
+      setResult('Perfil atualizado')
+    } catch (e:any) {
+      setResult(String(e.message || e))
+    } finally { setSavingProfile(false) }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 py-8">
@@ -259,6 +288,15 @@ export default function Settings(){
             </div>
 
             <div className="space-y-4">
+              {/* Profile: Company name editable */}
+              <div className="bg-slate-50/80 rounded-xl p-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Nome da Empresa (usado como From)</label>
+                <div className="flex space-x-3">
+                  <input value={companyName} onChange={e => setCompanyName(e.target.value)} className="flex-1 px-4 py-3 border border-slate-300 rounded-xl" placeholder="Nome da sua empresa" />
+                  <button onClick={saveProfile} disabled={savingProfile} className="px-4 py-3 bg-indigo-600 text-white rounded-xl">{savingProfile ? 'Salvando...' : 'Salvar'}</button>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Este nome será usado automaticamente como remetente quando não houver outro nome configurado.</p>
+              </div>
               <div className="bg-slate-50/80 rounded-xl p-4">
                 <div className="space-y-4">
                   {/* Tenant Key Input */}

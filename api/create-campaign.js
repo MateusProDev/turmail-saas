@@ -46,6 +46,8 @@ export default async function handler(req, res) {
     if (previousExperience) doc.previousExperience = previousExperience
     if (audience) doc.audience = audience
     if (keyBenefits) doc.keyBenefits = keyBenefits
+    // persist sender info if provided (name/email) so we can review and reuse
+    if (body.sender) doc.sender = body.sender
 
     await docRef.set(doc)
 
@@ -62,7 +64,8 @@ export default async function handler(req, res) {
           console.warn('[create-campaign] failed to normalize recipients', e)
         }
 
-        const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }, idempotencyKey }
+        const defaultSender = { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }
+        const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: body.sender || defaultSender, idempotencyKey }
         let sendUsingBrevoOrSmtp
         try {
           const sh = await import('../server/sendHelper.js')

@@ -10,6 +10,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSignup, setIsSignup] = useState(false)
+  const [companyName, setCompanyName] = useState('')
   const navigate = useNavigate()
 
   const submit = async (e: React.FormEvent) => {
@@ -22,6 +23,9 @@ export default function Login() {
           // initialize user doc with canonical fields; use merge to avoid
           // overwriting anything that might already exist
           const init = makeInitialUserData(userCred.user.uid, userCred.user.email)
+          // persist company name provided during signup
+          if (!init.company) init.company = { name: '' }
+          init.company.name = companyName || ''
           await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
         
           // Start 14-day trial automatically on signup (server will record IP + trial window)
@@ -62,6 +66,9 @@ export default function Login() {
         <h2 className="text-2xl font-semibold mb-4">{isSignup ? 'Criar conta' : 'Entrar'}</h2>
         <input required autoComplete="email" className="w-full p-2 border mb-2" placeholder="email" value={email} onChange={e=>setEmail(e.target.value)} />
         <input required autoComplete={isSignup ? 'new-password' : 'current-password'} className="w-full p-2 border mb-4" placeholder="senha" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        {isSignup && (
+          <input className="w-full p-2 border mb-2" placeholder="Nome da empresa (opcional)" value={companyName} onChange={e=>setCompanyName(e.target.value)} />
+        )}
         <button className="w-full bg-indigo-600 text-white p-2 rounded">{isSignup ? 'Cadastrar' : 'Entrar'}</button>
         <div className="mt-4 text-sm text-center">
           <button type="button" className="text-indigo-600" onClick={()=>setIsSignup(s=>!s)}>
