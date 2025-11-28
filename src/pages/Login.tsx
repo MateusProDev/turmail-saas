@@ -3,7 +3,7 @@ import './Login.css'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../lib/firebase'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import makeInitialUserData from '../lib/initUser'
 
 export default function Login() {
@@ -37,6 +37,20 @@ export default function Login() {
             })
           } catch (trialErr) {
             console.error('failed to start trial on signup', trialErr)
+          }
+          // Create a tenant for this user automatically (tenant_{uid}) and set user as owner
+          try {
+            const tenantId = `tenant_${userCred.user.uid}`
+            const tenantRef = doc(db, 'tenants', tenantId)
+            await setDoc(tenantRef, { createdAt: serverTimestamp(), ownerUid: userCred.user.uid, name: companyName || `Account ${userCred.user.uid}` }, { merge: true })
+            const memberRef = doc(db, 'tenants', tenantId, 'members', userCred.user.uid)
+            await setDoc(memberRef, { role: 'owner', createdAt: serverTimestamp() }, { merge: true })
+            // initialize empty secrets doc so UI can read it later
+            const secretsRef = doc(db, 'tenants', tenantId, 'settings', 'secrets')
+            await setDoc(secretsRef, { brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
+            console.log('[signup] created tenant', tenantId)
+          } catch (tenantErr) {
+            console.error('failed to create tenant on signup', tenantErr)
           }
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
