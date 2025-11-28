@@ -63,6 +63,8 @@ export default function Settings(){
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
   const [tenantOptions, setTenantOptions] = useState<Array<{ id: string, role: string }>>([])
   const [loadingTenants, setLoadingTenants] = useState(false)
+  const [showTenantSelect, setShowTenantSelect] = useState(false)
+  const [modalTenantId, setModalTenantId] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
 
@@ -125,7 +127,8 @@ export default function Settings(){
   }
   */
 
-  const saveTenantKey = async () => {
+  // perform save for a specific tenantId (used by modal confirm or direct save)
+  const performSaveTenantKey = async (tenantId: string | undefined) => {
     setSavingTenant(true); setResult(null)
     try {
       const getIdTokenSafe = async (force = false) => {
@@ -142,13 +145,12 @@ export default function Settings(){
       }
 
       const token = await getIdTokenSafe(false)
-      console.log('[Settings] saveTenantKey invoked; hasToken=', !!token, 'selectedTenant=', selectedTenant)
+      console.log('[Settings] performSaveTenantKey invoked; hasToken=', !!token, 'tenantId=', tenantId)
       const maskedTenant = tenantKey ? `${tenantKey.slice(0,6)}...(${tenantKey.length} chars)` : '<empty>'
       console.log('[Settings] tenantKey masked=%s', maskedTenant)
       if (!token) throw new Error('User not authenticated')
-      // Call endpoint with selected tenantId if we auto-detected one, otherwise let backend infer
       const body: any = { key: tenantKey }
-      if (selectedTenant) body.tenantId = selectedTenant
+      if (tenantId) body.tenantId = tenantId
       if (smtpLogin) body.smtpLogin = smtpLogin
       if (smtpMemberLevel) body.memberLevel = true
 
@@ -158,13 +160,12 @@ export default function Settings(){
         body: JSON.stringify(body),
       })
       const data = await resp.json()
-      console.log('[Settings] saveTenantKey response', resp.status, data)
+      console.log('[Settings] performSaveTenantKey response', resp.status, data)
       if (!resp.ok) throw new Error(JSON.stringify(data))
       setResult('Chave salva para o tenant')
       setTenantKey('')
       setShowTenantKey(false)
     } catch (e: any) {
-      // try to show backend-provided tenants list if present
       try {
         const parsed = JSON.parse(String(e.message || e))
         if (parsed && parsed.tenants) {
@@ -176,6 +177,16 @@ export default function Settings(){
         setResult(String(e.message || e))
       }
     } finally { setSavingTenant(false) }
+  }
+
+  // wrapper called by button: if no selectedTenant, open modal to force selection
+  const saveTenantKey = async () => {
+    if (!selectedTenant) {
+      setModalTenantId('')
+      setShowTenantSelect(true)
+      return
+    }
+    await performSaveTenantKey(selectedTenant)
   }
 
   // Auto-select tenant based on logged-in user's memberships (owner preferred)
@@ -429,9 +440,43 @@ export default function Settings(){
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500">
-                    Para salvar a chave Brevo você precisa ser <strong>Owner</strong> ou <strong>Admin</strong> da conta. Se administra várias contas, selecione a conta correta no seletor acima.
-                  </p>
+                    <p className="text-xs text-slate-500">
+                      Para salvar a chave Brevo você precisa ser <strong>Owner</strong> ou <strong>Admin</strong> da conta. Se administra várias contas, selecione a conta correta no seletor acima.
+                    </p>
+
+                    {/* Tenant selection modal (shown when user clicks Save without a selected tenant) */}
+                    {showTenantSelect && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                        <div className="w-full max-w-lg bg-white rounded-xl p-6 shadow-xl">
+                          <h3 className="text-lg font-semibold mb-2">Selecione a conta para salvar a chave</h3>
+                          <p className="text-sm text-slate-600 mb-4">Escolha uma das suas contas (tenant) ou cole o ID manualmente.</p>
+                          <div className="space-y-3">
+                            {tenantOptions && tenantOptions.length > 0 ? (
+                              <select value={modalTenantId} onChange={e => setModalTenantId(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                                <option value="">-- Selecione uma conta --</option>
+                                {tenantOptions.map(t => (
+                                  <option key={t.id} value={t.id}>{t.id} {t.role ? `(${t.role})` : ''}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="text-sm text-slate-500">Nenhuma conta listada. Cole o ID do tenant manualmente abaixo.</div>
+                            )}
+                            <input value={modalTenantId} onChange={e => setModalTenantId(e.target.value)} placeholder="ID do tenant (ex: tenant_abc123)" className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+                          </div>
+                          <div className="flex justify-end space-x-3 mt-6">
+                            <button onClick={() => setShowTenantSelect(false)} className="px-4 py-2 rounded-lg bg-slate-100">Cancelar</button>
+                            <button onClick={async () => {
+                              if (!modalTenantId) {
+                                setResult('Escolha ou cole o ID do tenant antes de confirmar.')
+                                return
+                              }
+                              setShowTenantSelect(false)
+                              await performSaveTenantKey(modalTenantId)
+                            }} className="px-4 py-2 rounded-lg bg-indigo-600 text-white">Confirmar e salvar</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
