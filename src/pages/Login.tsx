@@ -24,7 +24,7 @@ export default function Login() {
           // overwriting anything that might already exist
           const init = makeInitialUserData(userCred.user.uid, userCred.user.email)
           // persist company name provided during signup
-          if (!init.company) init.company = { name: '' }
+          if (!init.company) init.company = { name: '', website: '' }
           init.company.name = companyName || ''
           await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
         

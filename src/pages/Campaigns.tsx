@@ -55,6 +55,7 @@ export default function Campaigns(){
   const [showContactsModal, setShowContactsModal] = useState(false)
   const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
   const [showRecipientsModal, setShowRecipientsModal] = useState(false)
+  const [useCompanyAsFrom, setUseCompanyAsFrom] = useState(true)
   // variants UI
   const [variants, setVariants] = useState<any[]>([])
   const [showVariantsModal, setShowVariantsModal] = useState(false)
@@ -170,7 +171,17 @@ export default function Campaigns(){
     if (invalid) { setResult(`Endereço inválido: ${invalid}`); return }
     setResult(null)
 
-    const to = recipients.map(email => ({ email }))
+    const to = recipients.map(email => {
+      const contact = contacts.find(c => c.email && String(c.email).toLowerCase() === String(email).toLowerCase())
+      const obj: any = { email }
+      if (contact && contact.name) obj.name = contact.name
+      // attach per-recipient fromName when toggle enabled
+      if (useCompanyAsFrom) {
+        const fromName = companyName || (contact && (contact.company || contact.companyName)) || undefined
+        if (fromName) obj.fromName = fromName
+      }
+      return obj
+    })
     const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, preheader, to, ownerUid: user?.uid, sendImmediate }
     // attach metadata for server storage
     if (companyName) payload.companyName = companyName
@@ -932,6 +943,13 @@ export default function Campaigns(){
                         </div>
                       )
                     })()}
+
+                          <div className="mt-3">
+                            <label className="inline-flex items-center space-x-2">
+                              <input type="checkbox" checked={useCompanyAsFrom} onChange={e => setUseCompanyAsFrom(e.target.checked)} className="form-checkbox" />
+                              <span className="text-sm">Usar nome da empresa como From</span>
+                            </label>
+                          </div>
 
                     
                   </div>
