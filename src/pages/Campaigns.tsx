@@ -81,24 +81,25 @@ export default function Campaigns(){
 
   // Simple campaigns listener: campaigns where ownerUid == user.uid
   useEffect(() => {
-    // load tenant memberships for the current user so they can choose tenant-scoped keys
-    // async function loadTenants() {
-    //   if (!user) return
-    //   try {
-    //     const idToken = await user.getIdToken()
-    //     const resp = await fetch('/api/my-tenants', { method: 'GET', headers: { Authorization: `Bearer ${idToken}` } })
-    //     if (!resp.ok) {
-    //       console.warn('my-tenants endpoint returned', resp.status)
-    //       return
-    //     }
-    //     const json = await resp.json()
-    //     const opts = (json.tenants || []).map((t: any) => ({ id: t.tenantId, role: t.role }))
-    //     setTenantOptions(opts)
-    //   } catch (e) {
-    //     console.warn('Failed loading tenant memberships', e)
-    //   }
-    // }
-    // if (user) loadTenants()
+    // load tenant memberships for the current user so we can default to the tenant's Brevo key
+    async function loadTenants() {
+      if (!user) return
+      try {
+        const idToken = await user.getIdToken()
+        const resp = await fetch('/api/my-tenants', { method: 'GET', headers: { Authorization: `Bearer ${idToken}` } })
+        if (!resp.ok) {
+          console.warn('my-tenants endpoint returned', resp.status)
+          return
+        }
+        const json = await resp.json()
+        const opts = (json.tenants || []).map((t: any) => ({ id: t.tenantId, role: t.role }))
+        // if user hasn't selected a tenant in the UI, default to the first available tenant
+        if (opts.length > 0) setSelectedTenant(prev => prev || opts[0].id)
+      } catch (e) {
+        console.warn('Failed loading tenant memberships', e)
+      }
+    }
+    if (user) loadTenants()
 
     if (!user) return
     setLoading(true)
