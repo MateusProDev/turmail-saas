@@ -26,16 +26,19 @@ async function main() {
     } else {
       console.log('%s: tenant missing -> will create %s', uid, tenantId)
       if (!dry) {
-        try {
-          const name = (userData.company && userData.company.name) || userData.companyName || `Account ${uid}`
-          await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, name }, { merge: true })
-          await tenantRef.collection('members').doc(uid).set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
-          await tenantRef.collection('settings').doc('secrets').set({ brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
-          console.log('%s: tenant created', tenantId)
-          created += 1
-        } catch (e) {
-          console.error('%s: failed to create tenant %s', uid, e)
-        }
+      try {
+        const name = (userData.company && userData.company.name) || userData.companyName || `Account ${uid}`
+        await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, name }, { merge: true })
+        // include email/displayName in member doc when possible
+        const email = userData.email || ''
+        const displayName = userData.displayName || ''
+        await tenantRef.collection('members').doc(uid).set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp(), email, displayName }, { merge: true })
+        await tenantRef.collection('settings').doc('secrets').set({ brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
+        console.log('%s: tenant created', tenantId)
+        created += 1
+      } catch (e) {
+        console.error('%s: failed to create tenant %s', uid, e)
+      }
       }
     }
     if (limit && count >= limit) break

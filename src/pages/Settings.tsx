@@ -65,6 +65,8 @@ export default function Settings(){
   const [loadingTenants, setLoadingTenants] = useState(false)
   const [showTenantSelect, setShowTenantSelect] = useState(false)
   const [modalTenantId, setModalTenantId] = useState('')
+  const [tenantKeys, setTenantKeys] = useState<Array<any>>([])
+  const [loadingKeys, setLoadingKeys] = useState(false)
   const [companyName, setCompanyName] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
 
@@ -165,6 +167,8 @@ export default function Settings(){
       setResult('Chave salva para o tenant')
       setTenantKey('')
       setShowTenantKey(false)
+      // reload keys
+      if (tenantId) await loadTenantKeys(tenantId)
     } catch (e: any) {
       try {
         const parsed = JSON.parse(String(e.message || e))
@@ -177,6 +181,19 @@ export default function Settings(){
         setResult(String(e.message || e))
       }
     } finally { setSavingTenant(false) }
+  }
+
+  const loadTenantKeys = async (tenantId: string) => {
+    setLoadingKeys(true)
+    try {
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
+      const resp = await fetch('/api/tenant/list-keys', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId }) })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(JSON.stringify(data))
+      setTenantKeys(data.keys || [])
+    } catch (e:any) {
+      console.error('failed to load tenant keys', e)
+    } finally { setLoadingKeys(false) }
   }
 
   // wrapper called by button: if no selectedTenant, open modal to force selection
@@ -423,6 +440,48 @@ export default function Settings(){
                           </>
                         )}
                       </button>
+                    </div>
+
+                    {/* Tenant Keys list */}
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-slate-700 mb-2">Chaves do Tenant</h4>
+                      {loadingKeys ? (
+                        <div className="text-sm text-slate-600">Carregando chaves...</div>
+                      ) : (
+                        <div className="space-y-2">
+                          {tenantKeys.length === 0 && <div className="text-sm text-slate-500">Nenhuma chave configurada.</div>}
+                          {tenantKeys.map(k => (
+                            <div key={k.id} className="flex items-center justify-between bg-slate-50 p-3 rounded-lg">
+                              <div>
+                                <div className="text-sm font-medium">ID: {k.id}</div>
+                                <div className="text-xs text-slate-500">Criada por: {k.createdBy || 'desconhecido'} • {k.createdAt ? new Date(k.createdAt.seconds * 1000).toLocaleString() : ''}</div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button onClick={async () => {
+                                  try {
+                                    const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
+                                    const resp = await fetch('/api/tenant/set-active-key', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId: selectedTenant, keyId: k.id }) })
+                                    const data = await resp.json()
+                                    if (!resp.ok) throw new Error(JSON.stringify(data))
+                                    setResult('Chave ativada')
+                                    await loadTenantKeys(selectedTenant!)
+                                  } catch (e:any) { setResult(String(e.message || e)) }
+                                }} className="px-3 py-1 bg-indigo-600 text-white rounded">Ativar</button>
+                                <button onClick={async () => {
+                                  try {
+                                    const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
+                                    const resp = await fetch('/api/tenant/delete-key', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId: selectedTenant, keyId: k.id }) })
+                                    const data = await resp.json()
+                                    if (!resp.ok) throw new Error(JSON.stringify(data))
+                                    setResult('Chave removida')
+                                    await loadTenantKeys(selectedTenant!)
+                                  } catch (e:any) { setResult(String(e.message || e)) }
+                                }} className="px-3 py-1 bg-red-600 text-white rounded">Remover</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Test Results */}

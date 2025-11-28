@@ -18,7 +18,17 @@ export default async function handler(req, res) {
     const tenantRef = db.collection('tenants').doc(tenantId)
     await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, name }, { merge: true })
     const memberRef = tenantRef.collection('members').doc(uid)
-    await memberRef.set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    // include email and displayName for better UX/debugging
+    let displayName = ''
+    let email = ''
+    try {
+      const userRecord = await admin.auth().getUser(uid)
+      displayName = userRecord.displayName || ''
+      email = userRecord.email || ''
+    } catch (e) {
+      // ignore
+    }
+    await memberRef.set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp(), email, displayName }, { merge: true })
     const secretsRef = tenantRef.collection('settings').doc('secrets')
     await secretsRef.set({ brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
 
