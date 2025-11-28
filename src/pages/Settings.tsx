@@ -208,7 +208,7 @@ export default function Settings(){
 
   // Auto-select tenant based on logged-in user's memberships (owner preferred)
   useEffect(() => {
-    const unsub = (window as any).firebase?.auth()?.onAuthStateChanged(async (user: any) => {
+    const unsub = auth.onAuthStateChanged(async (user: any) => {
       if (!user) {
         setSelectedTenant(null)
         return
