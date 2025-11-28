@@ -29,10 +29,10 @@ export default function Campaigns(){
   // const [tenantOptions, setTenantOptions] = useState<Array<{id:string,role:string}>>([])
   const [companyName, setCompanyName] = useState('')
   const [productName, setProductName] = useState('')
-  const [mainTitle] = useState('')
-  const [ctaLink] = useState('')
-  const [destination] = useState('')
-  const [description] = useState('')
+  const [mainTitle, setMainTitle] = useState('')
+  const [ctaLink, setCtaLink] = useState('')
+  const [destination, setDestination] = useState('')
+  const [description, setDescription] = useState('')
   // Removed unused returningCustomer state
   const [userPatterns, setUserPatterns] = useState<string[]>([])
   const [tone, setTone] = useState<'friendly' | 'formal' | 'urgent' | 'casual'>('friendly')
@@ -45,6 +45,8 @@ export default function Campaigns(){
   
   const [sendImmediate, setSendImmediate] = useState(true)
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null)
+  const [returningCustomer, setReturningCustomer] = useState(false)
+  const [previousTrip, setPreviousTrip] = useState('') // <-- Added missing state
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
@@ -170,16 +172,28 @@ export default function Campaigns(){
 
     const to = recipients.map(email => ({ email }))
     const payload: any = { tenantId: selectedTenant || undefined, subject, htmlContent, preheader, to, ownerUid: user?.uid, sendImmediate }
+    // attach metadata for server storage
+    if (companyName) payload.companyName = companyName
+    if (productName) payload.productName = productName
+    if (destination) payload.destination = destination
+    if (ctaLink) payload.ctaLink = ctaLink
+    if (mainTitle) payload.mainTitle = mainTitle
+    if (tone) payload.tone = tone
+    if (vertical) payload.vertical = vertical
+    if (description) payload.description = description
+    // Removed previousExperience assignment due to missing returningCustomer and previousTrip
+    if (audience) payload.audience = audience
+    if (keyBenefits && keyBenefits.length) payload.keyBenefits = keyBenefits
     // template selection removed — payload.templateId omitted
     if (!sendImmediate && scheduledAt) payload.scheduledAt = scheduledAt
 
     try {
       if (editingCampaign && editingCampaign.id) {
-        const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt }) })
-        const data = await resp.json()
-        if (!resp.ok) throw new Error(JSON.stringify(data))
-        setResult('Campanha atualizada')
-      } else {
+          const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt, companyName: companyName || null, productName: productName || null, destination: destination || null, ctaLink: ctaLink || null, mainTitle: mainTitle || null, tone: tone || null, vertical: vertical || null, description: description || null, audience: audience || null, keyBenefits: (keyBenefits && keyBenefits.length) ? keyBenefits : null }) })
+          const data = await resp.json()
+          if (!resp.ok) throw new Error(JSON.stringify(data))
+          setResult('Campanha atualizada')
+        } else {
         const resp = await fetch('/api/create-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
         const data = await resp.json()
         if (!resp.ok) throw new Error(JSON.stringify(data))
@@ -723,6 +737,37 @@ export default function Campaigns(){
     </div>
   </div>
 </div>
+
+              {/* Consolidated Campaign Metadata (destination, CTA, title, description, returning customer) */}
+              <div className="grid grid-cols-1 gap-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Destino / Público</label>
+                    <input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Destino ou público" className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Título principal (H1)</label>
+                    <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal que aparecerá no email" className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Link do CTA</label>
+                    <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="https://..." className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Descrição (para IA)</label>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição específica para este público (ex: clientes que já viajaram com a agência) — opcional" className="w-full px-4 py-3 border border-slate-300 rounded-xl h-20" />
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <label className="inline-flex items-center space-x-2">
+                    <input type="checkbox" checked={returningCustomer} onChange={e=>setReturningCustomer(e.target.checked)} className="form-checkbox" />
+                    <span className="text-sm">Público: clientes anteriores</span>
+                  </label>
+                  <input value={previousTrip} onChange={e=>setPreviousTrip(e.target.value)} placeholder="Última viagem (ex: Rota das Serras)" className="px-4 py-3 border border-slate-300 rounded-xl flex-1" />
+                </div>
+              </div>
 
               {/* Content Editor */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -11,6 +11,8 @@ export default async function handler(req, res) {
     const body = req.body || {}
     // basic validation
     const { tenantId, subject, htmlContent, to, scheduledAt, ownerUid, sendImmediate } = body
+    // optional metadata from frontend
+    const { companyName, productName, destination, ctaLink, mainTitle, tone, vertical, description, previousExperience, audience, keyBenefits } = body
     if (!subject || !htmlContent) return res.status(400).json({ error: 'subject and htmlContent are required' })
 
     const id = `camp_${nanoid(10)}`
@@ -32,6 +34,18 @@ export default async function handler(req, res) {
     if (scheduledAt) {
       doc.scheduledAt = admin.firestore.Timestamp.fromDate(new Date(scheduledAt))
     }
+    // attach optional metadata if provided
+    if (companyName) doc.companyName = companyName
+    if (productName) doc.productName = productName
+    if (destination) doc.destination = destination
+    if (ctaLink) doc.ctaLink = ctaLink
+    if (mainTitle) doc.mainTitle = mainTitle
+    if (tone) doc.tone = tone
+    if (vertical) doc.vertical = vertical
+    if (description) doc.description = description
+    if (previousExperience) doc.previousExperience = previousExperience
+    if (audience) doc.audience = audience
+    if (keyBenefits) doc.keyBenefits = keyBenefits
 
     await docRef.set(doc)
 
