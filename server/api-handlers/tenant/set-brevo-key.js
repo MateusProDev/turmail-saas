@@ -70,16 +70,24 @@ export default async function handler(req, res) {
     const { key, smtpLogin, memberLevel } = body
     if (!key) return res.status(400).json({ error: 'key required' })
 
-    const stored = {}
-    stored.brevoApiKey = encryptValue(key)
-    if (smtpLogin) stored.smtpLogin = smtpLogin
-    if (memberLevel) stored.memberLevel = true
-    stored.updatedAt = admin.firestore.FieldValue.serverTimestamp()
-    stored.updatedBy = uid
+    // Create a new key document under tenants/{tenantId}/settings/keys/{keyId}
+    const keysCol = db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list')
+    const newKeyRef = keysCol.doc()
+    const encrypted = encryptValue(key)
+    const keyDoc = {
+      id: newKeyRef.id,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: uid,
+      brevoApiKey: encrypted,
+      smtpLogin: smtpLogin || null,
+      memberLevel: !!memberLevel,
+    }
+    await newKeyRef.set(keyDoc, { merge: true })
 
-    await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set(stored, { merge: true })
+    // set this key as the active key id on the secrets doc for backward compatibility
+    await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set({ activeKeyId: newKeyRef.id, updatedAt: admin.firestore.FieldValue.serverTimestamp(), updatedBy: uid }, { merge: true })
 
-    return res.status(200).json({ ok: true })
+    return res.status(200).json({ ok: true, keyId: newKeyRef.id })
   } catch (e) {
     console.error('[tenant/set-brevo-key] error', e && (e.response?.data || e.message || e))
     return res.status(500).json({ error: e.message || 'internal error' })

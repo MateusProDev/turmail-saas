@@ -66,13 +66,31 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
 
   let apiKey = process.env.BREVO_API_KEY
   if (tenantId) {
-    const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
-    let tenantKey = settingsDoc.exists ? settingsDoc.data()?.brevoApiKey : null
-    if (tenantKey) {
-      const maybe = tryDecrypt(tenantKey)
-      if (maybe) tenantKey = maybe
+    // First try: look for active key id in secrets, then fetch the key doc
+    try {
+      const secretsSnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
+      const secrets = secretsSnap.exists ? secretsSnap.data() : {}
+      const activeKeyId = secrets && secrets.activeKeyId
+      if (activeKeyId) {
+        const keySnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list').doc(activeKeyId).get()
+        if (keySnap.exists) {
+          let tenantKey = keySnap.data()?.brevoApiKey
+          const maybe = tryDecrypt(tenantKey)
+          if (maybe) tenantKey = maybe
+          if (tenantKey) apiKey = tenantKey
+        }
+      } else {
+        // fallback to legacy single key stored on secrets.brevoApiKey
+        const legacyKey = secretsSnap.exists ? secretsSnap.data()?.brevoApiKey : null
+        if (legacyKey) {
+          const maybe2 = tryDecrypt(legacyKey)
+          if (maybe2) apiKey = maybe2
+          else apiKey = legacyKey
+        }
+      }
+    } catch (e) {
+      if (debug) console.warn('[sendHelper] failed to load tenant key', e)
     }
-    if (tenantKey) apiKey = tenantKey
   }
 
   if (!apiKey) {
