@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { collectionGroup, query, where, getDocs } from 'firebase/firestore'
-import { db, auth } from '../lib/firebase'
+// Removed unused firestore imports
+import { auth } from '../lib/firebase'
 
 export default function Settings(){
   const [testing, setTesting] = useState(false)
@@ -227,22 +227,23 @@ export default function Settings(){
       }
       try {
         setLoadingTenants(true)
-        // Query membership documents by role and filter by doc id (member uid)
-        const q = query(collectionGroup(db, 'members'), where('role', 'in', ['owner', 'admin']))
-        const snaps = await getDocs(q)
-        const tenants: Array<{ id: string, role: string }> = []
-        snaps.forEach(s => {
-          if (s.id !== user.uid) return
-          const role = s.data()?.role || 'member'
-          const tenantDoc = s.ref.parent.parent
-          if (tenantDoc && tenantDoc.id) tenants.push({ id: tenantDoc.id, role })
-        })
+        // Use server endpoint that uses Admin SDK to list tenant memberships (bypasses client rules)
+        const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
+        if (!token) {
+          setTenantOptions([])
+          setSelectedTenant(null)
+          setLoadingTenants(false)
+          return
+        }
+        const resp = await fetch('/api/my-tenants', { method: 'GET', headers: { Authorization: `Bearer ${token}` } })
+        const json = await resp.json()
+        if (!resp.ok) throw new Error(JSON.stringify(json))
+        const tenants: Array<{ id: string, role: string }> = (json.tenants || []).map((t: any) => ({ id: t.tenantId, role: t.role }))
         console.log('[Settings] loaded tenant memberships for uid=%s count=%d', user.uid, tenants.length)
         if (tenants.length === 0) {
           setSelectedTenant(null)
           setTenantOptions([])
         } else {
-          // prefer owner then admin then first
           const owner = tenants.find(t => t.role === 'owner')
           const admin = tenants.find(t => t.role === 'admin')
           const chosen = owner ? owner.id : (admin ? admin.id : tenants[0].id)
