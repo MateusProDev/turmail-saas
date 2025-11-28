@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    // Only rewrite non-API routes to the SPA index so `/api/*` continues to work
     { "source": "/((?!api).*)", "destination": "/index.html" }
   ]
 }
