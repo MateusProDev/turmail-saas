@@ -30,14 +30,32 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   try {
+    // Safe debugging: log request meta but never log secrets (the key)
+    try {
+      console.log('[tenant/set-brevo-key] incoming request', {
+        method: req.method,
+        url: req.url,
+        ip: req.headers['x-forwarded-for'] || req.ip || 'unknown',
+      })
+    } catch (e) {
+      // ignore logging errors
+    }
+
     const authHeader = req.headers.authorization || ''
     if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Missing auth token' })
     const idToken = authHeader.split(' ')[1]
     const decoded = await admin.auth().verifyIdToken(idToken)
     const uid = decoded.uid
+    // Log the authenticated uid for debugging (not the token)
+    try { console.log('[tenant/set-brevo-key] auth verified uid=', uid) } catch(_) {}
 
     const body = req.body || {}
     const tenantId = body.tenantId
+    // Do not log body.key. Log only presence/length for diagnostics.
+    try {
+      const keyLen = body && typeof body.key === 'string' ? body.key.length : null
+      console.log('[tenant/set-brevo-key] body received', { tenantId: tenantId || '<none>', keyLen })
+    } catch (_) {}
     if (!tenantId) return res.status(400).json({ error: 'tenantId required' })
 
     // check membership role for uid in tenant
