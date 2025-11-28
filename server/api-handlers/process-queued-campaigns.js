@@ -51,6 +51,7 @@ export default async function handler(req, res) {
           subject: data.subject,
           htmlContent: data.htmlContent,
           to: data.to,
+          ownerUid: data.ownerUid,
           campaignId: id,
           sender: data.sender || { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` },
           idempotencyKey: data.idempotencyKey

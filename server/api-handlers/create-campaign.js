@@ -65,7 +65,7 @@ export default async function handler(req, res) {
         }
 
         const defaultSender = { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }
-        const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: body.sender || defaultSender, idempotencyKey }
+        const payload = { tenantId, subject, htmlContent, to: normalizedTo, campaignId: id, sender: body.sender || defaultSender, idempotencyKey, ownerUid }
         let sendUsingBrevoOrSmtp
         try {
           const sh = await import('../sendHelper.js')

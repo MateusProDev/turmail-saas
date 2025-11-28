@@ -27,6 +27,8 @@ export default async function handler(req, res) {
         if (!payload.htmlContent) payload.htmlContent = data.htmlContent
         if (!payload.to) payload.to = data.to
         if (!tenantId && data.tenantId) tenantId = data.tenantId
+          // ensure ownerUid is available for fallback key lookup
+          if (!payload.ownerUid && data.ownerUid) payload.ownerUid = data.ownerUid
         if (!payload.sender) payload.sender = data.sender || { name: process.env.DEFAULT_FROM_NAME || 'No Reply', email: process.env.DEFAULT_FROM_EMAIL || `no-reply@${process.env.DEFAULT_HOST || 'localhost'}` }
       }
     } catch (e) {

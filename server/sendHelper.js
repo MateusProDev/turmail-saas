@@ -65,6 +65,35 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
   if (debug) console.log('[sendHelper] start', { tenantId, campaignId: payload && payload.campaignId, hasTemplate: !!payload.templateId })
 
   let apiKey = process.env.BREVO_API_KEY
+  // If tenantId is not provided, attempt to derive tenantId from payload.ownerUid
+  if (!tenantId && payload && payload.ownerUid) {
+    try {
+      const ownerUid = payload.ownerUid
+      // First try: tenant document with ownerUid field
+      const ownerQ = await db.collection('tenants').where('ownerUid', '==', ownerUid).limit(1).get()
+      if (!ownerQ.empty) {
+        tenantId = ownerQ.docs[0].id
+        if (debug) console.log('[sendHelper] derived tenantId from tenants.ownerUid', tenantId)
+      } else {
+        // Fallback: search members collectionGroup where doc id == ownerUid
+        try {
+          const memberQ = await db.collectionGroup('members').where(admin.firestore.FieldPath.documentId(), '==', ownerUid).limit(1).get()
+          if (!memberQ.empty) {
+            const memberDoc = memberQ.docs[0]
+            const tenantDocRef = memberDoc.ref.parent.parent
+            if (tenantDocRef && tenantDocRef.id) {
+              tenantId = tenantDocRef.id
+              if (debug) console.log('[sendHelper] derived tenantId from members collectionGroup', tenantId)
+            }
+          }
+        } catch (e) {
+          if (debug) console.warn('[sendHelper] collectionGroup member lookup failed', e)
+        }
+      }
+    } catch (e) {
+      if (debug) console.warn('[sendHelper] failed to derive tenantId from ownerUid', e)
+    }
+  }
   if (tenantId) {
     // First try: look for active key id in secrets, then fetch the key doc
     try {
