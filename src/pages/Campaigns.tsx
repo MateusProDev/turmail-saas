@@ -645,9 +645,21 @@ export default function Campaigns(){
                             }`}
                             onClick={() => {
                               // Apply template and activate real-time sync
+                              const isSameTemplate = activeTemplate === template.id
                               setActiveTemplate(template.id)
                               setShowTemplateSelector(false)
                               setResult(`✅ Template "${template.name}" aplicado! Os campos do formulário agora atualizam o template automaticamente.`)
+                              
+                              // Se for o mesmo template, forçar atualização do preview
+                              if (isSameTemplate) {
+                                requestAnimationFrame(() => {
+                                  const editor = document.getElementById('visual-editor')
+                                  if (editor && htmlContent) {
+                                    editor.innerHTML = DOMPurify.sanitize(htmlContent)
+                                    console.log('🔄 Preview forçado para template já ativo:', template.id)
+                                  }
+                                })
+                              }
                             }}
                           >
                             {/* Thumbnail */}
