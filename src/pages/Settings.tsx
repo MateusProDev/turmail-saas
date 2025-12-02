@@ -57,7 +57,6 @@ export default function Settings(){
   */
   const [tenantKey, setTenantKey] = useState('')
   const [smtpLogin, setSmtpLogin] = useState('')
-  const [smtpMemberLevel] = useState(false)
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
