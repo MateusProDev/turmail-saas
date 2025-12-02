@@ -67,11 +67,11 @@ const destinationPackageTemplate: EmailTemplate = {
   </style>
 </head>
 <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 10px;">
     <tr>
       <td align="center">
         <!-- Container Principal -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
           
           <!-- Header Minimalista -->
           <tr>
@@ -232,10 +232,10 @@ const newsletterTemplate: EmailTemplate = {
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #fafafa;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; padding: 30px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; padding: 20px 10px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
           
           <!-- Masthead Editorial -->
           <tr>
@@ -400,10 +400,10 @@ const promotionalTemplate: EmailTemplate = {
   </style>
 </head>
 <body style="margin: 0; padding: 0; background: #050505;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #1a0a0f 100%); padding: 25px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #1a0a0f 100%); padding: 20px 10px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a0a14 0%, #2a1520 100%); border-radius: 20px; overflow: visible; box-shadow: 0 0 60px rgba(255, 20, 147, 0.4), 0 0 120px rgba(138, 43, 226, 0.2);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #1a0a14 0%, #2a1520 100%); border-radius: 20px; overflow: visible; box-shadow: 0 0 60px rgba(255, 20, 147, 0.4), 0 0 120px rgba(138, 43, 226, 0.2);">
           
           <!-- Urgency Badge Animado -->
           <tr>
@@ -547,10 +547,10 @@ const returningCustomerTemplate: EmailTemplate = {
   </style>
 </head>
 <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 35px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 20px 10px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(139,92,246,0.15), 0 0 1px rgba(139,92,246,0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(139,92,246,0.15), 0 0 1px rgba(139,92,246,0.1);">
           
           <!-- VIP Header Luxuoso -->
           <tr>
@@ -707,10 +707,10 @@ const eventTemplate: EmailTemplate = {
   </style>
 </head>
 <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 35px 20px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px 10px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(16,185,129,0.2), 0 0 1px rgba(16,185,129,0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(16,185,129,0.2), 0 0 1px rgba(16,185,129,0.1);">
           
           <!-- Ticket Header com Dashed Border -->
           <tr>

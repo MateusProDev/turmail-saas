@@ -154,22 +154,7 @@ export default function Campaigns(){
   }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
 
   // Inicializar editor visual na montagem do componente
-  useEffect(() => {
-    const editor = document.getElementById('visual-editor')
-    if (editor && !editor.innerHTML && htmlContent) {
-      editor.innerHTML = DOMPurify.sanitize(
-        renderTemplate(
-          htmlContent,
-          subject || 'Sem assunto',
-          preheader || ''
-        ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
-        .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
-        .replace(/\{destination\}/g, destination || 'Destino')
-        .replace(/\{productName\}/g, productName || 'Produto')
-        .replace(/\{mainTitle\}/g, mainTitle || 'Título')
-      )
-    }
-  }, [htmlContent])
+  // Preview automático removido - agora só mostra ao selecionar template manualmente
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
