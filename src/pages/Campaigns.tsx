@@ -137,23 +137,24 @@ export default function Campaigns(){
     setHtmlContent(generated.html)
     
     // Atualizar editor visual quando template muda
-    const editor = document.getElementById('visual-editor')
-    if (editor) {
-      editor.innerHTML = DOMPurify.sanitize(
-        renderTemplate(
-          generated.html,
-          generated.subject,
-          generated.preheader
-        ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
-        .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
-        .replace(/\{destination\}/g, destination || 'Destino')
-        .replace(/\{productName\}/g, productName || 'Produto')
-        .replace(/\{mainTitle\}/g, mainTitle || 'Título')
-      )
-    }
+    setTimeout(() => {
+      const editor = document.getElementById('visual-editor')
+      if (editor) {
+        editor.innerHTML = DOMPurify.sanitize(
+          renderTemplate(
+            generated.html,
+            generated.subject,
+            generated.preheader
+          ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
+          .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
+          .replace(/\{destination\}/g, destination || 'Destino')
+          .replace(/\{productName\}/g, productName || 'Produto')
+          .replace(/\{mainTitle\}/g, mainTitle || 'Título')
+        )
+      }
+    }, 100)
   }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
 
-  // Inicializar editor visual na montagem do componente
   // Preview automático removido - agora só mostra ao selecionar template manualmente
 
   // helpers for delivery metrics
