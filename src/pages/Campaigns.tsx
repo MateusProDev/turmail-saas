@@ -5,6 +5,8 @@ import { auth, db } from '../lib/firebase'
 
 import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
+import { EMAIL_TEMPLATES, EmailTemplate, getTemplateById } from '../lib/emailTemplates'
+import { generateTourismCopy } from '../lib/aiHelper'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { generateCopy, generateVariants } from '../lib/aiHelper'
@@ -62,6 +64,10 @@ export default function Campaigns(){
   const [generating, setGenerating] = useState(false)
   const [generatingVariants, setGeneratingVariants] = useState(false)
   const [copyHistory, setCopyHistory] = useState<any[]>([])
+  
+  // Template selection
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false)
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -483,6 +489,102 @@ export default function Campaigns(){
                   </div>
                 </div>
               )}
+              
+              {/* Template Selector Modal */}
+              {showTemplateSelector && (
+                <div className="fixed inset-0 z-60 flex items-center justify-center p-4" onClick={() => setShowTemplateSelector(false)}>
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                  <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-2xl font-bold">📧 Escolha um Template</h2>
+                          <p className="text-purple-100 text-sm mt-1">Selecione um modelo profissional para sua campanha</p>
+                        </div>
+                        <button
+                          onClick={() => setShowTemplateSelector(false)}
+                          className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Templates Grid */}
+                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {EMAIL_TEMPLATES.map((template) => (
+                          <div
+                            key={template.id}
+                            className="bg-white rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all cursor-pointer overflow-hidden group"
+                            onClick={() => {
+                              // Apply template
+                              const generated = template.generate({
+                                companyName: companyName || 'Sua Agência',
+                                destination: destination || 'Destino Incrível',
+                                productName: productName,
+                                mainTitle: mainTitle || `Descubra ${destination || 'Novos Horizontes'}`,
+                                description: description || 'Uma experiência única te espera',
+                                ctaLink: ctaLink || '#',
+                                ctaText: 'Ver Mais',
+                                keyBenefits: keyBenefits.length > 0 ? keyBenefits : undefined,
+                                priceInfo: 'Condições especiais',
+                                dateRange: 'Saídas flexíveis'
+                              })
+                              
+                              setSubject(generated.subject)
+                              setPreheader(generated.preheader)
+                              setHtmlContent(generated.html)
+                              setSelectedTemplateId(template.id)
+                              setShowTemplateSelector(false)
+                              setResult(`✅ Template "${template.name}" aplicado com sucesso!`)
+                            }}
+                          >
+                            {/* Thumbnail */}
+                            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 h-32 flex items-center justify-center group-hover:scale-105 transition-transform">
+                              <div className="text-5xl">{template.thumbnail}</div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-4">
+                              <h3 className="font-bold text-slate-900 mb-1">{template.name}</h3>
+                              <p className="text-xs text-slate-600 line-clamp-2 mb-3">{template.description}</p>
+                              <div className="flex items-center justify-between">
+                                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                                  template.category === 'tourism' ? 'bg-blue-100 text-blue-700' :
+                                  template.category === 'promotional' ? 'bg-red-100 text-red-700' :
+                                  template.category === 'newsletter' ? 'bg-purple-100 text-purple-700' :
+                                  template.category === 'event' ? 'bg-green-100 text-green-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {template.category === 'tourism' ? 'Turismo' :
+                                   template.category === 'promotional' ? 'Promocional' :
+                                   template.category === 'newsletter' ? 'Newsletter' :
+                                   template.category === 'event' ? 'Evento' : 'Fidelização'}
+                                </span>
+                                <button className="text-purple-600 text-sm font-semibold hover:text-purple-700">
+                                  Usar →
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p className="text-sm text-blue-800">
+                          <strong>💡 Dica:</strong> Após selecionar um template, você pode personalizá-lo completamente editando o conteúdo HTML abaixo.
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-6">
@@ -711,6 +813,17 @@ export default function Campaigns(){
           {generatingVariants ? '🔄 Gerando...' : '🎨 5 Variações'}
         </button>
       </div>
+
+      {/* Template Selector Button */}
+      <button
+        onClick={() => setShowTemplateSelector(true)}
+        className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+        <span>📧 Escolher Template</span>
+      </button>
 
       <button
         onClick={async () => {
