@@ -1057,69 +1057,217 @@ export default function Campaigns(){
               </div>
             ) : (
               <>
-                <table className="w-full">
-                  <thead className="bg-slate-50/80">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Título</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Enviadas</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Entrega com Sucesso</th>
-                      {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Aberturas</th> */}
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Criado</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200/60">
-                    {campaigns.slice((page-1)*pageSize, page*pageSize).map(c => (
-                      <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-slate-900">{c.subject}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-slate-600">{c.metrics?.sent ?? c.sent ?? (c.to || []).length}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-slate-600">{getDeliverRateDisplay(c)}</div>
-                        </td>
-                        {/* <td className="px-6 py-4">
-                          <div className="text-sm text-slate-600">{getOpenRateDisplay(c)}</div>
-                        </td> */}
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            c.status === 'sent' ? 'bg-green-100 text-green-800' :
-                            c.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                            c.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-slate-100 text-slate-800'
-                          }`}>
-                            {(() => {
-                              const s = c.status || ''
-                              if (s === 'sent') return 'Enviado'
-                              if (s === 'scheduled') return 'Agendada'
-                              if (s === 'draft') return 'Rascunho'
-                              return s || '—'
-                            })()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-slate-600">
-                            {c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleString('pt-BR') : '—'}
+                <div className="grid grid-cols-1 gap-4 p-6">
+                  {campaigns.slice((page-1)*pageSize, page*pageSize).map(c => {
+                    const sent = getSentCount(c)
+                    const delivered = getDeliveredCount(c)
+                    const deliveryRate = getDeliverRateDisplay(c)
+                    
+                    return (
+                      <div key={c.id} className="bg-gradient-to-br from-white to-slate-50/50 rounded-2xl border-2 border-slate-200/60 hover:border-indigo-300/60 hover:shadow-xl transition-all duration-300 overflow-hidden group">
+                        {/* Header com Status Badge */}
+                        <div className="bg-gradient-to-r from-slate-50 to-slate-100/50 px-6 py-4 border-b border-slate-200/60 flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              c.status === 'sent' ? 'bg-green-100' :
+                              c.status === 'scheduled' ? 'bg-blue-100' :
+                              'bg-yellow-100'
+                            }`}>
+                              <svg className={`w-6 h-6 ${
+                                c.status === 'sent' ? 'text-green-600' :
+                                c.status === 'scheduled' ? 'text-blue-600' :
+                                'text-yellow-600'
+                              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {c.status === 'sent' ? (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                ) : c.status === 'scheduled' ? (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                ) : (
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                )}
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                  {c.subject || 'Sem título'}
+                                </h3>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                  c.status === 'sent' ? 'bg-green-100 text-green-800 ring-1 ring-green-600/20' :
+                                  c.status === 'scheduled' ? 'bg-blue-100 text-blue-800 ring-1 ring-blue-600/20' :
+                                  'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-600/20'
+                                }`}>
+                                  {c.status === 'sent' ? '✓ Enviado' : c.status === 'scheduled' ? '⏰ Agendada' : '📝 Rascunho'}
+                                </span>
+                              </div>
+                              {c.preheader && (
+                                <p className="text-sm text-slate-600 mt-1 line-clamp-1">{c.preheader}</p>
+                              )}
+                            </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
+                          
+                          <div className="text-right">
+                            <div className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">Criado em</div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleDateString('pt-BR') : '—'}
+                            </div>
+                            <div className="text-xs text-slate-600">
+                              {c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}) : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Informações do Remetente */}
+                        <div className="px-6 py-4 bg-indigo-50/30 border-b border-indigo-100/50">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Remetente</div>
+                                <div className="text-sm font-bold text-slate-900 truncate">
+                                  {c._tenantFromName || c.companyName || 'Nome não definido'}
+                                </div>
+                                <div className="text-xs text-slate-600 truncate">
+                                  {c._tenantFromEmail || 'E-mail não configurado'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start space-x-3">
+                              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Destinatários</div>
+                                <div className="text-sm font-bold text-slate-900">
+                                  {(c.to || []).length} {(c.to || []).length === 1 ? 'pessoa' : 'pessoas'}
+                                </div>
+                                {(c.to || []).length > 0 && (
+                                  <div className="text-xs text-slate-600 truncate">
+                                    {(c.to || []).slice(0, 2).map((t: any) => t.email).join(', ')}
+                                    {(c.to || []).length > 2 && ` +${(c.to || []).length - 2}`}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {c.destination && (
+                              <div className="flex items-start space-x-3">
+                                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Destino</div>
+                                  <div className="text-sm font-bold text-slate-900 truncate">{c.destination}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Métricas de Performance */}
+                        <div className="px-6 py-4 bg-white">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Enviados</span>
+                                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-900">{sent || 0}</div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4 border border-green-200/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Entregues</span>
+                                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div className="text-2xl font-bold text-green-900">{delivered !== null ? delivered : sent || 0}</div>
+                              <div className="text-xs text-green-600 font-semibold mt-1">{deliveryRate}</div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-amber-600 uppercase tracking-wide">Tom</span>
+                                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                </svg>
+                              </div>
+                              <div className="text-sm font-bold text-amber-900 capitalize">
+                                {c.tone === 'friendly' ? 'Amigável' : 
+                                 c.tone === 'professional' ? 'Profissional' :
+                                 c.tone === 'formal' ? 'Formal' :
+                                 c.tone === 'casual' ? 'Casual' :
+                                 c.tone === 'urgent' ? 'Urgente' : 
+                                 c.tone || '—'}
+                              </div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-200/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Categoria</span>
+                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                              </div>
+                              <div className="text-sm font-bold text-purple-900 capitalize">
+                                {c.vertical === 'tourism' ? 'Turismo' :
+                                 c.vertical === 'ecommerce' ? 'E-commerce' :
+                                 c.vertical === 'services' ? 'Serviços' :
+                                 c.vertical === 'cooperative' ? 'Cooperativa' :
+                                 c.vertical === 'taxi' ? 'Táxi' :
+                                 c.vertical || 'Geral'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Ações */}
+                        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200/60 flex items-center justify-between">
+                          <div className="flex items-center space-x-4 text-xs text-slate-600">
+                            {c.productName && (
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                                <span className="font-medium">{c.productName}</span>
+                              </div>
+                            )}
+                            {c.mainTitle && (
+                              <div className="flex items-center space-x-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>{c.mainTitle}</span>
+                              </div>
+                            )}
+                          </div>
+                          
                           <div className="flex items-center space-x-2">
-                            {/* 'Teste' action removed: tests are sent on create/send or scheduled sends */}
                             <button 
                               onClick={async () => {
                                 try {
                                   const resp = await fetch('/api/send-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ campaignId: c.id }) })
                                   const j = await resp.json()
                                   if (!resp.ok) throw new Error(JSON.stringify(j))
-                                  setResult('Reenvio iniciado')
-                                } catch (e:any) { setResult(String(e.message || e)) }
+                                  setResult('✅ Campanha reenviada com sucesso!')
+                                } catch (e:any) { setResult('❌ ' + String(e.message || e)) }
                               }} 
-                              className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors"
+                              className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all duration-200"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
                               <span>Reenviar</span>
@@ -1134,59 +1282,103 @@ export default function Campaigns(){
                                 setRecipientsText((c.to||[]).map((t:any)=>t.email).join('\n')); 
                                 setSelectedTenant(c.tenantId||'') 
                               }} 
-                              className="inline-flex items-center space-x-1 px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors"
+                              className="inline-flex items-center space-x-2 px-4 py-2 bg-white border-2 border-slate-300 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:border-indigo-300 transition-all duration-200"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                               <span>Editar</span>
                             </button>
                             <button 
                               onClick={async () => {
-                                if (!confirm('Tem certeza que deseja remover esta campanha?')) return
+                                if (!confirm('⚠️ Tem certeza que deseja remover esta campanha? Esta ação não pode ser desfeita.')) return
                                 try { 
                                   const resp = await fetch('/api/delete-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: c.id }) }); 
                                   const j = await resp.json(); 
                                   if (!resp.ok) throw new Error(JSON.stringify(j)); 
                                   setCampaigns(prev=>prev.filter(x=>x.id!==c.id)); 
-                                  setResult('Campanha removida') 
-                                } catch (e:any){ setResult(String(e.message||e)) }
+                                  setResult('✅ Campanha removida com sucesso') 
+                                } catch (e:any){ setResult('❌ ' + String(e.message||e)) }
                               }} 
-                              className="inline-flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
+                              className="inline-flex items-center space-x-2 px-4 py-2 bg-red-50 border-2 border-red-200 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 hover:border-red-300 transition-all duration-200"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                               <span>Remover</span>
                             </button>
-                            {/* 'Ver' removed — use 'Editar' to view/edit and 'Reenviar' to resend */}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
                   </tbody>
                 </table>
 
+
                 {/* Pagination */}
                 {campaigns.length > pageSize && (
-                  <div className="px-6 py-4 border-t border-slate-200/60 flex items-center justify-between">
-                    <div className="text-sm text-slate-600">
-                      Mostrando {((page-1)*pageSize)+1} - {Math.min(page*pageSize, campaigns.length)} de {campaigns.length} campanhas
+                  <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100/50 border-t-2 border-slate-200/60 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          Exibindo {((page-1)*pageSize)+1} - {Math.min(page*pageSize, campaigns.length)} de {campaigns.length}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          Página {page} de {Math.ceil(campaigns.length/pageSize)}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center space-x-3">
                       <button 
-                        className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center space-x-2 px-5 py-2.5 border-2 border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-white hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-300 disabled:hover:text-slate-700"
                         disabled={page <= 1}
                         onClick={() => setPage(p => Math.max(1, p-1))}
                       >
-                        Anterior
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span>Anterior</span>
                       </button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({length: Math.ceil(campaigns.length/pageSize)}, (_, i) => i + 1)
+                          .filter(p => p === 1 || p === Math.ceil(campaigns.length/pageSize) || Math.abs(p - page) <= 1)
+                          .map((p, idx, arr) => (
+                            <>
+                              {idx > 0 && arr[idx - 1] !== p - 1 && (
+                                <span key={`ellipsis-${p}`} className="px-2 text-slate-400">...</span>
+                              )}
+                              <button
+                                key={p}
+                                onClick={() => setPage(p)}
+                                className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
+                                  p === page
+                                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                                    : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-600'
+                                }`}
+                              >
+                                {p}
+                              </button>
+                            </>
+                          ))}
+                      </div>
+
                       <button 
-                        className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center space-x-2 px-5 py-2.5 border-2 border-slate-300 text-slate-700 rounded-xl font-semibold hover:bg-white hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-slate-300 disabled:hover:text-slate-700"
                         disabled={page >= Math.ceil(campaigns.length/pageSize)}
                         onClick={() => setPage(p => p+1)}
                       >
-                        Próxima
+                        <span>Próxima</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
                       </button>
                     </div>
                   </div>
