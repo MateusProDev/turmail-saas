@@ -171,7 +171,52 @@ export default function Settings(){
       const data = await resp.json()
       console.log('[Settings] performSaveTenantKey response', resp.status, data)
       if (!resp.ok) throw new Error(JSON.stringify(data))
-      setResult('Chave salva para o tenant')
+      
+      // Auto-fetch senders from Brevo and update fromEmail/fromName
+      try {
+        const sendersResp = await fetch(`/api/tenant/get-brevo-senders?tenantId=${tenantId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        
+        if (sendersResp.ok) {
+          const sendersData = await sendersResp.json()
+          const senders = sendersData.senders || []
+          
+          // Find active sender (prefer first active, or first one)
+          const activeSender = senders.find((s: any) => s.active) || senders[0]
+          
+          if (activeSender && (!fromEmail || !fromName)) {
+            // Auto-fill if not manually set
+            if (!fromEmail) setFromEmail(activeSender.email)
+            if (!fromName) setFromName(activeSender.name)
+            
+            // Save the auto-detected sender info
+            await fetch('/api/tenant/set-brevo-key', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({
+                key: tenantKey,
+                tenantId,
+                smtpLogin,
+                smtpMemberLevel,
+                fromEmail: fromEmail || activeSender.email,
+                fromName: fromName || activeSender.name
+              })
+            })
+            
+            setResult(`✅ Chave salva! Remetente detectado: ${activeSender.name} <${activeSender.email}>`)
+          } else {
+            setResult('✅ Chave salva para o tenant')
+          }
+        } else {
+          setResult('✅ Chave salva (não foi possível buscar remetentes automaticamente)')
+        }
+      } catch (senderErr) {
+        console.warn('[Settings] Failed to auto-fetch senders', senderErr)
+        setResult('✅ Chave salva para o tenant')
+      }
+      
       setTenantKey('')
       setShowTenantKey(false)
       // reload keys
@@ -388,12 +433,16 @@ export default function Settings(){
                   {/* From Email (Sender) */}
                   <div className="flex space-x-3">
                     <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        E-mail do Remetente 
+                        <span className="text-slate-500 font-normal ml-2">(opcional - será detectado automaticamente da Brevo)</span>
+                      </label>
                       <input 
                         value={fromEmail} 
                         onChange={e => setFromEmail(e.target.value)} 
                         type="email" 
                         className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        placeholder="E-mail do Remetente (ex: contato@suaempresa.com)"
+                        placeholder="Deixe vazio para detectar automaticamente"
                       />
                     </div>
                   </div>
@@ -401,12 +450,16 @@ export default function Settings(){
                   {/* From Name (Sender Name) */}
                   <div className="flex space-x-3">
                     <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Nome do Remetente 
+                        <span className="text-slate-500 font-normal ml-2">(opcional - será detectado automaticamente da Brevo)</span>
+                      </label>
                       <input 
                         value={fromName} 
                         onChange={e => setFromName(e.target.value)} 
                         type="text" 
                         className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        placeholder="Nome do Remetente (ex: Sua Empresa)"
+                        placeholder="Deixe vazio para detectar automaticamente"
                       />
                     </div>
                   </div>
