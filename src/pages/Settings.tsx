@@ -290,6 +290,13 @@ export default function Settings(){
     return () => unsub && unsub()
   }, [])
 
+  // Load tenant keys when selectedTenant changes
+  useEffect(() => {
+    if (selectedTenant) {
+      loadTenantKeys(selectedTenant)
+    }
+  }, [selectedTenant])
+
   const saveProfile = async () => {
     setSavingProfile(true)
     try {
