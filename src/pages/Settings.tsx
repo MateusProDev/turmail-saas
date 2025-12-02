@@ -152,44 +152,10 @@ export default function Settings(){
       if (!tenantId) {
         throw new Error('Nenhum tenant selecionado. Recarregue a página.')
       }
-      // Auto-fetch senders from Brevo FIRST to get fromEmail/fromName
-      let detectedFromEmail = ''
-      let detectedFromName = ''
-      
-      try {
-        const sendersResp = await fetch(`/api/tenant/get-brevo-senders?tenantId=${tenantId}`, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        
-        if (sendersResp.ok) {
-          const sendersData = await sendersResp.json()
-          const senders = sendersData.senders || []
-          
-          console.log('[Settings] Brevo senders fetched:', senders)
-          
-          // Use FIRST sender (don't filter by active, as Brevo may not return that field correctly)
-          const firstSender = senders[0]
-          
-          if (firstSender) {
-            detectedFromEmail = firstSender.email
-            detectedFromName = firstSender.name
-            console.log('[Settings] Using sender:', firstSender)
-          } else {
-            console.warn('[Settings] No senders returned from Brevo API')
-          }
-        } else {
-          console.warn('[Settings] get-brevo-senders returned', sendersResp.status)
-        }
-      } catch (senderErr) {
-        console.warn('[Settings] Could not fetch senders before saving key', senderErr)
-      }
 
-      // Now save the key WITH the detected sender info
+      // Save the key (it will auto-detect senders internally)
       const body: any = { key: tenantKey, tenantId }
       if (smtpLogin) body.smtpLogin = smtpLogin
-      if (detectedFromEmail) body.fromEmail = detectedFromEmail
-      if (detectedFromName) body.fromName = detectedFromName
 
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
@@ -200,9 +166,10 @@ export default function Settings(){
       console.log('[Settings] performSaveTenantKey response', resp.status, data)
       if (!resp.ok) throw new Error(JSON.stringify(data))
       
-      // Show success message with detected sender info
-      if (detectedFromEmail && detectedFromName) {
-        setResult(`✅ Chave salva! Remetente detectado: ${detectedFromName} <${detectedFromEmail}>`)
+      // Show success message with detected sender info from response
+      if (data.senders && data.senders.length > 0) {
+        const firstSender = data.senders[0]
+        setResult(`✅ Chave salva! Remetente detectado: ${firstSender.name} <${firstSender.email}>`)
       } else {
         setResult('✅ Chave salva (nenhum remetente ativo encontrado na Brevo)')
       }

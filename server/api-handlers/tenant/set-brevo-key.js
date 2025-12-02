@@ -1,5 +1,6 @@
 import admin from '../../firebaseAdmin.js'
 import crypto from 'crypto'
+import axios from 'axios'
 
 const db = admin.firestore()
 
@@ -98,7 +99,51 @@ export default async function handler(req, res) {
     if (fromName) secretsUpdate.fromName = fromName
     await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set(secretsUpdate, { merge: true })
 
-    return res.status(200).json({ ok: true, keyId: newKeyRef.id })
+    // AUTO-DETECT senders from Brevo API
+    let detectedSenders = []
+    try {
+      console.log('[tenant/set-brevo-key] Fetching senders from Brevo API...')
+      const sendersResp = await axios.get('https://api.brevo.com/v3/senders', {
+        headers: { 'api-key': key },
+        timeout: 5000
+      })
+      if (sendersResp.data && Array.isArray(sendersResp.data.senders)) {
+        detectedSenders = sendersResp.data.senders.filter(s => s.active)
+        console.log('[tenant/set-brevo-key] Detected active senders:', detectedSenders.length)
+        
+        // If fromEmail/fromName not provided, use first active sender
+        if (detectedSenders.length > 0 && (!fromEmail || !fromName)) {
+          const firstSender = detectedSenders[0]
+          const autoFromEmail = fromEmail || firstSender.email
+          const autoFromName = fromName || firstSender.name
+          
+          // Update secrets with detected sender
+          await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set({
+            fromEmail: autoFromEmail,
+            fromName: autoFromName,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedBy: uid
+          }, { merge: true })
+          
+          // Also update the key document
+          await newKeyRef.set({
+            fromEmail: autoFromEmail,
+            fromName: autoFromName
+          }, { merge: true })
+          
+          console.log('[tenant/set-brevo-key] Auto-saved sender:', { autoFromEmail, autoFromName })
+        }
+      }
+    } catch (apiError) {
+      console.error('[tenant/set-brevo-key] Failed to fetch senders from Brevo:', apiError.message)
+      // Don't fail the whole operation if sender detection fails
+    }
+
+    return res.status(200).json({ 
+      ok: true, 
+      keyId: newKeyRef.id,
+      senders: detectedSenders // Return detected senders to frontend
+    })
   } catch (e) {
     console.error('[tenant/set-brevo-key] error', e && (e.response?.data || e.message || e))
     return res.status(500).json({ error: e.message || 'internal error' })
