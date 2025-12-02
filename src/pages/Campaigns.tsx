@@ -67,6 +67,7 @@ export default function Campaigns(){
   // Template selection
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
+  const [showHtmlCode, setShowHtmlCode] = useState(false)
 
   // Auto-update template when form fields change (real-time sync)
   useEffect(() => {
@@ -1048,26 +1049,60 @@ export default function Campaigns(){
 
               {/* Content Editor */}
               <div className="grid grid-cols-1 gap-6">
+                {/* Preview em Tamanho Real */}
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
                   <div className="flex items-center justify-between mb-4">
-                    <label className="text-lg font-semibold text-slate-900">✏️ Editor de Email</label>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowPreview(!showPreview)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          showPreview 
-                            ? 'bg-indigo-600 text-white' 
-                            : 'bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-300'
-                        }`}
-                      >
-                        {showPreview ? '👁️ Preview ON' : '👁️ Preview OFF'}
-                      </button>
-                    </div>
+                    <label className="text-lg font-semibold text-slate-900">📧 Preview do Email</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowHtmlCode(!showHtmlCode)}
+                      className="px-4 py-2 bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-300 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                      </svg>
+                      <span>{showHtmlCode ? 'Esconder Código' : 'Editar HTML'}</span>
+                    </button>
                   </div>
                   
-                  {/* Rich Text Toolbar */}
-                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-white rounded-lg border border-slate-200">
+                  {/* Preview Real */}
+                  <div className="bg-white rounded-xl shadow-lg border-2 border-slate-300 overflow-hidden mb-4">
+                    <div className="bg-slate-800 px-4 py-2 flex items-center space-x-2">
+                      <div className="flex space-x-1.5">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
+                      <div className="flex-1 text-center text-sm text-slate-300 font-mono">Preview - Email Marketing</div>
+                    </div>
+                    <div className="max-w-2xl mx-auto bg-white overflow-auto" style={{maxHeight: '600px'}}>
+                      <div 
+                        className="p-6" 
+                        dangerouslySetInnerHTML={{ 
+                          __html: DOMPurify.sanitize(
+                            renderTemplate(
+                              htmlContent || '<p class="text-slate-400 text-center py-12">Escolha um template ou digite o conteúdo HTML...</p>', 
+                              subject || 'Sem assunto', 
+                              preheader || ''
+                            ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
+                            .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
+                            .replace(/\{destination\}/g, destination || 'Destino')
+                            .replace(/\{productName\}/g, productName || 'Produto')
+                            .replace(/\{mainTitle\}/g, mainTitle || 'Título')
+                          ) 
+                        }} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Editor HTML Colapsável */}
+                {showHtmlCode && (
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
+                    <label className="text-lg font-semibold text-slate-900 mb-4 block">✏️ Editor HTML Avançado</label>
+                    
+                    {/* Rich Text Toolbar */}
+                    <div className="flex flex-wrap gap-2 mb-3 p-3 bg-white rounded-lg border border-slate-200">
                     <button 
                       type="button" 
                       onClick={() => {
@@ -1145,68 +1180,21 @@ export default function Campaigns(){
                     >
                       🔘 Botão CTA
                     </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {/* HTML Editor */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-700">Código HTML</span>
-                        <span className="text-xs text-slate-500">{htmlContent.length} caracteres</span>
-                      </div>
-                      <textarea 
-                        id="campaign-html" 
-                        value={htmlContent} 
-                        onChange={e => setHtmlContent(e.target.value)} 
-                        className="w-full h-96 px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none font-mono text-sm bg-white"
-                        placeholder="<p>Digite o conteúdo HTML do email...</p>"
-                      />
                     </div>
 
-                    {/* Live Preview */}
-                    {showPreview && (
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-slate-700">Preview ao Vivo</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const preview = document.getElementById('email-preview')
-                              if (preview) {
-                                preview.classList.toggle('h-96')
-                                preview.classList.toggle('h-[600px]')
-                              }
-                            }}
-                            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-                          >
-                            ⛶ Expandir/Reduzir
-                          </button>
-                        </div>
-                        <div 
-                          id="email-preview"
-                          className="h-96 border-2 border-slate-300 rounded-xl bg-white overflow-auto shadow-inner transition-all"
-                        >
-                          <div 
-                            className="p-6" 
-                            dangerouslySetInnerHTML={{ 
-                              __html: DOMPurify.sanitize(
-                                renderTemplate(
-                                  htmlContent || '<p class="text-slate-400 text-center py-12">Digite o conteúdo para ver o preview...</p>', 
-                                  subject || 'Sem assunto', 
-                                  preheader || ''
-                                ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
-                                .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
-                                .replace(/\{destination\}/g, destination || 'Destino')
-                                .replace(/\{productName\}/g, productName || 'Produto')
-                                .replace(/\{mainTitle\}/g, mainTitle || 'Título')
-                              ) 
-                            }} 
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-700">Código HTML</span>
+                      <span className="text-xs text-slate-500">{htmlContent.length} caracteres</span>
+                    </div>
+                    <textarea 
+                      id="campaign-html" 
+                      value={htmlContent} 
+                      onChange={e => setHtmlContent(e.target.value)} 
+                      className="w-full h-96 px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none font-mono text-sm bg-white"
+                      placeholder="<p>Digite o conteúdo HTML do email...</p>"
+                    />
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Recipients and Settings */}
