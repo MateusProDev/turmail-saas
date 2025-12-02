@@ -94,6 +94,9 @@ export default async function handler(req, res) {
           if (result.data && result.data.messageId) updates.messageId = result.data.messageId
           updates.result = result.data
         }
+        // Save tenant sender info for display
+        if (payload._tenantFromEmail) updates._tenantFromEmail = payload._tenantFromEmail
+        if (payload._tenantFromName) updates._tenantFromName = payload._tenantFromName
         updates.status = 'sent'
         await docRef.update(updates).catch(e => console.error('Failed updating campaign doc after send:', e))
       } catch (e) {

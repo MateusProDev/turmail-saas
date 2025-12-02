@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
@@ -1313,9 +1313,6 @@ export default function Campaigns(){
                     )
                   })}
                 </div>
-                  </tbody>
-                </table>
-
 
                 {/* Pagination */}
                 {campaigns.length > pageSize && (
@@ -1351,12 +1348,11 @@ export default function Campaigns(){
                         {Array.from({length: Math.ceil(campaigns.length/pageSize)}, (_, i) => i + 1)
                           .filter(p => p === 1 || p === Math.ceil(campaigns.length/pageSize) || Math.abs(p - page) <= 1)
                           .map((p, idx, arr) => (
-                            <>
+                            <React.Fragment key={p}>
                               {idx > 0 && arr[idx - 1] !== p - 1 && (
-                                <span key={`ellipsis-${p}`} className="px-2 text-slate-400">...</span>
+                                <span className="px-2 text-slate-400">...</span>
                               )}
                               <button
-                                key={p}
                                 onClick={() => setPage(p)}
                                 className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
                                   p === page
@@ -1366,7 +1362,7 @@ export default function Campaigns(){
                               >
                                 {p}
                               </button>
-                            </>
+                            </React.Fragment>
                           ))}
                       </div>
 
