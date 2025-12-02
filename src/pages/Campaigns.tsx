@@ -6,7 +6,6 @@ import { auth, db } from '../lib/firebase'
 import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
 import { EMAIL_TEMPLATES } from '../lib/emailTemplates'
-import type { EmailTemplate } from '../lib/emailTemplates'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { generateCopy, generateVariants } from '../lib/aiHelper'
