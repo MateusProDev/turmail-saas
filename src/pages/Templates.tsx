@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth } from '../lib/firebase'
-import { EMAIL_TEMPLATES, EmailTemplate } from '../lib/emailTemplates'
+import { EMAIL_TEMPLATES } from '../lib/emailTemplates'
+import type { EmailTemplate } from '../lib/emailTemplates'
 import './PagePlaceholder.css'
 
 export default function Templates() {
   const [user, loading] = useAuthState(auth)
   const navigate = useNavigate()
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null)
-  const [previewData, setPreviewData] = useState({
+  const previewData = {
     companyName: 'TurViagem',
     destination: 'Fernando de Noronha',
     mainTitle: 'Descubra o Paraíso',
@@ -20,7 +21,7 @@ export default function Templates() {
     priceInfo: 'A partir de R$ 3.999',
     dateRange: 'Saídas diárias',
     productName: 'Webinar Destinos 2025'
-  })
+  }
 
   useEffect(() => {
     if (!loading && !user) {
