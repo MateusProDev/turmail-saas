@@ -16,6 +16,7 @@ import About from './pages/About'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import Demo from './pages/Demo'
+import DnsCheck from './pages/DnsCheck'
 import './App.css'
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/dns-check" element={<DnsCheck />} />
           <Route path="/tenants/:tenantId/members" element={<TenantMembers />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/features" element={<Features />} />
