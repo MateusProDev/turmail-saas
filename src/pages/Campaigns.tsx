@@ -71,6 +71,7 @@ export default function Campaigns(){
   const [showHtmlCode, setShowHtmlCode] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [showAiAssistant, setShowAiAssistant] = useState(false) // Controle do accordion
+  const [showPackageDetails, setShowPackageDetails] = useState(false) // Controle do accordion de Detalhes
 
   // Aplicar template padrão ao carregar a página
   useEffect(() => {
@@ -96,21 +97,31 @@ export default function Campaigns(){
         setPreheader(generated.preheader)
         setHtmlContent(generated.html)
         
-        // Atualizar editor visual - força atualização mesmo no primeiro render
-        requestAnimationFrame(() => {
+        // Atualizar editor visual - com retry limitado
+        let attempts = 0
+        const maxAttempts = 10
+        
+        const updatePreview = () => {
           const editor = document.getElementById('visual-editor')
-          console.log('🎨 Inicializando preview, editor existe:', !!editor)
           if (editor) {
-            editor.innerHTML = DOMPurify.sanitize(
+            const renderedHtml = DOMPurify.sanitize(
               renderTemplate(
                 generated.html,
                 generated.subject,
                 generated.preheader
               )
             )
-            console.log('✅ Preview inicial carregado')
+            editor.innerHTML = renderedHtml
+            console.log('✅ Preview inicial carregado, tamanho:', renderedHtml.length)
+          } else if (attempts < maxAttempts) {
+            attempts++
+            setTimeout(updatePreview, 50)
+          } else {
+            console.warn('⚠️ Editor não encontrado após', maxAttempts, 'tentativas')
           }
-        })
+        }
+        
+        requestAnimationFrame(updatePreview)
       }
     }
   }, [activeTemplate])
@@ -706,30 +717,6 @@ export default function Campaigns(){
             </div>
 
             <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Assunto *</label>
-                  <input 
-                    value={subject} 
-                    onChange={e => setSubject(e.target.value)} 
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="Digite o assunto do email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Preheader</label>
-                  <input 
-                    value={preheader} 
-                    onChange={e => setPreheader(e.target.value)} 
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder="Texto curto exibido na caixa de entrada"
-                  />
-                </div>
-              </div>
-
-              {/* Tenant selection is intentionally hidden — using global configuration */}
-
               {/* CAMPOS ESSENCIAIS DO TEMPLATE */}
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
@@ -741,6 +728,28 @@ export default function Campaigns(){
                     </span>
                   )}
                 </h3>
+
+                {/* Assunto e Preheader */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Assunto *</label>
+                    <input 
+                      value={subject} 
+                      onChange={e => setSubject(e.target.value)} 
+                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      placeholder="Digite o assunto do email"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Preheader</label>
+                    <input 
+                      value={preheader} 
+                      onChange={e => setPreheader(e.target.value)} 
+                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      placeholder="Texto curto exibido na caixa de entrada"
+                    />
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -834,50 +843,71 @@ export default function Campaigns(){
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                      Link da Reserva/Mais Info *
-                      {activeTemplate && (
-                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-                          conectado
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      value={ctaLink} 
-                      onChange={e=>setCtaLink(e.target.value)} 
-                      placeholder="https://sua-agencia.com/pacotes/fernando-noronha" 
-                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
-                        activeTemplate 
-                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                          : 'border-slate-300 focus:ring-blue-500'
-                      }`} 
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                    Link da Reserva/Mais Info *
+                    {activeTemplate && (
+                      <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                        conectado
+                      </span>
+                    )}
+                  </label>
+                  <input 
+                    value={ctaLink} 
+                    onChange={e=>setCtaLink(e.target.value)} 
+                    placeholder="https://sua-agencia.com/pacotes/fernando-noronha" 
+                    className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                      activeTemplate 
+                        ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                        : 'border-slate-300 focus:ring-blue-500'
+                    }`} 
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                      Detalhes do Pacote
+                {/* ACCORDION - Detalhes do Pacote */}
+                <div className="mt-4 bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+                  <button
+                    onClick={() => setShowPackageDetails(!showPackageDetails)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-slate-700">📦 Detalhes do Pacote</span>
                       {activeTemplate && (
-                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                        <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
                           <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
                           conectado
                         </span>
                       )}
-                    </label>
-                    <input 
-                      value={description} 
-                      onChange={e => setDescription(e.target.value)} 
-                      placeholder="Ex: 5 dias e 4 noites, café da manhã incluído..." 
-                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
-                        activeTemplate 
-                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                          : 'border-slate-300 focus:ring-blue-500'
+                    </div>
+                    <svg 
+                      className={`w-5 h-5 text-slate-600 transition-transform ${
+                        showPackageDetails ? 'rotate-180' : ''
                       }`} 
-                    />
-                  </div>
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {showPackageDetails && (
+                    <div className="px-4 pb-4 border-t-2 border-slate-200">
+                      <div className="mt-3">
+                        <input 
+                          value={description} 
+                          onChange={e => setDescription(e.target.value)} 
+                          placeholder="Ex: 5 dias e 4 noites, café da manhã incluído..." 
+                          className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                            activeTemplate 
+                              ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                              : 'border-slate-300 focus:ring-blue-500'
+                          }`} 
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 flex gap-2">
