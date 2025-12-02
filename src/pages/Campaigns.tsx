@@ -149,6 +149,28 @@ export default function Campaigns(){
     return () => { mounted = false }
   }, [user])
 
+  // Load tenant settings in real-time (auto-populate company name, etc)
+  useEffect(() => {
+    if (!selectedTenant) return
+    
+    try {
+      const settingsRef = doc(db, 'tenants', selectedTenant, 'settings', 'secrets')
+      const unsubSettings = onSnapshot(settingsRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data()
+          // Auto-populate company name from tenant if not set by user
+          if (!companyName && data.companyName) {
+            setCompanyName(data.companyName)
+          }
+        }
+      }, (err) => console.error('tenant settings snapshot error', err))
+      
+      return () => unsubSettings()
+    } catch (e) {
+      console.error('tenant settings listener error', e)
+    }
+  }, [selectedTenant])
+
 
   const refreshCampaignsByTenant = async (tenantId: string) => {
     try {
@@ -892,12 +914,27 @@ export default function Campaigns(){
               </div>
 
               {/* Content Editor */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">Conteúdo HTML *</label>
+              <div className="grid grid-cols-1 gap-6">
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-lg font-semibold text-slate-900">✏️ Editor de Email</label>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          showPreview 
+                            ? 'bg-indigo-600 text-white' 
+                            : 'bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-300'
+                        }`}
+                      >
+                        {showPreview ? '👁️ Preview ON' : '👁️ Preview OFF'}
+                      </button>
+                    </div>
+                  </div>
                   
                   {/* Rich Text Toolbar */}
-                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-white rounded-lg border border-slate-200">
                     <button 
                       type="button" 
                       onClick={() => {
@@ -908,9 +945,10 @@ export default function Campaigns(){
                         ta.value = before + '<strong>' + sel + '</strong>' + after
                         setHtmlContent(ta.value)
                       }} 
-                      className="w-8 h-8 bg-white border border-slate-300 rounded-lg flex items-center justify-center font-bold hover:bg-slate-100 transition-colors"
+                      className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold hover:bg-slate-100 transition-colors"
+                      title="Negrito"
                     >
-                      B
+                      <strong>B</strong>
                     </button>
                     <button 
                       type="button" 
@@ -922,9 +960,10 @@ export default function Campaigns(){
                         ta.value = before + '<em>' + sel + '</em>' + after
                         setHtmlContent(ta.value)
                       }} 
-                      className="w-8 h-8 bg-white border border-slate-300 rounded-lg flex items-center justify-center italic hover:bg-slate-100 transition-colors"
+                      className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg italic hover:bg-slate-100 transition-colors"
+                      title="Itálico"
                     >
-                      I
+                      <em>I</em>
                     </button>
                     <button 
                       type="button" 
@@ -933,49 +972,108 @@ export default function Campaigns(){
                         if (!ta) return
                         const start = ta.selectionStart, end = ta.selectionEnd
                         const before = ta.value.slice(0, start), sel = ta.value.slice(start, end), after = ta.value.slice(end)
-                        ta.value = before + '<h3>' + sel + '</h3>' + after
+                        ta.value = before + '<h2>' + sel + '</h2>' + after
                         setHtmlContent(ta.value)
                       }} 
-                      className="w-8 h-8 bg-white border border-slate-300 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
+                      className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors font-semibold"
+                      title="Título"
                     >
-                      H1
+                      H2
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => setHtmlContent((h) => h + '<p>Olá {{name}},</p>')} 
-                      className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-sm hover:bg-slate-100 transition-colors"
+                      onClick={() => {
+                        const ta = document.getElementById('campaign-html') as HTMLTextAreaElement | null
+                        if (!ta) return
+                        const start = ta.selectionStart, end = ta.selectionEnd
+                        const before = ta.value.slice(0, start), sel = ta.value.slice(start, end), after = ta.value.slice(end)
+                        ta.value = before + '<a href="' + (ctaLink || '#') + '">' + sel + '</a>' + after
+                        setHtmlContent(ta.value)
+                      }} 
+                      className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
+                      title="Link"
                     >
-                      {'{{name}}'}
+                      🔗 Link
+                    </button>
+                    <div className="w-px h-8 bg-slate-300 mx-1"></div>
+                    <button 
+                      type="button" 
+                      onClick={() => setHtmlContent((h) => h + '<p>Olá {{name}},</p>\n')} 
+                      className="px-3 py-2 bg-blue-50 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition-colors"
+                      title="Saudação personalizada"
+                    >
+                      👤 {'{{name}}'}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setHtmlContent((h) => h + `<p><a href="${ctaLink || '#'}" style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">Ver Mais</a></p>\n`)} 
+                      className="px-3 py-2 bg-purple-50 border border-purple-300 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition-colors"
+                      title="Botão CTA"
+                    >
+                      🔘 Botão CTA
                     </button>
                   </div>
 
-                  {/* Editor actions removed: Formatar copy / Melhorar estrutura / Atualizar Preview (per user request) */}
-
-                  <textarea 
-                    id="campaign-html" 
-                    value={htmlContent} 
-                    onChange={e => setHtmlContent(e.target.value)} 
-                    className="w-full h-64 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                    placeholder="Digite o conteúdo HTML do email..."
-                  />
-                </div>
-
-                {/* Preview */}
-                {showPreview && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Preview</label>
-                    <div className="h-64 border-2 border-slate-200 rounded-xl bg-white p-4 overflow-auto">
-                      <div 
-                        className="prose max-w-none text-sm" 
-                        dangerouslySetInnerHTML={{ 
-                          __html: DOMPurify.sanitize(
-                            renderTemplate(htmlContent || '<p class="text-slate-400">Digite o conteúdo para ver o preview...</p>', subject, preheader)
-                          ) 
-                        }} 
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* HTML Editor */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-slate-700">Código HTML</span>
+                        <span className="text-xs text-slate-500">{htmlContent.length} caracteres</span>
+                      </div>
+                      <textarea 
+                        id="campaign-html" 
+                        value={htmlContent} 
+                        onChange={e => setHtmlContent(e.target.value)} 
+                        className="w-full h-96 px-4 py-3 border-2 border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none font-mono text-sm bg-white"
+                        placeholder="<p>Digite o conteúdo HTML do email...</p>"
                       />
                     </div>
+
+                    {/* Live Preview */}
+                    {showPreview && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700">Preview ao Vivo</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const preview = document.getElementById('email-preview')
+                              if (preview) {
+                                preview.classList.toggle('h-96')
+                                preview.classList.toggle('h-[600px]')
+                              }
+                            }}
+                            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                          >
+                            ⛶ Expandir/Reduzir
+                          </button>
+                        </div>
+                        <div 
+                          id="email-preview"
+                          className="h-96 border-2 border-slate-300 rounded-xl bg-white overflow-auto shadow-inner transition-all"
+                        >
+                          <div 
+                            className="p-6" 
+                            dangerouslySetInnerHTML={{ 
+                              __html: DOMPurify.sanitize(
+                                renderTemplate(
+                                  htmlContent || '<p class="text-slate-400 text-center py-12">Digite o conteúdo para ver o preview...</p>', 
+                                  subject || 'Sem assunto', 
+                                  preheader || ''
+                                ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
+                                .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
+                                .replace(/\{destination\}/g, destination || 'Destino')
+                                .replace(/\{productName\}/g, productName || 'Produto')
+                                .replace(/\{mainTitle\}/g, mainTitle || 'Título')
+                              ) 
+                            }} 
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Recipients and Settings */}
