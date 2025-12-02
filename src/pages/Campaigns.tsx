@@ -748,7 +748,7 @@ export default function Campaigns(){
       )}
     </div>
   </div>
-</div>
+</div> 
 
               {/* Consolidated Campaign Metadata (destination, CTA, title, description, returning customer) */}
               <div className="grid grid-cols-1 gap-6 mt-6">
