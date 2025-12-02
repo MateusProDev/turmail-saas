@@ -47,12 +47,16 @@ Testar que um novo usuário consegue:
 #### B. Colar no app
 1. Em Settings, seção "Chave Brevo"
 2. Cole a **Master Password** no campo "Cole a chave API"
-3. Cole o **Login** no campo "Login SMTP"
-4. Clique "Salvar para este tenant"
+3. **Cole o e-mail de remetente** no campo "E-mail do Remetente" (ex: `contato@suaempresa.com`)
+4. **Cole o nome do remetente** no campo "Nome do Remetente" (ex: `Minha Empresa`)
+5. Cole o **Login** no campo "Login SMTP"
+6. Clique "Salvar para este tenant"
 
 **✅ Verificar:**
 - Mensagem: "Chave salva para o tenant"
 - Sem erros no console
+
+**⚠️ IMPORTANTE:** Os campos **E-mail do Remetente** e **Nome do Remetente** são **obrigatórios** para enviar e-mails. Sem eles, você receberá o erro: `valid sender email required`
 
 ---
 
@@ -167,11 +171,15 @@ tenants/tenant_{uid}/
     secrets/
       activeKeyId: "xxx"
       smtpLogin: "9c6dd5001@smtp-brevo.com"
+      fromEmail: "contato@suaempresa.com"
+      fromName: "Minha Empresa"
     keys/
       list/
         {keyId}/
           brevoApiKey: "xsmtpsib-..."
           smtpLogin: "9c6dd5001@smtp-brevo.com"
+          fromEmail: "contato@suaempresa.com"
+          fromName: "Minha Empresa"
 ```
 
 ### Campanha enviada?
