@@ -75,8 +75,9 @@ export default function Campaigns(){
   // Aplicar template padrão ao carregar a página
   useEffect(() => {
     // Se não houver conteúdo HTML, aplicar template padrão de turismo
-    if (!htmlContent && !editingCampaign) {
-      const defaultTemplate = EMAIL_TEMPLATES.find(t => t.id === 'destination-package')
+    if (!htmlContent && !editingCampaign && activeTemplate) {
+      console.log('🎬 Inicializando com template padrão:', activeTemplate)
+      const defaultTemplate = EMAIL_TEMPLATES.find(t => t.id === activeTemplate)
       if (defaultTemplate) {
         const generated = defaultTemplate.generate({
           companyName: companyName || 'Sua Agência de Turismo',
@@ -95,9 +96,10 @@ export default function Campaigns(){
         setPreheader(generated.preheader)
         setHtmlContent(generated.html)
         
-        // Atualizar editor visual
-        setTimeout(() => {
+        // Atualizar editor visual - força atualização mesmo no primeiro render
+        requestAnimationFrame(() => {
           const editor = document.getElementById('visual-editor')
+          console.log('🎨 Inicializando preview, editor existe:', !!editor)
           if (editor) {
             editor.innerHTML = DOMPurify.sanitize(
               renderTemplate(
@@ -106,11 +108,12 @@ export default function Campaigns(){
                 generated.preheader
               )
             )
+            console.log('✅ Preview inicial carregado')
           }
-        }, 100)
+        })
       }
     }
-  }, [])
+  }, [activeTemplate])
 
   // Auto-update template when form fields change (real-time sync)
   useEffect(() => {
@@ -139,7 +142,7 @@ export default function Campaigns(){
     setHtmlContent(generated.html)
     
     // Atualizar editor visual quando template muda
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       const editor = document.getElementById('visual-editor')
       console.log('📝 Editor encontrado:', !!editor)
       if (editor) {
@@ -157,7 +160,7 @@ export default function Campaigns(){
         editor.innerHTML = renderedHtml
         console.log('✅ Preview atualizado! Tamanho:', renderedHtml.length)
       }
-    }, 150)
+    })
   }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
 
   // Preview automático removido - agora só mostra ao selecionar template manualmente
