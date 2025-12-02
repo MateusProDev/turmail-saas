@@ -869,18 +869,6 @@ export default function Campaigns(){
                     </svg>
                     <span>📧 Escolher Outro Template</span>
                   </button>
-                  
-                  {activeTemplate && (
-                    <button
-                      onClick={() => {
-                        setActiveTemplate(null)
-                        setResult('ℹ️ Modo template desativado. Você pode editar o HTML livremente.')
-                      }}
-                      className="py-3 px-6 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition-colors"
-                    >
-                      Desativar Template
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -1265,7 +1253,7 @@ export default function Campaigns(){
                         </span>
                       </div>
                     </div>
-                    <div className="max-w-2xl mx-auto bg-white overflow-auto" style={{maxHeight: '700px'}}>
+                    <div className="w-full bg-white overflow-auto" style={{maxHeight: '700px'}}>
                       <div 
                         id="visual-editor"
                         contentEditable={true}
