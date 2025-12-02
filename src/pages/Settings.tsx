@@ -153,21 +153,10 @@ export default function Settings(){
       if (!tenantId) {
         throw new Error('Nenhum tenant selecionado. Recarregue a página.')
       }
-      const body: any = { key: tenantKey, tenantId }
-      if (smtpLogin) body.smtpLogin = smtpLogin
-      if (smtpMemberLevel) body.smtpMemberLevel = true
-      // fromEmail and fromName will be auto-detected from Brevo
-
-      const resp = await fetch('/api/tenant/set-brevo-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(body),
-      })
-      const data = await resp.json()
-      console.log('[Settings] performSaveTenantKey response', resp.status, data)
-      if (!resp.ok) throw new Error(JSON.stringify(data))
+      // Auto-fetch senders from Brevo FIRST to get fromEmail/fromName
+      let detectedFromEmail = ''
+      let detectedFromName = ''
       
-      // Auto-fetch senders from Brevo and update fromEmail/fromName
       try {
         const sendersResp = await fetch(`/api/tenant/get-brevo-senders?tenantId=${tenantId}`, {
           method: 'GET',
@@ -182,30 +171,34 @@ export default function Settings(){
           const activeSender = senders.find((s: any) => s.active) || senders[0]
           
           if (activeSender) {
-            // Save the auto-detected sender info
-            await fetch('/api/tenant/set-brevo-key', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({
-                key: tenantKey,
-                tenantId,
-                smtpLogin,
-                smtpMemberLevel,
-                fromEmail: activeSender.email,
-                fromName: activeSender.name
-              })
-            })
-            
-            setResult(`✅ Chave salva! Remetente detectado: ${activeSender.name} <${activeSender.email}>`)
-          } else {
-            setResult('✅ Chave salva (nenhum remetente encontrado na Brevo)')
+            detectedFromEmail = activeSender.email
+            detectedFromName = activeSender.name
           }
-        } else {
-          setResult('✅ Chave salva (não foi possível buscar remetentes automaticamente)')
         }
       } catch (senderErr) {
-        console.warn('[Settings] Failed to auto-fetch senders', senderErr)
-        setResult('✅ Chave salva para o tenant')
+        console.warn('[Settings] Could not fetch senders before saving key', senderErr)
+      }
+
+      // Now save the key WITH the detected sender info
+      const body: any = { key: tenantKey, tenantId }
+      if (smtpLogin) body.smtpLogin = smtpLogin
+      if (detectedFromEmail) body.fromEmail = detectedFromEmail
+      if (detectedFromName) body.fromName = detectedFromName
+
+      const resp = await fetch('/api/tenant/set-brevo-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body),
+      })
+      const data = await resp.json()
+      console.log('[Settings] performSaveTenantKey response', resp.status, data)
+      if (!resp.ok) throw new Error(JSON.stringify(data))
+      
+      // Show success message with detected sender info
+      if (detectedFromEmail && detectedFromName) {
+        setResult(`✅ Chave salva! Remetente detectado: ${detectedFromName} <${detectedFromEmail}>`)
+      } else {
+        setResult('✅ Chave salva (nenhum remetente ativo encontrado na Brevo)')
       }
       
       setTenantKey('')
