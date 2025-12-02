@@ -30,7 +30,7 @@ export default function Settings(){
       const userEmail = auth.currentUser?.email || 'test@example.com'
       const payload: any = {
         tenantId: selectedTenant || undefined,
-        sender: { name: 'TurMail Test', email: `no-reply@${window.location.hostname}` },
+        // Don't set sender - let sendHelper use tenant's fromEmail/fromName
         to: [{ email: userEmail }],
         subject: `Teste de envio (${selectedTenant || 'global'})`,
         htmlContent: `<p>Teste de envio do tenant ${selectedTenant || 'global'}</p>`,
