@@ -47,8 +47,8 @@ export default function Campaigns(){
   
   const [sendImmediate, setSendImmediate] = useState(true)
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null)
-  const [returningCustomer, setReturningCustomer] = useState(false)
-  const [previousTrip, setPreviousTrip] = useState('') // <-- Added missing state
+  // const [returningCustomer, setReturningCustomer] = useState(false) // Removido - campo não usado
+  // const [previousTrip, setPreviousTrip] = useState('') // Removido - campo não usado
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
@@ -70,6 +70,7 @@ export default function Campaigns(){
   const [activeTemplate, setActiveTemplate] = useState<string | null>('destination-package') // Template de turismo por padrão
   const [showHtmlCode, setShowHtmlCode] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [showAiAssistant, setShowAiAssistant] = useState(false) // Controle do accordion
 
   // Aplicar template padrão ao carregar a página
   useEffect(() => {
@@ -719,199 +720,359 @@ export default function Campaigns(){
 
               {/* Tenant selection is intentionally hidden — using global configuration */}
 
-              {/* Assistente de Copy Profissional */}
-              <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
-  <label className="block text-sm font-semibold text-slate-800 mb-4">
-    🚀 Assistente de Copy Profissional
-    <span className="text-xs font-normal text-slate-600 ml-2">(Processamento local - 100% privado)</span>
-  </label>
-  
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {/* Coluna 1: Inputs principais */}
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center">
-          Empresa
-          {activeTemplate && (
-            <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-              conectado
-            </span>
-          )}
-        </label>
-        <input 
-          value={companyName} 
-          onChange={e => setCompanyName(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all ${
-            activeTemplate 
-              ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-              : 'border-slate-300 focus:ring-blue-500'
-          }`}
-          placeholder="Nome da sua empresa"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center">
-          Pacote/Experiência
-          {activeTemplate && (
-            <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-              conectado
-            </span>
-          )}
-        </label>
-        <input 
-          value={productName} 
-          onChange={e => setProductName(e.target.value)}
-          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all ${
-            activeTemplate 
-              ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-              : 'border-slate-300 focus:ring-blue-500'
-          }`}
-          placeholder="Ex: Pacote Nordeste Completo, City Tour SP"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Perfil do Viajante</label>
-        <input 
-          value={audience} 
-          onChange={e => setAudience(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          placeholder="Ex: casais em lua de mel, famílias, aventureiros..."
-        />
-      </div>
-    </div>
+              {/* CAMPOS ESSENCIAIS DO TEMPLATE */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                  📝 Informações do Pacote
+                  {activeTemplate && (
+                    <span className="ml-3 text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full flex items-center">
+                      <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1.5 animate-pulse" />
+                      Template ativo: {EMAIL_TEMPLATES.find(t => t.id === activeTemplate)?.name}
+                    </span>
+                  )}
+                </h3>
 
-    {/* Coluna 2: Configurações */}
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Tom</label>
-          <select 
-            value={tone} 
-            onChange={e => setTone(e.target.value as any)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="friendly">Amigável</option>
-            <option value="professional">Profissional</option>
-            <option value="formal">Formal</option>
-            <option value="casual">Casual</option>
-            <option value="urgent">Urgente</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Vertente</label>
-          <select 
-            value={vertical} 
-            onChange={e => setVertical(e.target.value as any)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="general">Geral</option>
-            <option value="tourism">Turismo</option>
-            <option value="ecommerce">E-commerce</option>
-            <option value="services">Serviços</option>
-            <option value="cooperative">Cooperativa</option>
-            <option value="taxi">Táxi/Motoristas</option>
-          </select>
-        </div>
-      </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Empresa *
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={companyName} 
+                      onChange={e => setCompanyName(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`}
+                      placeholder="Nome da sua agência"
+                    />
+                  </div>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Diferenciais do Pacote</label>
-        <div className="flex space-x-2 mb-2">
-          <input
-            value={benefitInput}
-            onChange={e => setBenefitInput(e.target.value)}
-            onKeyPress={e => {
-              if (e.key === 'Enter' && benefitInput.trim()) {
-                setKeyBenefits(prev => [...prev, benefitInput.trim()])
-                setBenefitInput('')
-              }
-            }}
-            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Ex: Guia em português, Hotel 5 estrelas, Transfer incluído..."
-          />
-          <button
-            onClick={() => {
-              if (benefitInput.trim()) {
-                setKeyBenefits(prev => [...prev, benefitInput.trim()])
-                setBenefitInput('')
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            +
-          </button>
-        </div>
-        
-        {keyBenefits.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {keyBenefits.map((benefit, index) => (
-              <span key={index} className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                {benefit}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Destino da Viagem *
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={destination} 
+                      onChange={e=>setDestination(e.target.value)} 
+                      placeholder="Ex: Fernando de Noronha, Europa, Caribe..." 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`} 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Pacote/Experiência
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={productName} 
+                      onChange={e => setProductName(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 transition-all ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`}
+                      placeholder="Ex: Pacote Nordeste Completo, City Tour SP"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Título da Oferta *
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={mainTitle} 
+                      onChange={e=>setMainTitle(e.target.value)} 
+                      placeholder="Ex: Descubra o Paraíso do Nordeste" 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`} 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Link da Reserva/Mais Info *
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={ctaLink} 
+                      onChange={e=>setCtaLink(e.target.value)} 
+                      placeholder="https://sua-agencia.com/pacotes/fernando-noronha" 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`} 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Detalhes do Pacote
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={description} 
+                      onChange={e => setDescription(e.target.value)} 
+                      placeholder="Ex: 5 dias e 4 noites, café da manhã incluído..." 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all focus:ring-2 ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300 focus:ring-blue-500'
+                      }`} 
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => setShowTemplateSelector(true)}
+                    className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium flex items-center justify-center space-x-2 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                    </svg>
+                    <span>📧 Escolher Outro Template</span>
+                  </button>
+                  
+                  {activeTemplate && (
+                    <button
+                      onClick={() => {
+                        setActiveTemplate(null)
+                        setResult('ℹ️ Modo template desativado. Você pode editar o HTML livremente.')
+                      }}
+                      className="py-3 px-6 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-medium transition-colors"
+                    >
+                      Desativar Template
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* ACCORDION - ASSISTENTE DE IA */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 overflow-hidden">
                 <button
-                  onClick={() => setKeyBenefits(prev => prev.filter((_, i) => i !== index))}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  onClick={() => setShowAiAssistant(!showAiAssistant)}
+                  className="w-full px-6 py-4 flex items-center justify-between hover:bg-blue-100/50 transition-colors"
                 >
-                  ×
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-lg font-semibold text-slate-900">🚀 Assistente de IA para Gerar Copy</h3>
+                      <p className="text-sm text-slate-600">Processamento local - 100% privado e seguro</p>
+                    </div>
+                  </div>
+                  <svg 
+                    className={`w-6 h-6 text-slate-600 transition-transform ${showAiAssistant ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
 
-    {/* Coluna 3: Ações */}
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={async () => {
-            setGenerating(true)
-            try {
-              const copy = await generateCopy({
-                company: companyName,
-                product: productName,
-                tone,
-                vertical,
-                destination,
-                ctaLink,
-                mainTitle,
-                description,
-                previousExperience: undefined,
-                userPatterns,
-                audience,
-                keyBenefits
-              })
-              
-              setSubject(copy.subject)
-              setPreheader(copy.preheader)
-              setHtmlContent(copy.html)
-              setCopyHistory(prev => [copy, ...prev.slice(0, 9)]) // Manter últimas 10
-              
-              setResult(`✅ Copy gerada (Score: ${copy.score}/100)`)
-            } catch (error) {
-              setResult('❌ Erro ao gerar copy')
-            }
-            setGenerating(false)
-          }}
-          disabled={generating}
-          className={`py-3 px-4 rounded-lg font-medium ${
-            generating 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }`}
-        >
-          {generating ? '🔄 Gerando...' : '✨ Gerar Copy'}
-        </button>
+                {showAiAssistant && (
+                  <div className="px-6 pb-6 space-y-4 border-t-2 border-blue-200 pt-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* Coluna 1 */}
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Perfil do Viajante</label>
+                          <input 
+                            value={audience} 
+                            onChange={e => setAudience(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="Ex: casais em lua de mel, famílias..."
+                          />
+                        </div>
+                      </div>
 
-        <button
-          onClick={async () => {
-            setGeneratingVariants(true)
-            try {
+                      {/* Coluna 2 */}
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Tom</label>
+                            <select 
+                              value={tone} 
+                              onChange={e => setTone(e.target.value as any)}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            >
+                              <option value="friendly">Amigável</option>
+                              <option value="professional">Profissional</option>
+                              <option value="formal">Formal</option>
+                              <option value="casual">Casual</option>
+                              <option value="urgent">Urgente</option>
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Vertente</label>
+                            <select 
+                              value={vertical} 
+                              onChange={e => setVertical(e.target.value as any)}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                            >
+                              <option value="general">Geral</option>
+                              <option value="tourism">Turismo</option>
+                              <option value="ecommerce">E-commerce</option>
+                              <option value="services">Serviços</option>
+                              <option value="cooperative">Cooperativa</option>
+                              <option value="taxi">Táxi/Motoristas</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Coluna 3 */}
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Diferenciais do Pacote</label>
+                          <div className="flex space-x-2">
+                            <input
+                              value={benefitInput}
+                              onChange={e => setBenefitInput(e.target.value)}
+                              onKeyPress={e => {
+                                if (e.key === 'Enter' && benefitInput.trim()) {
+                                  setKeyBenefits(prev => [...prev, benefitInput.trim()])
+                                  setBenefitInput('')
+                                }
+                              }}
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                              placeholder="Ex: Guia em português..."
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (benefitInput.trim()) {
+                                  setKeyBenefits(prev => [...prev, benefitInput.trim()])
+                                  setBenefitInput('')
+                                }
+                              }}
+                              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                            >
+                              +
+                            </button>
+                          </div>
+                          
+                          {keyBenefits.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {keyBenefits.map((benefit, index) => (
+                                <span key={index} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                                  {benefit}
+                                  <button
+                                    type="button"
+                                    onClick={() => setKeyBenefits(prev => prev.filter((_, i) => i !== index))}
+                                    className="ml-1 text-blue-600 hover:text-blue-800 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Botões de Ação IA */}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setGenerating(true)
+                          try {
+                            const copy = await generateCopy({
+                              company: companyName,
+                              product: productName,
+                              tone,
+                              vertical,
+                              destination,
+                              ctaLink,
+                              mainTitle,
+                              description,
+                              previousExperience: undefined,
+                              userPatterns,
+                              audience,
+                              keyBenefits
+                            })
+                            
+                            setSubject(copy.subject)
+                            setPreheader(copy.preheader)
+                            setHtmlContent(copy.html)
+                            setCopyHistory(prev => [copy, ...prev.slice(0, 9)])
+                            
+                            setResult(`✅ Copy gerada (Score: ${copy.score}/100)`)
+                          } catch (error) {
+                            setResult('❌ Erro ao gerar copy')
+                          }
+                          setGenerating(false)
+                        }}
+                        disabled={generating}
+                        className={`py-3 px-4 rounded-lg font-medium transition-colors ${
+                          generating 
+                            ? 'bg-gray-400 cursor-not-allowed text-white' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg'
+                        }`}
+                      >
+                        {generating ? '🔄 Gerando...' : '✨ Gerar Copy com IA'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setGeneratingVariants(true)
+                          try {
               const variants = await generateVariants({
                 company: companyName,
                 product: productName,
@@ -945,44 +1106,8 @@ export default function Campaigns(){
         </button>
       </div>
 
-      {/* Template Selector Button */}
-      <div className="space-y-2">
-        <button
-          onClick={() => setShowTemplateSelector(true)}
-          className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-          </svg>
-          <span>📧 Escolher Template</span>
-        </button>
-        
-        {/* Active Template Indicator */}
-        {activeTemplate && (
-          <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-              <span className="text-sm text-purple-700 font-medium">
-                Template ativo: {EMAIL_TEMPLATES.find(t => t.id === activeTemplate)?.name}
-              </span>
-              <span className="text-xs text-purple-600">
-                (atualização automática)
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                setActiveTemplate(null)
-                setResult('ℹ️ Modo template desativado. Você pode editar o HTML livremente.')
-              }}
-              className="text-purple-600 hover:text-purple-800 text-xs font-medium"
-            >
-              Desativar
-            </button>
-          </div>
-        )}
-      </div>
-
       <button
+        type="button"
         onClick={async () => {
           if (!user) {
             setResult('⚠️ Faça login para salvar padrões')
@@ -1012,114 +1137,15 @@ export default function Campaigns(){
       {copyHistory.length > 0 && (
         <div className="text-xs text-slate-600">
           📊 Última copy: {copyHistory[0]?.score}/100 - 
-          {copyHistory[0]?.metadata?.readingLevel} - 
-          {copyHistory[0]?.metadata?.emotionalTone.join(', ')}
-        </div>
-      )}
-    </div>
-  </div>
-</div> 
-
-              {/* Consolidated Campaign Metadata (destination, CTA, title, description, returning customer) */}
-              <div className="grid grid-cols-1 gap-6 mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                      Destino da Viagem
-                      {activeTemplate && (
-                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-                          conectado
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      value={destination} 
-                      onChange={e=>setDestination(e.target.value)} 
-                      placeholder="Ex: Fernando de Noronha, Europa, Caribe..." 
-                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
-                        activeTemplate 
-                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                          : 'border-slate-300'
-                      }`} 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                      Título da Oferta
-                      {activeTemplate && (
-                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-                          conectado
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      value={mainTitle} 
-                      onChange={e=>setMainTitle(e.target.value)} 
-                      placeholder="Ex: Descubra o Paraíso do Nordeste" 
-                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
-                        activeTemplate 
-                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                          : 'border-slate-300'
-                      }`} 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                      Link da Reserva/Mais Info
-                      {activeTemplate && (
-                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-                          conectado
-                        </span>
-                      )}
-                    </label>
-                    <input 
-                      value={ctaLink} 
-                      onChange={e=>setCtaLink(e.target.value)} 
-                      placeholder="https://sua-agencia.com/pacotes/fernando-noronha" 
-                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
-                        activeTemplate 
-                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                          : 'border-slate-300'
-                      }`} 
-                    />
-                  </div>
+                      {copyHistory[0]?.metadata?.readingLevel} - 
+                      {copyHistory[0]?.metadata?.emotionalTone.join(', ')}
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
-                    Detalhes do Pacote (opcional)
-                    {activeTemplate && (
-                      <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
-                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
-                        conectado
-                      </span>
-                    )}
-                  </label>
-                  <textarea 
-                    value={description} 
-                    onChange={e => setDescription(e.target.value)} 
-                    placeholder="Ex: 5 dias e 4 noites, inclui café da manhã, transfer e passeios..." 
-                    className={`w-full px-4 py-3 border rounded-xl h-20 transition-all ${
-                      activeTemplate 
-                        ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
-                        : 'border-slate-300'
-                    }`} 
-                  />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <label className="inline-flex items-center space-x-2">
-                    <input type="checkbox" checked={returningCustomer} onChange={e=>setReturningCustomer(e.target.checked)} className="form-checkbox" />
-                    <span className="text-sm">Público: clientes anteriores</span>
-                  </label>
-                  <input value={previousTrip} onChange={e=>setPreviousTrip(e.target.value)} placeholder="Última viagem (ex: Rota das Serras)" className="px-4 py-3 border border-slate-300 rounded-xl flex-1" />
-                </div>
-              </div>
-
-              {/* Content Editor */}
+            {/* Content Editor */}
               <div className="grid grid-cols-1 gap-6">
                 {/* Preview em Tamanho Real */}
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
