@@ -117,6 +117,13 @@ service cloud.firestore {
       );
     }
 
+    // Image Gallery: allow tenant members to read/write images for their tenant
+    // Path: /clients/{tenantId}/gallery/images
+    match /clients/{tenantId}/gallery/{docId} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+    }
+
     // Fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
