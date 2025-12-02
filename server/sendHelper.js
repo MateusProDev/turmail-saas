@@ -144,15 +144,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     throw new Error('Brevo API key missing')
   }
 
-  // Validate / normalize sender. Use tenant fromEmail/fromName first, then DEFAULT_FROM_EMAIL/NAME as fallback.
+  // Validate / normalize sender. Use ONLY tenant fromEmail/fromName (no global fallback in SaaS)
   function isValidEmail(e) {
     return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
   }
 
   const tenantFromEmail = payload._tenantFromEmail || ''
   const tenantFromName = payload._tenantFromName || ''
-  const defaultFromEmail = process.env.DEFAULT_FROM_EMAIL || ''
-  const defaultFromName = process.env.DEFAULT_FROM_NAME || ''
 
   // ensure payload.sender exists and has a valid email; otherwise fallback
   payload = payload || {}
@@ -165,17 +163,15 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     payload.htmlContent = payload.htmlContent || payload.html || ''
   }
   if (!isValidEmail(payload.sender.email)) {
-    // Priority: tenant fromEmail > global DEFAULT_FROM_EMAIL
-    const fallbackEmail = tenantFromEmail || defaultFromEmail
-    const fallbackName = tenantFromName || defaultFromName
-    if (isValidEmail(fallbackEmail)) {
-      if (debug) console.log('[sendHelper] using tenant/default fromEmail fallback:', fallbackEmail)
-      payload.sender.email = fallbackEmail
-      payload.sender.name = payload.sender.name || fallbackName || ''
+    // Use tenant fromEmail (REQUIRED in SaaS - each account has its own Brevo sender)
+    if (isValidEmail(tenantFromEmail)) {
+      if (debug) console.log('[sendHelper] using tenant fromEmail:', tenantFromEmail)
+      payload.sender.email = tenantFromEmail
+      payload.sender.name = payload.sender.name || tenantFromName || ''
     } else {
-      console.error('[sendHelper] invalid sender email and no tenant/default fromEmail configured', payload.sender && payload.sender.email)
-      const err = new Error('valid sender email required. Please configure From Email in Settings.')
-      err.code = 'invalid_sender'
+      console.error('[sendHelper] No valid sender email configured for tenant', { tenantId, tenantFromEmail })
+      const err = new Error('Sender email not configured. Please configure your Brevo API key and SMTP Login in Settings.')
+      err.code = 'missing_sender_email'
       throw err
     }
   }
