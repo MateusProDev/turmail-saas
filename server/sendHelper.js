@@ -167,7 +167,7 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     if (isValidEmail(tenantFromEmail)) {
       if (debug) console.log('[sendHelper] using tenant fromEmail:', tenantFromEmail)
       payload.sender.email = tenantFromEmail
-      payload.sender.name = payload.sender.name || tenantFromName || ''
+      payload.sender.name = tenantFromName || payload.sender.name || ''
     } else {
       console.error('[sendHelper] No valid sender email configured for tenant', { tenantId, tenantFromEmail })
       const err = new Error('Sender email not configured. Please configure your Brevo API key and SMTP Login in Settings.')
@@ -176,7 +176,7 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     }
   }
 
-  // If sender name is missing, try to infer from tenant owner or payload ownerUid
+  // If sender name is still missing, try to infer from tenant owner or payload ownerUid
   if (!payload.sender.name || String(payload.sender.name).trim() === '') {
     try {
       let ownerUid = null
