@@ -377,11 +377,11 @@ export default function Settings(){
                     </div>
                   </div>
 
-                  {/* Login SMTP (opcional para chaves xsmtp) */}
+                  {/* Login SMTP (OBRIGATÓRIO para envio de emails) */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Login SMTP 
-                      <span className="text-slate-500 font-normal ml-2">(opcional - apenas para chaves xsmtp)</span>
+                      <span className="text-red-600 font-semibold ml-2">*obrigatório</span>
                     </label>
                     <input 
                       value={smtpLogin} 
@@ -389,7 +389,11 @@ export default function Settings(){
                       type="text" 
                       className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       placeholder="ex: 9c6dd5001@smtp-brevo.com"
+                      required
                     />
+                    <p className="text-xs text-slate-600 mt-1">
+                      📍 Encontre em <strong>Brevo → SMTP & API → Login</strong>
+                    </p>
                   </div>
 
                   {/* Info box sobre detecção automática */}
@@ -406,6 +410,13 @@ export default function Settings(){
                             <li>Nome do remetente configurado na Brevo</li>
                             <li>E-mail do remetente verificado</li>
                           </ul>
+                          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                            <strong className="text-amber-900">⚠️ Importante:</strong>
+                            <div className="text-amber-800 mt-1">
+                              O <strong>Login SMTP</strong> é obrigatório para envio de emails. 
+                              Sem ele, as campanhas serão criadas mas os emails não serão enviados.
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
