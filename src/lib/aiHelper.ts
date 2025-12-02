@@ -115,19 +115,85 @@ const TEMPLATE_SYSTEM = {
         '{company} tem novas experiências em {destination}',
         'Descubra {destination} com {company}',
         'Pacotes exclusivos para {destination}',
-        'Sua próxima aventura em {destination} começa aqui'
+        'Sua próxima aventura em {destination} começa aqui',
+        '{destination}: Ofertas imperdíveis {company}',
+        'Viaje para {destination} - Condições especiais',
+        'Realize o sonho de conhecer {destination}',
+        '{destination} te espera! Veja as novidades',
+        'Promoção relâmpago: {destination} com {company}',
+        'Roteiros exclusivos em {destination}'
       ],
       intros: [
         'Preparamos roteiros únicos para você viver o melhor de {destination}.',
         'Selecionamos as melhores experiências em {destination} pensando em você.',
-        'Descubra {destination} como nunca antes com nossos pacotes exclusivos.'
+        'Descubra {destination} como nunca antes com nossos pacotes exclusivos.',
+        'Transforme seu sonho de conhecer {destination} em realidade.',
+        'Experiências autênticas e inesquecíveis te aguardam em {destination}.',
+        'Guias locais, roteiros personalizados e momentos únicos em {destination}.',
+        'Viva {destination} de forma completa com nossos pacotes especiais.',
+        'De praias paradisíacas a cultura vibrante, {destination} tem tudo isso.',
+        'Sua jornada para {destination} começa com a expertise da {company}.',
+        'Criamos memórias que duram para sempre em {destination}.'
       ],
       benefits: [
         'Guias locais especializados e roteiros personalizados',
         'Experiências autênticas que vão além do turismo convencional',
-        'Condições flexíveis e atendimento dedicado',
-        'Opções para todos os tipos de viajante'
-      ]
+        'Condições flexíveis e atendimento dedicado 24/7',
+        'Opções para todos os tipos de viajante',
+        'Hospedagens selecionadas com excelente custo-benefício',
+        'Translados e logística completa inclusos',
+        'Seguro viagem e assistência internacional',
+        'Parcelamento facilitado e condições especiais',
+        'Roteiros que combinam aventura, cultura e gastronomia',
+        'Acesso a experiências exclusivas e off the beaten path'
+      ],
+      tourismPrompts: {
+        beach: {
+          phrases: [
+            'Sinta a brisa do mar e o sol na pele',
+            'Praias de águas cristalinas te esperam',
+            'Mergulhe em cenários paradisíacos',
+            'Do nascer ao pôr do sol, cada momento é mágico'
+          ],
+          activities: ['mergulho', 'passeios de barco', 'esportes aquáticos', 'beach clubs exclusivos']
+        },
+        cultural: {
+          phrases: [
+            'Imersa na história e cultura local',
+            'Descubra tradições milenares',
+            'Gastronomia autêntica e arquitetura de tirar o fôlego',
+            'Cada rua conta uma história'
+          ],
+          activities: ['city tours guiados', 'experiências gastronômicas', 'museus e patrimônios', 'mercados locais']
+        },
+        adventure: {
+          phrases: [
+            'Adrenalina e natureza em perfeita harmonia',
+            'Trilhas, montanhas e paisagens de cortar a respiração',
+            'Para quem busca emoção e superação',
+            'Conexão total com a natureza'
+          ],
+          activities: ['trekking', 'rafting', 'escalada', 'safáris fotográficos']
+        },
+        romantic: {
+          phrases: [
+            'O cenário perfeito para momentos inesquecíveis a dois',
+            'Romantismo, privacidade e experiências exclusivas',
+            'Crie memórias únicas ao lado de quem você ama',
+            'Do jantar à beira-mar ao spa relaxante'
+          ],
+          activities: ['jantares românticos', 'spa para casais', 'passeios privativos', 'suítes com vista panorâmica']
+        },
+        family: {
+          phrases: [
+            'Diversão garantida para toda a família',
+            'Atividades que unem pais e filhos',
+            'Segurança, conforto e entretenimento',
+            'Memórias que seus filhos vão lembrar para sempre'
+          ],
+          activities: ['parques temáticos', 'atividades educativas', 'passeios kid-friendly', 'hotéis family resort']
+        }
+      }
     },
     ecommerce: {
       subjects: [
@@ -573,4 +639,182 @@ export function suggestCopyVariants(opts: CopyOptions, count = 3): GeneratedCopy
   }
   
   return variants
+}
+
+// ✨ GERADOR ESPECIALIZADO EM TURISMO ✨
+export async function generateTourismCopy(opts: {
+  destination: string
+  companyName: string
+  tripType?: 'beach' | 'cultural' | 'adventure' | 'romantic' | 'family'
+  duration?: string
+  priceRange?: string
+  highlights?: string[]
+  tone?: CopyOptions['tone']
+}): Promise<GeneratedCopy> {
+  const {
+    destination,
+    companyName,
+    tripType = 'beach',
+    duration = '',
+    priceRange = '',
+    highlights = [],
+    tone = 'friendly'
+  } = opts
+
+  await new Promise(resolve => setTimeout(resolve, 800))
+
+  const tourismData = TEMPLATE_SYSTEM.verticals.tourism.tourismPrompts[tripType]
+  const toneData = TEMPLATE_SYSTEM.tones[tone as keyof typeof TEMPLATE_SYSTEM.tones] || TEMPLATE_SYSTEM.tones.friendly
+
+  // Sujeito especializado
+  const subjectTemplates = [
+    `${destination}: ${tourismData.phrases[0]}`,
+    `Explore ${destination} com ${companyName}`,
+    `Pacote ${tripType === 'romantic' ? 'Romântico' : tripType === 'family' ? 'em Família' : 'Especial'} para ${destination}`,
+    `Sua aventura em ${destination} começa aqui!`,
+    `${destination} te espera! Confira as novidades`
+  ]
+
+  const subject = subjectTemplates[Math.floor(Math.random() * subjectTemplates.length)]
+
+  // Preheader contextual
+  const preheaderTemplates = [
+    `${tourismData.phrases[1]} | ${duration || 'Saídas flexíveis'}`,
+    `${priceRange || 'Condições especiais'} - ${tourismData.phrases[2]}`,
+    `${companyName} criou o roteiro perfeito para você`
+  ]
+
+  const preheader = preheaderTemplates[Math.floor(Math.random() * preheaderTemplates.length)]
+
+  // HTML rico e contextualizado
+  const selectedActivities = tourismData.activities.slice(0, 3)
+  const opening = toneData.openings[0].replace(/{name}/g, '{name}')
+  const closing = toneData.closings[0].replace(/{company}/g, companyName)
+  const ctaText = tripType === 'romantic' ? 'Reservar Experiência Romântica' : 
+                   tripType === 'family' ? 'Ver Pacote Família' : 
+                   'Conhecer Roteiro Completo'
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f7fa; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 800;">${companyName}</h1>
+              <p style="margin: 10px 0 0; color: #e0e7ff; font-size: 14px; letter-spacing: 2px; text-transform: uppercase;">Experiências Autênticas</p>
+            </td>
+          </tr>
+
+          <!-- Conteúdo -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 10px; color: #334155; font-size: 16px;">${opening}</p>
+              
+              <h2 style="margin: 20px 0 15px; color: #1e293b; font-size: 32px; font-weight: 700; line-height: 1.2;">
+                Descubra ${destination}
+              </h2>
+
+              <p style="margin: 0 0 25px; color: #475569; font-size: 16px; line-height: 1.7;">
+                ${tourismData.phrases[Math.floor(Math.random() * tourismData.phrases.length)]}
+              </p>
+
+              <!-- Highlights -->
+              <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                <p style="margin: 0 0 15px; color: #0c4a6e; font-size: 16px; font-weight: 700;">✨ O que te espera:</p>
+                ${selectedActivities.map(activity => `
+                  <p style="margin: 8px 0; color: #0369a1; font-size: 15px;">
+                    <strong>✓</strong> ${activity.charAt(0).toUpperCase() + activity.slice(1)}
+                  </p>
+                `).join('')}
+                ${highlights.map(h => `
+                  <p style="margin: 8px 0; color: #0369a1; font-size: 15px;">
+                    <strong>✓</strong> ${h}
+                  </p>
+                `).join('')}
+              </div>
+
+              ${duration || priceRange ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                <tr>
+                  ${duration ? `
+                  <td width="50%" style="padding-right: 10px;">
+                    <div style="background-color: #fef3c7; border-radius: 8px; padding: 18px; text-align: center;">
+                      <p style="margin: 0 0 5px; color: #92400e; font-size: 12px; text-transform: uppercase; font-weight: 600;">Duração</p>
+                      <p style="margin: 0; color: #78350f; font-size: 20px; font-weight: 700;">${duration}</p>
+                    </div>
+                  </td>
+                  ` : ''}
+                  ${priceRange ? `
+                  <td width="50%" style="${duration ? 'padding-left: 10px;' : ''}">
+                    <div style="background-color: #dcfce7; border-radius: 8px; padding: 18px; text-align: center;">
+                      <p style="margin: 0 0 5px; color: #14532d; font-size: 12px; text-transform: uppercase; font-weight: 600;">Investimento</p>
+                      <p style="margin: 0; color: #166534; font-size: 20px; font-weight: 700;">${priceRange}</p>
+                    </div>
+                  </td>
+                  ` : ''}
+                </tr>
+              </table>
+              ` : ''}
+
+              <!-- CTA -->
+              <div style="text-align: center; margin: 30px 0 20px;">
+                <a href="{ctaLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                  ${ctaText}
+                </a>
+              </div>
+
+              <p style="margin: 20px 0 0; color: #94a3b8; font-size: 13px; text-align: center;">
+                💬 Dúvidas? Nossa equipe de especialistas está pronta para ajudar!
+              </p>
+
+              <p style="margin: 25px 0 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                ${closing}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 25px; text-align: center; border-radius: 0 0 16px 16px; border-top: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 8px; color: #64748b; font-size: 13px; font-weight: 600;">${companyName}</p>
+              <p style="margin: 0 0 12px; color: #94a3b8; font-size: 11px;">Transformando sonhos em viagens inesquecíveis</p>
+              <p style="margin: 0; color: #cbd5e1; font-size: 10px;">
+                <a href="#" style="color: #667eea; text-decoration: none;">Descadastrar</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim()
+
+  const copy: GeneratedCopy = {
+    subject,
+    preheader,
+    html,
+    tone,
+    vertical: 'tourism',
+    metadata: {
+      wordCount: html.split(/\s+/).length,
+      readingLevel: 'médio',
+      emotionalTone: ['positivo', 'inspirador']
+    }
+  }
+
+  copy.score = CopyAnalyzer.calculateScore(copy)
+  return copy
 }
