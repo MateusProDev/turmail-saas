@@ -119,6 +119,8 @@ export default function Campaigns(){
     const template = EMAIL_TEMPLATES.find(t => t.id === activeTemplate)
     if (!template) return
 
+    console.log('🔄 Atualizando template:', activeTemplate)
+
     const generated = template.generate({
       companyName: companyName || 'Sua Agência',
       destination: destination || 'Destino Incrível',
@@ -139,8 +141,9 @@ export default function Campaigns(){
     // Atualizar editor visual quando template muda
     setTimeout(() => {
       const editor = document.getElementById('visual-editor')
+      console.log('📝 Editor encontrado:', !!editor)
       if (editor) {
-        editor.innerHTML = DOMPurify.sanitize(
+        const renderedHtml = DOMPurify.sanitize(
           renderTemplate(
             generated.html,
             generated.subject,
@@ -151,8 +154,10 @@ export default function Campaigns(){
           .replace(/\{productName\}/g, productName || 'Produto')
           .replace(/\{mainTitle\}/g, mainTitle || 'Título')
         )
+        editor.innerHTML = renderedHtml
+        console.log('✅ Preview atualizado! Tamanho:', renderedHtml.length)
       }
-    }, 100)
+    }, 150)
   }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
 
   // Preview automático removido - agora só mostra ao selecionar template manualmente
