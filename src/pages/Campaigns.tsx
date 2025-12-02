@@ -66,6 +66,32 @@ export default function Campaigns(){
   
   // Template selection
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
+
+  // Auto-update template when form fields change (real-time sync)
+  useEffect(() => {
+    if (!activeTemplate) return
+    
+    const template = EMAIL_TEMPLATES.find(t => t.id === activeTemplate)
+    if (!template) return
+
+    const generated = template.generate({
+      companyName: companyName || 'Sua Agência',
+      destination: destination || 'Destino Incrível',
+      productName: productName || '',
+      mainTitle: mainTitle || `Descubra ${destination || 'Novos Horizontes'}`,
+      description: description || 'Uma experiência única te espera',
+      ctaLink: ctaLink || '#',
+      ctaText: 'Ver Mais',
+      keyBenefits: keyBenefits.length > 0 ? keyBenefits : undefined,
+      priceInfo: 'Condições especiais',
+      dateRange: 'Saídas flexíveis'
+    })
+
+    setSubject(generated.subject)
+    setPreheader(generated.preheader)
+    setHtmlContent(generated.html)
+  }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -540,27 +566,16 @@ export default function Campaigns(){
                         {EMAIL_TEMPLATES.map((template) => (
                           <div
                             key={template.id}
-                            className="bg-white rounded-xl border-2 border-slate-200 hover:border-purple-400 transition-all cursor-pointer overflow-hidden group"
+                            className={`bg-white rounded-xl border-2 transition-all cursor-pointer overflow-hidden group ${
+                              activeTemplate === template.id 
+                                ? 'border-purple-500 ring-2 ring-purple-200' 
+                                : 'border-slate-200 hover:border-purple-400'
+                            }`}
                             onClick={() => {
-                              // Apply template
-                              const generated = template.generate({
-                                companyName: companyName || 'Sua Agência',
-                                destination: destination || 'Destino Incrível',
-                                productName: productName,
-                                mainTitle: mainTitle || `Descubra ${destination || 'Novos Horizontes'}`,
-                                description: description || 'Uma experiência única te espera',
-                                ctaLink: ctaLink || '#',
-                                ctaText: 'Ver Mais',
-                                keyBenefits: keyBenefits.length > 0 ? keyBenefits : undefined,
-                                priceInfo: 'Condições especiais',
-                                dateRange: 'Saídas flexíveis'
-                              })
-                              
-                              setSubject(generated.subject)
-                              setPreheader(generated.preheader)
-                              setHtmlContent(generated.html)
+                              // Apply template and activate real-time sync
+                              setActiveTemplate(template.id)
                               setShowTemplateSelector(false)
-                              setResult(`✅ Template "${template.name}" aplicado com sucesso!`)
+                              setResult(`✅ Template "${template.name}" aplicado! Os campos do formulário agora atualizam o template automaticamente.`)
                             }}
                           >
                             {/* Thumbnail */}
@@ -642,32 +657,56 @@ export default function Campaigns(){
     {/* Coluna 1: Inputs principais */}
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Empresa</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center">
+          Empresa
+          {activeTemplate && (
+            <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+              conectado
+            </span>
+          )}
+        </label>
         <input 
           value={companyName} 
           onChange={e => setCompanyName(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all ${
+            activeTemplate 
+              ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+              : 'border-slate-300 focus:ring-blue-500'
+          }`}
           placeholder="Nome da sua empresa"
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Produto/Serviço</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center">
+          Pacote/Experiência
+          {activeTemplate && (
+            <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+              conectado
+            </span>
+          )}
+        </label>
         <input 
           value={productName} 
           onChange={e => setProductName(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          placeholder="O que você oferece?"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-all ${
+            activeTemplate 
+              ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+              : 'border-slate-300 focus:ring-blue-500'
+          }`}
+          placeholder="Ex: Pacote Nordeste Completo, City Tour SP"
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Público-alvo</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Perfil do Viajante</label>
         <input 
           value={audience} 
           onChange={e => setAudience(e.target.value)}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          placeholder="ex: clientes premium, jovens..."
+          placeholder="Ex: casais em lua de mel, famílias, aventureiros..."
         />
       </div>
     </div>
@@ -708,7 +747,7 @@ export default function Campaigns(){
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">Benefícios principais</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Diferenciais do Pacote</label>
         <div className="flex space-x-2 mb-2">
           <input
             value={benefitInput}
@@ -720,7 +759,7 @@ export default function Campaigns(){
               }
             }}
             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            placeholder="Adicione um benefício e pressione Enter"
+            placeholder="Ex: Guia em português, Hotel 5 estrelas, Transfer incluído..."
           />
           <button
             onClick={() => {
@@ -834,15 +873,41 @@ export default function Campaigns(){
       </div>
 
       {/* Template Selector Button */}
-      <button
-        onClick={() => setShowTemplateSelector(true)}
-        className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-        </svg>
-        <span>📧 Escolher Template</span>
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={() => setShowTemplateSelector(true)}
+          className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
+          <span>📧 Escolher Template</span>
+        </button>
+        
+        {/* Active Template Indicator */}
+        {activeTemplate && (
+          <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+              <span className="text-sm text-purple-700 font-medium">
+                Template ativo: {EMAIL_TEMPLATES.find(t => t.id === activeTemplate)?.name}
+              </span>
+              <span className="text-xs text-purple-600">
+                (atualização automática)
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setActiveTemplate(null)
+                setResult('ℹ️ Modo template desativado. Você pode editar o HTML livremente.')
+              }}
+              className="text-purple-600 hover:text-purple-800 text-xs font-medium"
+            >
+              Desativar
+            </button>
+          </div>
+        )}
+      </div>
 
       <button
         onClick={async () => {
@@ -886,22 +951,90 @@ export default function Campaigns(){
               <div className="grid grid-cols-1 gap-6 mt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Destino / Público</label>
-                    <input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Destino ou público" className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Destino da Viagem
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={destination} 
+                      onChange={e=>setDestination(e.target.value)} 
+                      placeholder="Ex: Fernando de Noronha, Europa, Caribe..." 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300'
+                      }`} 
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Título principal (H1)</label>
-                    <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} placeholder="Título principal que aparecerá no email" className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Título da Oferta
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={mainTitle} 
+                      onChange={e=>setMainTitle(e.target.value)} 
+                      placeholder="Ex: Descubra o Paraíso do Nordeste" 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300'
+                      }`} 
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Link do CTA</label>
-                    <input value={ctaLink} onChange={e=>setCtaLink(e.target.value)} placeholder="https://..." className="w-full px-4 py-3 border border-slate-300 rounded-xl" />
+                    <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                      Link da Reserva/Mais Info
+                      {activeTemplate && (
+                        <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                          conectado
+                        </span>
+                      )}
+                    </label>
+                    <input 
+                      value={ctaLink} 
+                      onChange={e=>setCtaLink(e.target.value)} 
+                      placeholder="https://sua-agencia.com/pacotes/fernando-noronha" 
+                      className={`w-full px-4 py-3 border rounded-xl transition-all ${
+                        activeTemplate 
+                          ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                          : 'border-slate-300'
+                      }`} 
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Descrição (para IA)</label>
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição específica para este público (ex: clientes que já viajaram com a agência) — opcional" className="w-full px-4 py-3 border border-slate-300 rounded-xl h-20" />
+                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center">
+                    Detalhes do Pacote (opcional)
+                    {activeTemplate && (
+                      <span className="ml-2 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full flex items-center">
+                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-1 animate-pulse" />
+                        conectado
+                      </span>
+                    )}
+                  </label>
+                  <textarea 
+                    value={description} 
+                    onChange={e => setDescription(e.target.value)} 
+                    placeholder="Ex: 5 dias e 4 noites, inclui café da manhã, transfer e passeios..." 
+                    className={`w-full px-4 py-3 border rounded-xl h-20 transition-all ${
+                      activeTemplate 
+                        ? 'border-purple-300 focus:ring-purple-500 focus:border-purple-500' 
+                        : 'border-slate-300'
+                    }`} 
+                  />
                 </div>
 
                 <div className="flex items-center space-x-4">
