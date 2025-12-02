@@ -67,9 +67,49 @@ export default function Campaigns(){
   
   // Template selection
   const [showTemplateSelector, setShowTemplateSelector] = useState(false)
-  const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
+  const [activeTemplate, setActiveTemplate] = useState<string | null>('destination-package') // Template de turismo por padrão
   const [showHtmlCode, setShowHtmlCode] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+
+  // Aplicar template padrão ao carregar a página
+  useEffect(() => {
+    // Se não houver conteúdo HTML, aplicar template padrão de turismo
+    if (!htmlContent && !editingCampaign) {
+      const defaultTemplate = EMAIL_TEMPLATES.find(t => t.id === 'destination-package')
+      if (defaultTemplate) {
+        const generated = defaultTemplate.generate({
+          companyName: companyName || 'Sua Agência de Turismo',
+          destination: 'Destino dos Sonhos',
+          productName: '',
+          mainTitle: 'Descubra o Paraíso',
+          description: 'Uma experiência inesquecível te espera',
+          ctaLink: '#',
+          ctaText: 'Ver Pacote Completo',
+          keyBenefits: ['Guias especializados', 'Hospedagem premium', 'Translados inclusos'],
+          priceInfo: 'A partir de R$ 2.999',
+          dateRange: 'Saídas diárias'
+        })
+        
+        setSubject(generated.subject)
+        setPreheader(generated.preheader)
+        setHtmlContent(generated.html)
+        
+        // Atualizar editor visual
+        setTimeout(() => {
+          const editor = document.getElementById('visual-editor')
+          if (editor) {
+            editor.innerHTML = DOMPurify.sanitize(
+              renderTemplate(
+                generated.html,
+                generated.subject,
+                generated.preheader
+              )
+            )
+          }
+        }, 100)
+      }
+    }
+  }, [])
 
   // Auto-update template when form fields change (real-time sync)
   useEffect(() => {
@@ -94,7 +134,37 @@ export default function Campaigns(){
     setSubject(generated.subject)
     setPreheader(generated.preheader)
     setHtmlContent(generated.html)
+    
+    // Atualizar editor visual quando template muda
+    const editor = document.getElementById('visual-editor')
+    if (editor) {
+      editor.innerHTML = DOMPurify.sanitize(
+        renderTemplate(
+          generated.html,
+          generated.subject,
+          generated.preheader
+        ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
+        .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
+        .replace(/\{destination\}/g, destination || 'Destino')
+        .replace(/\{productName\}/g, productName || 'Produto')
+        .replace(/\{mainTitle\}/g, mainTitle || 'Título')
+      )
+    }
   }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
+
+  // Inicializar editor visual na montagem do componente
+  useEffect(() => {
+    const editor = document.getElementById('visual-editor')
+    if (editor && !editor.innerHTML) {
+      editor.innerHTML = DOMPurify.sanitize(
+        renderTemplate(
+          htmlContent || '<p class="text-slate-400 text-center py-12">Escolha um template ou clique aqui para começar a digitar...</p>',
+          subject || 'Sem assunto',
+          preheader || ''
+        )
+      )
+    }
+  }, [])
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
@@ -1055,44 +1125,145 @@ export default function Campaigns(){
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
                   <div className="flex items-center justify-between mb-4">
                     <label className="text-lg font-semibold text-slate-900">📧 Preview do Email</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowHtmlCode(!showHtmlCode)}
-                      className="px-4 py-2 bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-300 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                      </svg>
-                      <span>{showHtmlCode ? 'Esconder Código' : 'Editar HTML'}</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      {/* Toolbar de Formatação Visual */}
+                      <div className="flex items-center space-x-1 bg-white border-2 border-slate-300 rounded-lg px-2 py-1">
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('bold', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded font-bold text-sm"
+                          title="Negrito (Ctrl+B)"
+                        >
+                          B
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('italic', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded italic text-sm"
+                          title="Itálico (Ctrl+I)"
+                        >
+                          I
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('underline', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded underline text-sm"
+                          title="Sublinhado (Ctrl+U)"
+                        >
+                          U
+                        </button>
+                        <div className="w-px h-6 bg-slate-300"></div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = prompt('Digite o link:')
+                            if (url) document.execCommand('createLink', false, url)
+                          }}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Inserir link"
+                        >
+                          🔗
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('fontSize', false, '5')}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm font-semibold"
+                          title="Título grande"
+                        >
+                          H1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('fontSize', false, '4')}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Título médio"
+                        >
+                          H2
+                        </button>
+                        <div className="w-px h-6 bg-slate-300"></div>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('justifyLeft', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Alinhar à esquerda"
+                        >
+                          ⬅️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('justifyCenter', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Centralizar"
+                        >
+                          ⬆️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => document.execCommand('justifyRight', false)}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Alinhar à direita"
+                        >
+                          ➡️
+                        </button>
+                        <div className="w-px h-6 bg-slate-300"></div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const color = prompt('Cor (ex: #FF5733):')
+                            if (color) document.execCommand('foreColor', false, color)
+                          }}
+                          className="px-2 py-1 hover:bg-slate-100 rounded text-sm"
+                          title="Cor do texto"
+                        >
+                          🎨
+                        </button>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setShowHtmlCode(!showHtmlCode)}
+                        className="px-4 py-2 bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-300 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        <span>{showHtmlCode ? 'Esconder Código' : 'Ver HTML'}</span>
+                      </button>
+                    </div>
                   </div>
                   
-                  {/* Preview Real */}
+                  {/* Preview Real - Editor Visual */}
                   <div className="bg-white rounded-xl shadow-lg border-2 border-slate-300 overflow-hidden mb-4">
-                    <div className="bg-slate-800 px-4 py-2 flex items-center space-x-2">
-                      <div className="flex space-x-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div className="bg-slate-800 px-4 py-2 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex space-x-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div className="text-sm text-slate-300 font-mono">Preview - Email Marketing</div>
                       </div>
-                      <div className="flex-1 text-center text-sm text-slate-300 font-mono">Preview - Email Marketing</div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-green-400 flex items-center">
+                          <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                          Clique para editar
+                        </span>
+                      </div>
                     </div>
-                    <div className="max-w-2xl mx-auto bg-white overflow-auto" style={{maxHeight: '600px'}}>
+                    <div className="max-w-2xl mx-auto bg-white overflow-auto" style={{maxHeight: '700px'}}>
                       <div 
-                        className="p-6" 
-                        dangerouslySetInnerHTML={{ 
-                          __html: DOMPurify.sanitize(
-                            renderTemplate(
-                              htmlContent || '<p class="text-slate-400 text-center py-12">Escolha um template ou digite o conteúdo HTML...</p>', 
-                              subject || 'Sem assunto', 
-                              preheader || ''
-                            ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
-                            .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
-                            .replace(/\{destination\}/g, destination || 'Destino')
-                            .replace(/\{productName\}/g, productName || 'Produto')
-                            .replace(/\{mainTitle\}/g, mainTitle || 'Título')
-                          ) 
-                        }} 
+                        id="visual-editor"
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onBlur={(e) => {
+                          // Atualizar HTML quando sair da edição
+                          const newHtml = e.currentTarget.innerHTML
+                          setHtmlContent(newHtml)
+                        }}
+                        className="p-6 outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-inset min-h-[400px] cursor-text"
+                        style={{
+                          transition: 'all 0.2s ease',
+                        }}
                       />
                     </div>
                   </div>
