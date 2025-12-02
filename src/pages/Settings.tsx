@@ -57,9 +57,7 @@ export default function Settings(){
   */
   const [tenantKey, setTenantKey] = useState('')
   const [smtpLogin, setSmtpLogin] = useState('')
-  const [smtpMemberLevel, setSmtpMemberLevel] = useState(false)
-  const [fromEmail, setFromEmail] = useState('')
-  const [fromName, setFromName] = useState('')
+  const [smtpMemberLevel] = useState(false)
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
@@ -70,8 +68,6 @@ export default function Settings(){
   const [autoCreateAttempted, setAutoCreateAttempted] = useState(false)
   const [tenantKeys, setTenantKeys] = useState<Array<any>>([])
   const [loadingKeys, setLoadingKeys] = useState(false)
-  const [companyName, setCompanyName] = useState('')
-  const [savingProfile, setSavingProfile] = useState(false)
 
   /*
   const saveToVercel = async () => {
@@ -160,8 +156,7 @@ export default function Settings(){
       const body: any = { key: tenantKey, tenantId }
       if (smtpLogin) body.smtpLogin = smtpLogin
       if (smtpMemberLevel) body.smtpMemberLevel = true
-      if (fromEmail) body.fromEmail = fromEmail
-      if (fromName) body.fromName = fromName
+      // fromEmail and fromName will be auto-detected from Brevo
 
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
@@ -186,11 +181,7 @@ export default function Settings(){
           // Find active sender (prefer first active, or first one)
           const activeSender = senders.find((s: any) => s.active) || senders[0]
           
-          if (activeSender && (!fromEmail || !fromName)) {
-            // Auto-fill if not manually set
-            if (!fromEmail) setFromEmail(activeSender.email)
-            if (!fromName) setFromName(activeSender.name)
-            
+          if (activeSender) {
             // Save the auto-detected sender info
             await fetch('/api/tenant/set-brevo-key', {
               method: 'POST',
@@ -200,14 +191,14 @@ export default function Settings(){
                 tenantId,
                 smtpLogin,
                 smtpMemberLevel,
-                fromEmail: fromEmail || activeSender.email,
-                fromName: fromName || activeSender.name
+                fromEmail: activeSender.email,
+                fromName: activeSender.name
               })
             })
             
             setResult(`✅ Chave salva! Remetente detectado: ${activeSender.name} <${activeSender.email}>`)
           } else {
-            setResult('✅ Chave salva para o tenant')
+            setResult('✅ Chave salva (nenhum remetente encontrado na Brevo)')
           }
         } else {
           setResult('✅ Chave salva (não foi possível buscar remetentes automaticamente)')
@@ -265,18 +256,6 @@ export default function Settings(){
         setSelectedTenant(null)
         return
       }
-      // load user profile company name
-      try {
-        const { db } = await import('../lib/firebase')
-        const { getDoc, doc } = await import('firebase/firestore')
-        const uDoc = await getDoc(doc(db, 'users', user.uid))
-        if (uDoc && uDoc.exists()) {
-          const data = uDoc.data() || {}
-          setCompanyName((data.company && data.company.name) || data.companyName || '')
-        }
-      } catch (e) {
-        // ignore
-      }
       try {
         setLoadingTenants(true)
         // Use server endpoint that uses Admin SDK to list tenant memberships (bypasses client rules)
@@ -299,7 +278,7 @@ export default function Settings(){
           try {
             if (!autoCreateAttempted) {
               setAutoCreateAttempted(true)
-              const createResp = await fetch('/api/tenant/create-tenant', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: companyName || undefined }) })
+              const createResp = await fetch('/api/tenant/create-tenant', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: `Tenant ${user.uid}` }) })
               const createJson = await createResp.json()
               if (createResp.ok && createJson && createJson.tenantId) {
                 // reload tenants after create
@@ -342,21 +321,6 @@ export default function Settings(){
     }
   }, [selectedTenant])
 
-  const saveProfile = async () => {
-    setSavingProfile(true)
-    try {
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
-      if (!token) throw new Error('Not authenticated')
-      const body: any = { company: { name: companyName } }
-      const resp = await fetch('/api/user/update-profile', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(JSON.stringify(data))
-      setResult('Perfil atualizado')
-    } catch (e:any) {
-      setResult(String(e.message || e))
-    } finally { setSavingProfile(false) }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -387,27 +351,18 @@ export default function Settings(){
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
                 <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Chave Brevo (opcional)</h2>
+                <h2 className="text-xl font-semibold text-slate-900">Configuração Brevo</h2>
                 <p className="text-slate-600 text-sm">
-                  Cole aqui a chave API da sua conta Brevo. Esta chave será usada para enviar e‑mails; mantenha‑a em segredo.
+                  Cole sua chave API da Brevo. O remetente será detectado automaticamente.
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              {/* Profile: Company name editable */}
-              <div className="bg-slate-50/80 rounded-xl p-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Nome da Empresa (usado como From)</label>
-                <div className="flex space-x-3">
-                  <input value={companyName} onChange={e => setCompanyName(e.target.value)} className="flex-1 px-4 py-3 border border-slate-300 rounded-xl" placeholder="Nome da sua empresa" />
-                  <button onClick={saveProfile} disabled={savingProfile} className="px-4 py-3 bg-indigo-600 text-white rounded-xl">{savingProfile ? 'Salvando...' : 'Salvar'}</button>
-                </div>
-                <p className="text-xs text-slate-500 mt-2">Este nome será usado automaticamente como remetente quando não houver outro nome configurado.</p>
-              </div>
               <div className="bg-slate-50/80 rounded-xl p-4">
                 <div className="space-y-4">
                   {/* Tenant Key Input */}
@@ -418,7 +373,7 @@ export default function Settings(){
                         onChange={e => setTenantKey(e.target.value)} 
                         type={showTenantKey ? 'text' : 'password'} 
                         className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-24"
-                        placeholder="Cole a chave API"
+                        placeholder="Cole a chave API da Brevo"
                       />
                       <button 
                         onClick={() => setShowTenantKey(s => !s)} 
@@ -430,60 +385,38 @@ export default function Settings(){
                     </div>
                   </div>
 
-                  {/* From Email (Sender) */}
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        E-mail do Remetente 
-                        <span className="text-slate-500 font-normal ml-2">(opcional - será detectado automaticamente da Brevo)</span>
-                      </label>
-                      <input 
-                        value={fromEmail} 
-                        onChange={e => setFromEmail(e.target.value)} 
-                        type="email" 
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        placeholder="Deixe vazio para detectar automaticamente"
-                      />
-                    </div>
-                  </div>
-
-                  {/* From Name (Sender Name) */}
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Nome do Remetente 
-                        <span className="text-slate-500 font-normal ml-2">(opcional - será detectado automaticamente da Brevo)</span>
-                      </label>
-                      <input 
-                        value={fromName} 
-                        onChange={e => setFromName(e.target.value)} 
-                        type="text" 
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        placeholder="Deixe vazio para detectar automaticamente"
-                      />
-                    </div>
-                  </div>
-
-                  {/* SMTP Login */}
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <input 
-                        value={smtpLogin} 
-                        onChange={e => setSmtpLogin(e.target.value)} 
-                        type="text" 
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        placeholder="Login SMTP (opcional — ex: 9c6dd5001@smtp-brevo.com)"
-                      />
-                    </div>
-                    <label className="flex items-center space-x-2 bg-slate-100 rounded-xl px-4 py-3">
-                      <input 
-                        type="checkbox" 
-                        checked={smtpMemberLevel} 
-                        onChange={e => setSmtpMemberLevel(e.target.checked)} 
-                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-slate-700 font-medium">Salvar este login SMTP para este membro (opcional)</span>
+                  {/* Login SMTP (opcional para chaves xsmtp) */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Login SMTP 
+                      <span className="text-slate-500 font-normal ml-2">(opcional - apenas para chaves xsmtp)</span>
                     </label>
+                    <input 
+                      value={smtpLogin} 
+                      onChange={e => setSmtpLogin(e.target.value)} 
+                      type="text" 
+                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      placeholder="ex: 9c6dd5001@smtp-brevo.com"
+                    />
+                  </div>
+
+                  {/* Info box sobre detecção automática */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start space-x-3">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="text-sm text-blue-900">
+                        <div className="font-semibold mb-1">✨ Detecção Automática</div>
+                        <div className="text-blue-800">
+                          Ao salvar, o sistema irá detectar automaticamente:
+                          <ul className="list-disc list-inside mt-1 ml-2 space-y-0.5">
+                            <li>Nome do remetente configurado na Brevo</li>
+                            <li>E-mail do remetente verificado</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Tenant Selection */}
