@@ -103,10 +103,15 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
       if (activeKeyId) {
         const keySnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list').doc(activeKeyId).get()
         if (keySnap.exists) {
-          let tenantKey = keySnap.data()?.brevoApiKey
+          const keyData = keySnap.data() || {}
+          let tenantKey = keyData.brevoApiKey
           const maybe = tryDecrypt(tenantKey)
           if (maybe) tenantKey = maybe
           if (tenantKey) apiKey = tenantKey
+          // Also capture smtpLogin from the key document if not in secrets
+          if (!secrets.smtpLogin && keyData.smtpLogin) {
+            secrets.smtpLogin = keyData.smtpLogin
+          }
         }
       } else {
         // fallback to legacy single key stored on secrets.brevoApiKey
@@ -181,14 +186,17 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
   }
 
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
-    if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)')
+    if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)', { tenantId })
     let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
     try {
       if (tenantId) {
-        const settingsDoc = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
-        if (settingsDoc.exists) {
-          const s = settingsDoc.data() || {}
-          if (!smtpUser && s.smtpLogin) smtpUser = s.smtpLogin
+        const secretsSnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
+        if (secretsSnap.exists) {
+          const s = secretsSnap.data() || {}
+          if (!smtpUser && s.smtpLogin) {
+            smtpUser = s.smtpLogin
+            if (debug) console.log('[sendHelper] found smtpLogin in secrets')
+          }
         }
         if (!smtpUser) {
           const tenantDoc = await db.collection('tenants').doc(tenantId).get()
@@ -197,14 +205,22 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
             const memberDoc = await db.collection('tenants').doc(tenantId).collection('members').doc(ownerUid).get()
             if (memberDoc.exists) {
               const m = memberDoc.data() || {}
-              if (m.smtpLogin) smtpUser = m.smtpLogin
+              if (m.smtpLogin) {
+                smtpUser = m.smtpLogin
+                if (debug) console.log('[sendHelper] found smtpLogin in member doc')
+              }
             }
           }
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      if (debug) console.warn('[sendHelper] error loading smtpLogin', e)
+    }
 
-    if (!smtpUser) throw new Error('SMTP login not configured for this tenant')
+    if (!smtpUser) {
+      console.error('[sendHelper] SMTP login not configured for tenant', tenantId)
+      throw new Error('SMTP login not configured for this tenant. Please add SMTP Login in Settings.')
+    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',

@@ -152,8 +152,10 @@ export default function Settings(){
       const maskedTenant = tenantKey ? `${tenantKey.slice(0,6)}...(${tenantKey.length} chars)` : '<empty>'
       console.log('[Settings] tenantKey masked=%s', maskedTenant)
       if (!token) throw new Error('User not authenticated')
-      const body: any = { key: tenantKey }
-      if (tenantId) body.tenantId = tenantId
+      if (!tenantId) {
+        throw new Error('Nenhum tenant selecionado. Recarregue a página.')
+      }
+      const body: any = { key: tenantKey, tenantId }
       if (smtpLogin) body.smtpLogin = smtpLogin
       if (smtpMemberLevel) body.memberLevel = true
 

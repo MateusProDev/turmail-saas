@@ -85,7 +85,14 @@ export default async function handler(req, res) {
     await newKeyRef.set(keyDoc, { merge: true })
 
     // set this key as the active key id on the secrets doc for backward compatibility
-    await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set({ activeKeyId: newKeyRef.id, updatedAt: admin.firestore.FieldValue.serverTimestamp(), updatedBy: uid }, { merge: true })
+    // ALSO save smtpLogin in secrets so sendHelper can find it easily
+    const secretsUpdate = {
+      activeKeyId: newKeyRef.id,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: uid
+    }
+    if (smtpLogin) secretsUpdate.smtpLogin = smtpLogin
+    await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set(secretsUpdate, { merge: true })
 
     return res.status(200).json({ ok: true, keyId: newKeyRef.id })
   } catch (e) {
