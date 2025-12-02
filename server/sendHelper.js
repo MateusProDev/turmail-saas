@@ -119,13 +119,6 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
           if (!secrets.fromName && keyData.fromName) {
             secrets.fromName = keyData.fromName
           }
-        } // Capture fromEmail and fromName from key doc if not in secrets
-          if (!secrets.fromEmail && keyData.fromEmail) {
-            secrets.fromEmail = keyData.fromEmail
-          }
-          if (!secrets.fromName && keyData.fromName) {
-            secrets.fromName = keyData.fromName
-          }
         }
       } else {
         // fallback to legacy single key stored on secrets.brevoApiKey
