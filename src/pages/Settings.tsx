@@ -58,6 +58,8 @@ export default function Settings(){
   const [tenantKey, setTenantKey] = useState('')
   const [smtpLogin, setSmtpLogin] = useState('')
   const [smtpMemberLevel, setSmtpMemberLevel] = useState(false)
+  const [fromEmail, setFromEmail] = useState('')
+  const [fromName, setFromName] = useState('')
   const [savingTenant, setSavingTenant] = useState(false)
   const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
@@ -157,7 +159,9 @@ export default function Settings(){
       }
       const body: any = { key: tenantKey, tenantId }
       if (smtpLogin) body.smtpLogin = smtpLogin
-      if (smtpMemberLevel) body.memberLevel = true
+      if (smtpMemberLevel) body.smtpMemberLevel = true
+      if (fromEmail) body.fromEmail = fromEmail
+      if (fromName) body.fromName = fromName
 
       const resp = await fetch('/api/tenant/set-brevo-key', {
         method: 'POST',
@@ -371,6 +375,32 @@ export default function Settings(){
                       >
                         {showTenantKey ? 'Ocultar' : 'Mostrar'}
                       </button>
+                    </div>
+                  </div>
+
+                  {/* From Email (Sender) */}
+                  <div className="flex space-x-3">
+                    <div className="flex-1">
+                      <input 
+                        value={fromEmail} 
+                        onChange={e => setFromEmail(e.target.value)} 
+                        type="email" 
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        placeholder="E-mail do Remetente (ex: contato@suaempresa.com)"
+                      />
+                    </div>
+                  </div>
+
+                  {/* From Name (Sender Name) */}
+                  <div className="flex space-x-3">
+                    <div className="flex-1">
+                      <input 
+                        value={fromName} 
+                        onChange={e => setFromName(e.target.value)} 
+                        type="text" 
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        placeholder="Nome do Remetente (ex: Sua Empresa)"
+                      />
                     </div>
                   </div>
 

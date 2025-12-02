@@ -112,6 +112,20 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
           if (!secrets.smtpLogin && keyData.smtpLogin) {
             secrets.smtpLogin = keyData.smtpLogin
           }
+          // Capture fromEmail and fromName from key doc if not in secrets
+          if (!secrets.fromEmail && keyData.fromEmail) {
+            secrets.fromEmail = keyData.fromEmail
+          }
+          if (!secrets.fromName && keyData.fromName) {
+            secrets.fromName = keyData.fromName
+          }
+        } // Capture fromEmail and fromName from key doc if not in secrets
+          if (!secrets.fromEmail && keyData.fromEmail) {
+            secrets.fromEmail = keyData.fromEmail
+          }
+          if (!secrets.fromName && keyData.fromName) {
+            secrets.fromName = keyData.fromName
+          }
         }
       } else {
         // fallback to legacy single key stored on secrets.brevoApiKey
@@ -121,6 +135,11 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
           if (maybe2) apiKey = maybe2
           else apiKey = legacyKey
         }
+      }
+      // Store tenant from/name in a variable for later use
+      if (secrets.fromEmail || secrets.fromName) {
+        payload._tenantFromEmail = secrets.fromEmail
+        payload._tenantFromName = secrets.fromName
       }
     } catch (e) {
       if (debug) console.warn('[sendHelper] failed to load tenant key', e)
@@ -132,11 +151,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     throw new Error('Brevo API key missing')
   }
 
-  // Validate / normalize sender. Use DEFAULT_FROM_EMAIL/NAME as fallback.
+  // Validate / normalize sender. Use tenant fromEmail/fromName first, then DEFAULT_FROM_EMAIL/NAME as fallback.
   function isValidEmail(e) {
     return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
   }
 
+  const tenantFromEmail = payload._tenantFromEmail || ''
+  const tenantFromName = payload._tenantFromName || ''
   const defaultFromEmail = process.env.DEFAULT_FROM_EMAIL || ''
   const defaultFromName = process.env.DEFAULT_FROM_NAME || ''
 
@@ -151,13 +172,16 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     payload.htmlContent = payload.htmlContent || payload.html || ''
   }
   if (!isValidEmail(payload.sender.email)) {
-    if (isValidEmail(defaultFromEmail)) {
-      if (debug) console.log('[sendHelper] using DEFAULT_FROM_EMAIL fallback')
-      payload.sender.email = defaultFromEmail
-      payload.sender.name = payload.sender.name || defaultFromName || ''
+    // Priority: tenant fromEmail > global DEFAULT_FROM_EMAIL
+    const fallbackEmail = tenantFromEmail || defaultFromEmail
+    const fallbackName = tenantFromName || defaultFromName
+    if (isValidEmail(fallbackEmail)) {
+      if (debug) console.log('[sendHelper] using tenant/default fromEmail fallback:', fallbackEmail)
+      payload.sender.email = fallbackEmail
+      payload.sender.name = payload.sender.name || fallbackName || ''
     } else {
-      console.error('[sendHelper] invalid sender email and no DEFAULT_FROM_EMAIL configured', payload.sender && payload.sender.email)
-      const err = new Error('valid sender email required')
+      console.error('[sendHelper] invalid sender email and no tenant/default fromEmail configured', payload.sender && payload.sender.email)
+      const err = new Error('valid sender email required. Please configure From Email in Settings.')
       err.code = 'invalid_sender'
       throw err
     }

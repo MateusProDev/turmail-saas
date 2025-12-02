@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     const isSiteAdmin = !!decoded.admin
     if (!isOwnerOrAdmin && !isSiteAdmin) return res.status(403).json({ error: 'Not authorized to set tenant key' })
 
-    const { key, smtpLogin, memberLevel } = body
+    const { key, smtpLogin, memberLevel, fromEmail, fromName } = body
     if (!key) return res.status(400).json({ error: 'key required' })
 
     // Create a new key document under tenants/{tenantId}/settings/keys/{keyId}
@@ -80,6 +80,8 @@ export default async function handler(req, res) {
       createdBy: uid,
       brevoApiKey: encrypted,
       smtpLogin: smtpLogin || null,
+      fromEmail: fromEmail || null,
+      fromName: fromName || null,
       memberLevel: !!memberLevel,
     }
     await newKeyRef.set(keyDoc, { merge: true })
@@ -92,6 +94,8 @@ export default async function handler(req, res) {
       updatedBy: uid
     }
     if (smtpLogin) secretsUpdate.smtpLogin = smtpLogin
+    if (fromEmail) secretsUpdate.fromEmail = fromEmail
+    if (fromName) secretsUpdate.fromName = fromName
     await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').set(secretsUpdate, { merge: true })
 
     return res.status(200).json({ ok: true, keyId: newKeyRef.id })
