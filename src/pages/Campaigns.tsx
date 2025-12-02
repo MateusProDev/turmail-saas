@@ -156,16 +156,20 @@ export default function Campaigns(){
   // Inicializar editor visual na montagem do componente
   useEffect(() => {
     const editor = document.getElementById('visual-editor')
-    if (editor && !editor.innerHTML) {
+    if (editor && !editor.innerHTML && htmlContent) {
       editor.innerHTML = DOMPurify.sanitize(
         renderTemplate(
-          htmlContent || '<p class="text-slate-400 text-center py-12">Escolha um template ou clique aqui para começar a digitar...</p>',
+          htmlContent,
           subject || 'Sem assunto',
           preheader || ''
-        )
+        ).replace(/\{\{name\}\}/g, '<span class="bg-yellow-100 px-2 py-1 rounded font-semibold">João Silva</span>')
+        .replace(/\{companyName\}/g, companyName || 'Sua Empresa')
+        .replace(/\{destination\}/g, destination || 'Destino')
+        .replace(/\{productName\}/g, productName || 'Produto')
+        .replace(/\{mainTitle\}/g, mainTitle || 'Título')
       )
     }
-  }, [])
+  }, [htmlContent])
 
   // helpers for delivery metrics
   const getDeliveredCount = (c: any) => {
