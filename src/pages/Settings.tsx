@@ -166,13 +166,20 @@ export default function Settings(){
           const sendersData = await sendersResp.json()
           const senders = sendersData.senders || []
           
-          // Find active sender (prefer first active, or first one)
-          const activeSender = senders.find((s: any) => s.active) || senders[0]
+          console.log('[Settings] Brevo senders fetched:', senders)
           
-          if (activeSender) {
-            detectedFromEmail = activeSender.email
-            detectedFromName = activeSender.name
+          // Use FIRST sender (don't filter by active, as Brevo may not return that field correctly)
+          const firstSender = senders[0]
+          
+          if (firstSender) {
+            detectedFromEmail = firstSender.email
+            detectedFromName = firstSender.name
+            console.log('[Settings] Using sender:', firstSender)
+          } else {
+            console.warn('[Settings] No senders returned from Brevo API')
           }
+        } else {
+          console.warn('[Settings] get-brevo-senders returned', sendersResp.status)
         }
       } catch (senderErr) {
         console.warn('[Settings] Could not fetch senders before saving key', senderErr)
