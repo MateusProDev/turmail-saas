@@ -7,6 +7,8 @@ import DOMPurify from 'dompurify'
 import { renderTemplate } from '../lib/templateHelper'
 import { EMAIL_TEMPLATES } from '../lib/emailTemplates'
 import { uploadImage } from '../lib/cloudinary'
+import { ImageGallerySelector } from '../components/ImageGallerySelector'
+import { ImageEditablePreview } from '../components/ImageEditablePreview'
 
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { generateCopy, generateVariants } from '../lib/aiHelper'
@@ -72,6 +74,16 @@ export default function Campaigns(){
   const [uploadingImage, setUploadingImage] = useState(false)
   const [showAiAssistant, setShowAiAssistant] = useState(false) // Controle do accordion
   const [showPackageDetails, setShowPackageDetails] = useState(false) // Controle do accordion de Detalhes
+  
+  // Estados para imagens do template
+  const [heroImage, setHeroImage] = useState<string>('')
+  const [teamImage1, setTeamImage1] = useState<string>('')
+  const [teamImage2, setTeamImage2] = useState<string>('')
+  const [teamImage3, setTeamImage3] = useState<string>('')
+  const [teamImage4, setTeamImage4] = useState<string>('')
+  const [locationImage, setLocationImage] = useState<string>('')
+  const [logoImage, setLogoImage] = useState<string>('')
+  const [showImageGallery, setShowImageGallery] = useState(false)
 
   // Aplicar template padrão ao carregar a página
   useEffect(() => {
@@ -145,7 +157,15 @@ export default function Campaigns(){
       ctaText: 'Ver Mais',
       keyBenefits: keyBenefits.length > 0 ? keyBenefits : undefined,
       priceInfo: 'Condições especiais',
-      dateRange: 'Saídas flexíveis'
+      dateRange: 'Saídas flexíveis',
+      // Adicionar imagens
+      heroImage: heroImage || 'https://via.placeholder.com/536x298?text=Destino+Premium',
+      teamImage1: teamImage1 || 'https://via.placeholder.com/244x122&text=Hospedagem',
+      teamImage2: teamImage2 || 'https://via.placeholder.com/244x122&text=Refeicoes',
+      teamImage3: teamImage3 || 'https://via.placeholder.com/244x122&text=Guias',
+      teamImage4: teamImage4 || 'https://via.placeholder.com/244x122&text=Transporte',
+      locationImage: locationImage || 'https://via.placeholder.com/536x298&text=Local',
+      logoImage: logoImage || 'https://via.placeholder.com/95x36?text=Logo'
     })
 
     setSubject(generated.subject)
@@ -942,6 +962,102 @@ export default function Campaigns(){
                   )}
                 </div>
 
+                {/* ACCORDION - GALERIA DE IMAGENS */}
+                <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden mt-4">
+                  <button
+                    onClick={() => setShowImageGallery(!showImageGallery)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold text-slate-700">🖼️ Imagens do Pacote (Galeria Cloudinary)</span>
+                      <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1" />
+                        Opcional
+                      </span>
+                    </div>
+                    <svg 
+                      className={`w-5 h-5 text-slate-600 transition-transform ${
+                        showImageGallery ? 'rotate-180' : ''
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {showImageGallery && selectedTenant && (
+                    <div className="px-4 pb-4 border-t-2 border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 space-y-4">
+                      <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="hero"
+                          selectedImageUrl={heroImage}
+                          onImageSelect={setHeroImage}
+                          label="🌄 Imagem Principal (Hero)"
+                          allowUpload={true}
+                        />
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="general"
+                          selectedImageUrl={logoImage}
+                          onImageSelect={setLogoImage}
+                          label="🏢 Logo da Empresa"
+                          allowUpload={true}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="team"
+                          selectedImageUrl={teamImage1}
+                          onImageSelect={setTeamImage1}
+                          label="🏨 Hospedagem (Imagem 1)"
+                          allowUpload={true}
+                        />
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="team"
+                          selectedImageUrl={teamImage2}
+                          onImageSelect={setTeamImage2}
+                          label="🍽️ Refeições (Imagem 2)"
+                          allowUpload={true}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="team"
+                          selectedImageUrl={teamImage3}
+                          onImageSelect={setTeamImage3}
+                          label="👨‍🏫 Guias (Imagem 3)"
+                          allowUpload={true}
+                        />
+                        <ImageGallerySelector
+                          clientId={selectedTenant}
+                          category="team"
+                          selectedImageUrl={teamImage4}
+                          onImageSelect={setTeamImage4}
+                          label="🚌 Transporte (Imagem 4)"
+                          allowUpload={true}
+                        />
+                      </div>
+                      <ImageGallerySelector
+                        clientId={selectedTenant}
+                        category="location"
+                        selectedImageUrl={locationImage}
+                        onImageSelect={setLocationImage}
+                        label="📍 Imagem de Localização (Mapa/Acesso)"
+                        allowUpload={true}
+                      />
+                      <p className="text-xs text-slate-600 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                        💡 Dica: Suas imagens são armazenadas no Cloudinary e salvas em uma galeria individual do cliente para reutilização em futuras campanhas!
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="mt-6 flex gap-2">
                   <button
                     onClick={() => setShowTemplateSelector(true)}
@@ -1133,79 +1249,77 @@ export default function Campaigns(){
                         onClick={async () => {
                           setGeneratingVariants(true)
                           try {
-              const variants = await generateVariants({
-                company: companyName,
-                product: productName,
-                vertical,
-                destination,
-                ctaLink,
-                mainTitle,
-                description,
-                previousExperience: undefined,
-                userPatterns,
-                audience,
-                keyBenefits
-              }, 5)
-              
-              setVariants(variants)
-              setShowVariantsModal(true)
-              setResult(`✅ ${variants.length} variações geradas`)
-            } catch (error) {
-              setResult('❌ Erro ao gerar variações')
-            }
-            setGeneratingVariants(false)
-          }}
-          disabled={generatingVariants}
-          className={`py-3 px-4 rounded-lg font-medium ${
-            generatingVariants
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
-        >
-          {generatingVariants ? '🔄 Gerando...' : '🎨 5 Variações'}
-        </button>
-      </div>
-
-      <button
-        type="button"
-        onClick={async () => {
-          if (!user) {
-            setResult('⚠️ Faça login para salvar padrões')
-            return
-          }
-          
-          const patternData = {
-            pattern: description || `${companyName} - ${productName} - ${destination}`,
-            tone,
-            vertical,
-            mainTitle,
-            ctaLink,
-            description,
-            audience
-          }
-          
-          // dynamic import to avoid SSR/import cycles
-          const { saveUserPattern } = await import('../lib/aiHelper')
-          const success = await saveUserPattern(user.uid, patternData)
-          setResult(success ? '✅ Padrão salvo' : '❌ Erro ao salvar')
-        }}
-        className="w-full py-2 px-4 border border-slate-300 rounded-lg hover:bg-slate-50"
-      >
-        💾 Salvar Padrão
-      </button>
-
-      {copyHistory.length > 0 && (
-        <div className="text-xs text-slate-600">
-          📊 Última copy: {copyHistory[0]?.score}/100 - 
-                      {copyHistory[0]?.metadata?.readingLevel} - 
-                      {copyHistory[0]?.metadata?.emotionalTone.join(', ')}
+                            const variants = await generateVariants({
+                              company: companyName,
+                              product: productName,
+                              vertical,
+                              destination,
+                              ctaLink,
+                              mainTitle,
+                              description,
+                              previousExperience: undefined,
+                              userPatterns,
+                              audience,
+                              keyBenefits
+                            }, 5)
+                            
+                            setVariants(variants)
+                            setShowVariantsModal(true)
+                            setResult(`✅ ${variants.length} variações geradas`)
+                          } catch (error) {
+                            setResult('❌ Erro ao gerar variações')
+                          }
+                          setGeneratingVariants(false)
+                        }}
+                        disabled={generatingVariants}
+                        className={`py-3 px-4 rounded-lg font-medium transition-colors ${
+                          generatingVariants
+                            ? 'bg-gray-400 cursor-not-allowed text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                        }`}
+                      >
+                        {generatingVariants ? '🔄 Gerando...' : '🎨 5 Variações'}
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* Content Editor */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!user) {
+                          setResult('⚠️ Faça login para salvar padrões')
+                          return
+                        }
+                        
+                        const patternData = {
+                          pattern: description || `${companyName} - ${productName} - ${destination}`,
+                          tone,
+                          vertical,
+                          mainTitle,
+                          ctaLink,
+                          description,
+                          audience
+                        }
+                        
+                        // dynamic import to avoid SSR/import cycles
+                        const { saveUserPattern } = await import('../lib/aiHelper')
+                        const success = await saveUserPattern(user.uid, patternData)
+                        setResult(success ? '✅ Padrão salvo' : '❌ Erro ao salvar')
+                      }}
+                      className="w-full py-2 px-4 border border-slate-300 rounded-lg hover:bg-slate-50"
+                    >
+                      💾 Salvar Padrão
+                    </button>
+
+                    {copyHistory.length > 0 && (
+                      <div className="text-xs text-slate-600">
+                        📊 Última copy: {copyHistory[0]?.score}/100 - 
+                        {copyHistory[0]?.metadata?.readingLevel} - 
+                        {copyHistory[0]?.metadata?.emotionalTone.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>            {/* Content Editor */}
               <div className="grid grid-cols-1 gap-6">
                 {/* Preview em Tamanho Real */}
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200">
@@ -1336,21 +1450,80 @@ export default function Campaigns(){
                         </span>
                       </div>
                     </div>
+                    {/* Preview Real - Editor Visual com Overlays Clicáveis */}
                     <div className="w-full bg-white overflow-auto" style={{maxHeight: '700px'}}>
-                      <div 
-                        id="visual-editor"
-                        contentEditable={true}
-                        suppressContentEditableWarning={true}
-                        onBlur={(e) => {
-                          // Atualizar HTML quando sair da edição
-                          const newHtml = e.currentTarget.innerHTML
-                          setHtmlContent(newHtml)
-                        }}
-                        className="p-6 outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-inset min-h-[400px] cursor-text"
-                        style={{
-                          transition: 'all 0.2s ease',
-                        }}
-                      />
+                      {showPreview && selectedTenant && (
+                        <ImageEditablePreview
+                          clientId={selectedTenant}
+                          previewHtml={htmlContent}
+                          imageConfigs={[
+                            {
+                              type: 'hero',
+                              imageUrl: heroImage,
+                              onImageSelect: setHeroImage,
+                              label: '🌄 Imagem Principal (Hero)',
+                              category: 'hero'
+                            },
+                            {
+                              type: 'logo',
+                              imageUrl: logoImage,
+                              onImageSelect: setLogoImage,
+                              label: '🏢 Logo da Empresa',
+                              category: 'general'
+                            },
+                            {
+                              type: 'team1',
+                              imageUrl: teamImage1,
+                              onImageSelect: setTeamImage1,
+                              label: '🏨 Hospedagem (Imagem 1)',
+                              category: 'team'
+                            },
+                            {
+                              type: 'team2',
+                              imageUrl: teamImage2,
+                              onImageSelect: setTeamImage2,
+                              label: '🍽️ Refeições (Imagem 2)',
+                              category: 'team'
+                            },
+                            {
+                              type: 'team3',
+                              imageUrl: teamImage3,
+                              onImageSelect: setTeamImage3,
+                              label: '👨‍🏫 Guias (Imagem 3)',
+                              category: 'team'
+                            },
+                            {
+                              type: 'team4',
+                              imageUrl: teamImage4,
+                              onImageSelect: setTeamImage4,
+                              label: '🚌 Transporte (Imagem 4)',
+                              category: 'team'
+                            },
+                            {
+                              type: 'location',
+                              imageUrl: locationImage,
+                              onImageSelect: setLocationImage,
+                              label: '📍 Imagem de Localização',
+                              category: 'location'
+                            }
+                          ]}
+                        />
+                      )}
+                      {!showPreview && (
+                        <div 
+                          id="visual-editor"
+                          contentEditable={true}
+                          suppressContentEditableWarning={true}
+                          onBlur={(e) => {
+                            const newHtml = e.currentTarget.innerHTML
+                            setHtmlContent(newHtml)
+                          }}
+                          className="p-6 outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-inset min-h-[400px] cursor-text"
+                          style={{
+                            transition: 'all 0.2s ease',
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
