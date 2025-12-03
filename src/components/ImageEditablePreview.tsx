@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ImageGallerySelector } from './ImageGallerySelector'
 import DOMPurify from 'dompurify'
 
@@ -22,6 +22,7 @@ export function ImageEditablePreview({
   imageConfigs 
 }: ImageEditablePreviewProps) {
   const [selectedImage, setSelectedImage] = useState<'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null>(null)
+  // Removed unused imageMap state
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
@@ -38,13 +39,18 @@ export function ImageEditablePreview({
     'text=Logo': 'logo'
   }
 
-  // Replace placeholder URLs with actual image URLs
+  const newImageMap = new Map<string, 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location'>()
+
+  // Replace placeholder URLs with actual image URLs and add click handlers
   Object.entries(placeholderMap).forEach(([placeholder, imageType]) => {
     const config = imageConfigs.find(c => c.type === imageType)
     if (!config) return
 
     // Use actual image URL if available, otherwise use placeholder
     const imageUrl = config.imageUrl || `https://via.placeholder.com/400?${placeholder}`
+    const uniqueId = `img-${imageType}-${Date.now()}`
+    
+    newImageMap.set(uniqueId, imageType)
     
     // Create a pattern that matches the placeholder in various formats
     const patterns = [
@@ -58,72 +64,73 @@ export function ImageEditablePreview({
     })
   })
 
+  // setImageMap(newImageMap) // Removed as setImageMap is not defined
+
+  // Add click handlers to all images
+  enhancedHtml = enhancedHtml.replace(
+    /<img([^>]*?)>/g,
+    (_, attrs) => {
+      // Find which image type this is
+      let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
+      
+      if (attrs.includes('Logo')) imageType = 'logo'
+      else if (attrs.includes('Destino+Premium')) imageType = 'hero'
+      else if (attrs.includes('Hospedagem')) imageType = 'team1'
+      else if (attrs.includes('Refeicoes')) imageType = 'team2'
+      else if (attrs.includes('Guias')) imageType = 'team3'
+      else if (attrs.includes('Transporte')) imageType = 'team4'
+      else if (attrs.includes('Local')) imageType = 'location'
+
+      return `
+        <img${attrs} 
+          style="cursor: pointer; transition: opacity 0.2s; position: relative;" 
+          onmouseover="this.style.opacity='0.7'; this.style.filter='brightness(0.8)'"
+          onmouseout="this.style.opacity='1'; this.style.filter='brightness(1)'"
+          onclick="window.dispatchEvent(new CustomEvent('editImage', { detail: { type: '${imageType}' } }))"
+          title="Clique para editar a imagem"
+        />
+      `
+    }
+  )
+
+  // Handle image click events
+  useEffect(() => {
+    const handleEditImage = (event: Event) => {
+      const customEvent = event as CustomEvent
+      setSelectedImage(customEvent.detail.type)
+    }
+
+    window.addEventListener('editImage', handleEditImage)
+    return () => window.removeEventListener('editImage', handleEditImage)
+  }, [])
+
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Sidebar com botões flutuantes */}
-      <div style={{
-        position: 'absolute',
-        top: '12px',
-        right: '12px',
-        zIndex: 50,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        maxWidth: '140px'
-      }}>
-        {imageConfigs.map(config => {
-          const isSet = !!config.imageUrl
-          return (
-            <button
-              key={config.type}
-              onClick={() => setSelectedImage(config.type)}
-              style={{
-                background: isSet ? '#10b981' : '#4f1337',
-                color: 'white',
-                border: 'none',
-                padding: '6px 10px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'
-              }}
-              title={config.label}
-            >
-              {isSet ? '✓' : '✏️'} {config.label.substring(0, 10)}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Preview HTML */}
-      <div
-        style={{
-          width: '100%',
-          position: 'relative',
-          paddingRight: '150px'
-        }}
-      >
+      {/* Preview HTML - sem botões flutuantes */}
+      <div style={{ width: '100%', position: 'relative' }}>
         <div
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(enhancedHtml) }}
           style={{ width: '100%' }}
         />
       </div>
+      
+      {/* Tooltip flutuante ao passar mouse */}
+      <style>{`
+        img[title="Clique para editar a imagem"]:hover::after {
+          content: "✏️ Editar imagem";
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          background: rgba(79, 19, 55, 0.9);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          white-space: nowrap;
+          z-index: 100;
+        }
+      `}</style>
       
       {/* Modal de seleção de imagem */}
       {selectedImage && currentConfig && (

@@ -42,14 +42,29 @@ export async function uploadClientImage(
     // Upload para Cloudinary
     const cloudinaryResponse = await uploadImage(file)
     
-    if (!cloudinaryResponse.secure_url) {
+    if (!cloudinaryResponse.secure_url && !cloudinaryResponse.url) {
       throw new Error('Falha ao obter URL do Cloudinary')
+    }
+
+    // Usar secure_url e transformar para otimizar para emails
+    let imageUrl = cloudinaryResponse.secure_url || cloudinaryResponse.url
+    
+    // Transformar URL para otimizar para email:
+    // - Redimensionar para max 600px de largura
+    // - Comprimir qualidade para 85%
+    // - Formato automático (webp para navegadores modernos, jpg fallback)
+    // Exemplo: https://res.cloudinary.com/ddq2asu2s/image/upload/w_600,q_85,f_auto/...
+    if (imageUrl.includes('cloudinary.com')) {
+      imageUrl = imageUrl.replace(
+        /\/image\/upload\//,
+        '/image/upload/w_600,q_85,f_jpg/' // Força jpg para melhor compatibilidade com email
+      )
     }
 
     // Criar objeto da imagem
     const newImage: ClientImage = {
       id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      url: cloudinaryResponse.secure_url,
+      url: imageUrl,
       name: name,
       uploadedAt: Date.now(),
       category: category,
