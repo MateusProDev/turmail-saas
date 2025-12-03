@@ -22,7 +22,6 @@ export function ImageEditablePreview({
   imageConfigs 
 }: ImageEditablePreviewProps) {
   const [selectedImage, setSelectedImage] = useState<'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null>(null)
-  // Removed unused imageMap state
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
@@ -33,13 +32,11 @@ export function ImageEditablePreview({
     'Destino+Premium': 'hero',
     'text=Hospedagem': 'team1',
     'text=Refeicoes': 'team2',
-    'text=Guias': 'team3',
+    'text=Guias+Experientes': 'team3',
     'text=Transporte': 'team4',
     'Local': 'location',
     'text=Logo': 'logo'
   }
-
-  const newImageMap = new Map<string, 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location'>()
 
   // Replace placeholder URLs with actual image URLs and add click handlers
   Object.entries(placeholderMap).forEach(([placeholder, imageType]) => {
@@ -48,9 +45,6 @@ export function ImageEditablePreview({
 
     // Use actual image URL if available, otherwise use placeholder
     const imageUrl = config.imageUrl || `https://via.placeholder.com/400?${placeholder}`
-    const uniqueId = `img-${imageType}-${Date.now()}`
-    
-    newImageMap.set(uniqueId, imageType)
     
     // Create a pattern that matches the placeholder in various formats
     const patterns = [
@@ -64,9 +58,7 @@ export function ImageEditablePreview({
     })
   })
 
-  // setImageMap(newImageMap) // Removed as setImageMap is not defined
-
-  // Add click handlers to all images
+  // Add interactive wrapper to all images
   enhancedHtml = enhancedHtml.replace(
     /<img([^>]*?)>/g,
     (_, attrs) => {
@@ -81,14 +73,22 @@ export function ImageEditablePreview({
       else if (attrs.includes('Transporte')) imageType = 'team4'
       else if (attrs.includes('Local')) imageType = 'location'
 
+      // Extract width and max-width from style or img attributes
+      const widthMatch = attrs.match(/(?:width|max-width):\s*([0-9]+)px/i) || attrs.match(/width="([0-9]+)"/i)
+      const width = widthMatch ? widthMatch[1] : '600'
+
       return `
-        <img${attrs} 
-          style="cursor: pointer; transition: opacity 0.2s; position: relative;" 
-          onmouseover="this.style.opacity='0.7'; this.style.filter='brightness(0.8)'"
-          onmouseout="this.style.opacity='1'; this.style.filter='brightness(1)'"
+        <span 
+          class="image-edit-container" 
+          data-image-type="${imageType}"
+          data-width="${width}"
+          onmouseover="this.classList.add('hovered')"
+          onmouseout="this.classList.remove('hovered')"
           onclick="window.dispatchEvent(new CustomEvent('editImage', { detail: { type: '${imageType}' } }))"
-          title="Clique para editar a imagem"
-        />
+        >
+          <img${attrs} style="cursor: pointer; display: block; transition: opacity 0.2s;" />
+          <span class="image-edit-btn">✏️ Editar</span>
+        </span>
       `
     }
   )
@@ -116,19 +116,50 @@ export function ImageEditablePreview({
       
       {/* Tooltip flutuante ao passar mouse */}
       <style>{`
-        img[title="Clique para editar a imagem"]:hover::after {
-          content: "✏️ Editar imagem";
+        .image-edit-container {
+          position: relative;
+          display: inline-block;
+          width: 100%;
+        }
+
+        .image-edit-container img {
+          width: 100%;
+          height: auto;
+          display: block;
+          transition: opacity 0.2s ease, filter 0.2s ease;
+        }
+
+        .image-edit-container:hover img {
+          opacity: 0.7;
+          filter: brightness(0.8);
+        }
+
+        .image-edit-btn {
           position: absolute;
-          top: 10px;
-          left: 10px;
-          background: rgba(79, 19, 55, 0.9);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(79, 19, 55, 0.95);
           color: white;
           padding: 8px 12px;
           border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 13px;
+          font-weight: 700;
           white-space: nowrap;
           z-index: 100;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+          pointer-events: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          cursor: pointer;
+        }
+
+        .image-edit-container:hover .image-edit-btn {
+          opacity: 1;
+        }
+
+        .image-edit-container.hovered .image-edit-btn {
+          opacity: 1;
         }
       `}</style>
       
