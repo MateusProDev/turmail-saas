@@ -682,11 +682,11 @@ const returningCustomerTemplate: EmailTemplate = {
   }
 }
 
-// Template 5: Pacote de Viagem Premium - Baseado em Brevo Design
+// Template 5: Pacote de Viagem Premium - Imagens reduzidas
 const eventTemplate: EmailTemplate = {
   id: 'event-invitation',
   name: 'Pacote de Viagem Premium',
-  description: 'Design profissional baseado no padrão Brevo com logo, divisor, hero image, descrição, botão CTA, seção de pacotes inclusos com imagens e footer com redes sociais',
+  description: 'Template baseado em Brevo com logo, textos e redes sociais — sem images hero e sem grid de pacotes.',
   category: 'tourism',
   thumbnail: '✈️',
   generate: (data) => {
@@ -694,16 +694,12 @@ const eventTemplate: EmailTemplate = {
       companyName = 'Sua Agência',
       destination = 'Destino Incrível',
       mainTitle = `Descubra ${destination}`,
-      description = 'Bem-vindo ao pacote premium! Uma experiência única que você não vai esquecer com hospedagem de luxo, guias especializados e momentos inesquecíveis.',
+      description = 'Uma experiência única com destinos incríveis e preços especiais!',
       ctaLink = '#',
-      ctaText = 'Reservar Pacote',
+      ctaText = 'Reservar Agora',
       priceInfo = 'A partir de R$ 3.299',
-      heroImage = 'https://via.placeholder.com/536x298?text=Destino+Premium',
-      teamImage1 = 'https://via.placeholder.com/244x122&text=Hospedagem',
-      teamImage2 = 'https://via.placeholder.com/244x122&text=Refeicoes',
-      teamImage3 = 'https://via.placeholder.com/244x122&text=Guias+Experientes',
-      teamImage4 = 'https://via.placeholder.com/244x122&text=Transporte',
-      logoImage = 'https://via.placeholder.com/95x36?text=Logo'
+      // imagens removidas
+      logoImage = 'https://via.placeholder.com/95x36?text=LOGO'
     } = data
 
     return {
@@ -716,246 +712,81 @@ const eventTemplate: EmailTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
-    a { color: #4f1337; text-decoration: none; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #ffffff; }
+    a { text-decoration: none; color: #4f1337; }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #ffffff;">
-  
-  <!-- Main Container -->
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
-    <tr>
-      <td align="center" style="padding: 20px;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
-          
-          <!-- View in Browser Link -->
-          <tr>
-            <td align="center" style="padding: 10px 30px 5px 30px;">
-              <p style="margin: 0; text-align: center;"><a href="#" style="font-size: 12px; color: #26081a;">Visualizar no navegador</a></p>
-            </td>
-          </tr>
+<body>
 
-          <!-- Header com Logo -->
-          <tr>
-            <td align="center" style="background-color: #ffffff; padding: 14px 0;">
-              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block;">
-            </td>
-          </tr>
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:auto;background:#ffffff;">
 
-          <!-- Divisor -->
-          <tr>
-            <td style="border-top: 1px solid #26081a; height: 0; margin: 0; padding: 0;"></td>
-          </tr>
+  <!-- LOGO -->
+  <tr>
+    <td align="center" style="padding:14px;">
+      <img src="${logoImage}" alt="${companyName}" style="width:95px;display:block;">
+    </td>
+  </tr>
 
-          <!-- Hero Image com Descrição -->
-          <tr>
-            <td align="center" style="padding: 40px 32px 0 32px;">
-              <img src="${heroImage}" alt="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
-            </td>
-          </tr>
+  <tr><td style="border-top:1px solid #26081a;"></td></tr>
 
-          <!-- Heading -->
-          <tr>
-            <td align="left" style="padding: 8px 32px 0 32px;">
-              <h2 style="margin: 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; font-weight: bold; line-height: 1.1;">${mainTitle}</h2>
-            </td>
-          </tr>
+  <!-- TÍTULO -->
+  <tr>
+    <td style="padding:24px 32px 0;">
+      <h2 style="margin:0;color:#4f1337;font-size:26px;font-weight:900;">${mainTitle}</h2>
+    </td>
+  </tr>
 
-          <!-- Descrição do Pacote -->
-          <tr>
-            <td align="left" style="padding: 8px 32px 0 32px;">
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">${description}</p>
-            </td>
-          </tr>
+  <!-- DESCRIÇÃO -->
+  <tr>
+    <td style="padding:12px 32px 0;">
+      <p style="margin:0;color:#26081a;font-size:16px;line-height:1.5;">${description}</p>
+    </td>
+  </tr>
 
-          <!-- CTA Button -->
-          <tr>
-            <td align="center" style="padding: 8px 32px 0 32px;">
-              <table cellpadding="0" cellspacing="0" border="0" align="center">
-                <tr>
-                  <td style="background-color: #4f1337; border-radius: 8px; padding: 11px 5px; text-align: center;">
-                    <a href="${ctaLink}" style="display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
-                      ${ctaText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+  <!-- CTA -->
+  <tr>
+    <td align="center" style="padding:24px 32px 0;">
+      <a href="${ctaLink}" style="display:inline-block;background:#4f1337;color:#fff;font-weight:bold;font-size:16px;padding:12px 40px;border-radius:8px;">
+        ${ctaText}
+      </a>
+    </td>
+  </tr>
 
-          <!-- Divisor - Dotted -->
-          <tr>
-            <td align="center" style="padding: 40px 0 0 0;">
-              <div style="width: 100%; border-top: 8px dotted #4f1337; margin: 0;"></div>
-            </td>
-          </tr>
+  <!-- PREÇO -->
+  <tr>
+    <td align="center" style="padding:28px 32px;">
+      <p style="margin:0;color:#4f1337;font-size:28px;font-weight:bold;">${priceInfo}</p>
+    </td>
+  </tr>
 
-          <!-- Seção: O que está Incluído -->
-          <tr>
-            <td align="left" style="padding: 40px 32px 0 32px;">
-              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">O que está incluído</h2>
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes premium incluem tudo o que você precisa para uma experiência inesquecível e segura.</p>
-            </td>
-          </tr>
+  <!-- RODAPÉ + REDES SOCIAIS -->
+  <tr>
+    <td align="center" style="background:#e7e7e7;padding:32px;">
 
-          <!-- 4 Imagens em Grid 2x2 -->
-          <tr>
-            <td align="center" style="padding: 16px 24px;">
-              <!-- Primeira linha - 2 colunas -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
-                <tr>
-                  <!-- Imagem 1 -->
-                  <td width="50%" align="center" style="padding-right: 8px; padding-bottom: 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <img src="${teamImage1}" alt="Hospedagem Luxo" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding-top: 8px;">
-                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Hospedagem Luxo</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  
-                  <!-- Imagem 2 -->
-                  <td width="50%" align="center" style="padding-left: 8px; padding-bottom: 0;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <img src="${teamImage2}" alt="Refeições Gourmet" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding-top: 8px;">
-                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Refeições Gourmet</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+      <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+        <tr>
+          <td style="padding:5px;">
+            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" width="32"></a>
+          </td>
+          <td style="padding:5px;">
+            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" width="32"></a>
+          </td>
+          <td style="padding:5px;">
+            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" width="32"></a>
+          </td>
+          <td style="padding:5px;">
+            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" width="32"></a>
+          </td>
+        </tr>
+      </table>
 
-              <!-- Segunda linha - 2 colunas -->
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <!-- Imagem 3 -->
-                  <td width="50%" align="center" style="padding-right: 8px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <img src="${teamImage3}" alt="Guias Experientes" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding-top: 8px;">
-                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Guias Experientes</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  
-                  <!-- Imagem 4 -->
-                  <td width="50%" align="center" style="padding-left: 8px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <img src="${teamImage4}" alt="Transporte Incluído" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding-top: 8px;">
-                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Transporte Incluído</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+      <p style="margin:0;color:#334155;font-size:15px;font-weight:bold;">${companyName}</p>
+      <p style="margin:4px 0 0;color:#64748b;font-size:12px;">Sua próxima aventura te espera! ✈️</p>
 
-          <!-- Como Chegar / Informações -->
-          <tr>
-            <td align="left" style="padding: 40px 32px 0 32px;">
-              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">Informações do Pacote</h2>
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes para ${destination} saem regularmente durante o ano. Consulte a melhor data para sua viagem e aproveite as melhores promoções.</p>
-            </td>
-          </tr>
+    </td>
+  </tr>
 
-          <!-- Preço destaque -->
-          <tr>
-            <td align="center" style="padding: 24px 32px 0 32px;">
-              <p style="margin: 0; color: #4f1337; font-size: 28px; font-weight: bold;">${priceInfo}</p>
-            </td>
-          </tr>
-
-          <!-- Footer com Redes Sociais -->
-          <tr>
-            <td style="background-color: #e7e7e7; padding: 32px 32px; text-align: center; margin-top: 40px;">
-              
-              <!-- Social Icons -->
-              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
-                <tr align="center">
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" style="width: 32px; height: 32px; display: block;">
-                    </a>
-                  </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" style="width: 32px; height: 32px; display: block;">
-                    </a>
-                  </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" style="width: 32px; height: 32px; display: block;">
-                    </a>
-                  </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" style="width: 32px; height: 32px; display: block;">
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Company Info -->
-              <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; font-weight: bold;">${companyName}</p>
-              <p style="margin: 0 0 18px 0; color: #64748b; font-size: 12px;">Sua próxima aventura te espera! ✈️</p>
-
-              <!-- Navigation Links -->
-              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
-                <tr align="center">
-                  <td style="padding: 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Download App</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Reservar</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Contato</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Descadastrar</a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Logo Footer -->
-              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block; margin: 40px auto 0;"
-
-              <!-- Disclaimer -->
-              <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+</table>
 
 </body>
 </html>
@@ -963,6 +794,7 @@ const eventTemplate: EmailTemplate = {
     }
   }
 }
+
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   destinationPackageTemplate,
