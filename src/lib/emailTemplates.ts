@@ -1,3 +1,10 @@
+// IMPORTS DAS IMAGENS LOCAIS (React)
+import heroDestinoPremium from '@/assets/images/hero-destino-premium.webp';
+import hospedagemLuxo from '@/assets/images/hospedagem-luxo.webp';
+import refeicoesGourmet from '@/assets/images/refeicoes-gourmet.webp';
+import guiasExperientes from '@/assets/images/guias-experientes.webp';
+import transporteIncluso from '@/assets/images/transporte-incluso.webp';
+
 export interface EmailTemplate {
   id: string
   name: string
@@ -23,7 +30,7 @@ export interface TemplateData {
     email?: string
     website?: string
   }
-  // Imagens (URLs do Cloudinary)
+  // Imagens (URLs do Cloudinary ou caminhos locais)
   heroImage?: string
   teamImage1?: string
   teamImage2?: string
@@ -78,10 +85,7 @@ const destinationPackageTemplate: EmailTemplate = {
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 10px;">
     <tr>
       <td align="center">
-        <!-- Container Principal -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-          
-          <!-- Header Minimalista -->
           <tr>
             <td style="padding: 30px 40px; background: #ffffff;">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -96,8 +100,6 @@ const destinationPackageTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Hero Section com Overlay -->
           <tr>
             <td style="position: relative; padding: 0;">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -106,8 +108,6 @@ const destinationPackageTemplate: EmailTemplate = {
                     <p style="margin: 0 0 10px; color: #e0e7ff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;">🌟 OFERTA EXCLUSIVA</p>
                     <h2 style="margin: 0 0 15px; color: #ffffff; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -1px;">${mainTitle}</h2>
                     <p style="margin: 0; color: #c7d2fe; font-size: 18px; font-weight: 500; max-width: 450px; margin: 0 auto;">${description}</p>
-                    
-                    <!-- Badge de Destino -->
                     <div style="display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 50px; padding: 12px 28px; margin-top: 25px;">
                       <p style="margin: 0; color: #ffffff; font-size: 15px; font-weight: 700;">📍 ${destination}</p>
                     </div>
@@ -116,12 +116,9 @@ const destinationPackageTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Benefícios em Cards -->
           <tr>
             <td style="padding: 50px 40px;">
               <h3 style="margin: 0 0 30px; color: #1e293b; font-size: 24px; font-weight: 800; text-align: center;">✨ Experiência Completa</h3>
-              
               <table width="100%" cellpadding="0" cellspacing="0">
                 ${keyBenefits.map((benefit, index) => `
                   <tr>
@@ -142,8 +139,6 @@ const destinationPackageTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Preço e Disponibilidade - Design Moderno -->
           <tr>
             <td style="padding: 0 40px 40px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px; overflow: hidden; border: 2px solid #e2e8f0;">
@@ -160,8 +155,6 @@ const destinationPackageTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- CTA Ultra Moderno -->
           <tr>
             <td style="padding: 0 40px 50px;" align="center">
               <table cellpadding="0" cellspacing="0" border="0">
@@ -178,8 +171,6 @@ const destinationPackageTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
-          <!-- Footer Elegante -->
           <tr>
             <td style="background: #0f172a; padding: 40px; text-align: center;">
               <p style="margin: 0 0 5px; color: #ffffff; font-size: 16px; font-weight: 700;">${companyName}</p>
@@ -197,7 +188,6 @@ const destinationPackageTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
@@ -244,8 +234,6 @@ const newsletterTemplate: EmailTemplate = {
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
-          
-          <!-- Masthead Editorial -->
           <tr>
             <td style="padding: 35px 40px 25px; border-bottom: 1px solid #e5e7eb;">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -261,8 +249,6 @@ const newsletterTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Hero Editorial -->
           <tr>
             <td style="padding: 40px 40px 35px;">
               <p style="margin: 0 0 8px; color: #8b5cf6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px;">✦ EDIÇÃO ESPECIAL</p>
@@ -270,8 +256,6 @@ const newsletterTemplate: EmailTemplate = {
               <p style="margin: 0; color: #475569; font-size: 17px; font-weight: 400; line-height: 1.7; max-width: 480px;">${description}</p>
             </td>
           </tr>
-
-          <!-- Featured Story - Destino em Destaque -->
           <tr>
             <td style="padding: 0 40px 35px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -290,13 +274,10 @@ const newsletterTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Grid de Cards: Dica + Promoção -->
           <tr>
             <td style="padding: 0 40px 35px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <!-- Dica do Especialista -->
                   <td width="48%" style="vertical-align: top; padding-right: 10px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius: 14px; border: 1px solid #fde68a; overflow: hidden; height: 100%;">
                       <tr>
@@ -310,8 +291,6 @@ const newsletterTemplate: EmailTemplate = {
                       </tr>
                     </table>
                   </td>
-                  
-                  <!-- Oferta Especial -->
                   <td width="48%" style="vertical-align: top; padding-left: 10px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-radius: 14px; border: 1px solid #c4b5fd; overflow: hidden; height: 100%;">
                       <tr>
@@ -329,15 +308,11 @@ const newsletterTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Divider -->
           <tr>
             <td style="padding: 15px 40px;">
               <div style="height: 1px; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);"></div>
             </td>
           </tr>
-
-          <!-- CTA Principal -->
           <tr>
             <td align="center" style="padding: 30px 40px 40px;">
               <table cellpadding="0" cellspacing="0" border="0">
@@ -351,8 +326,6 @@ const newsletterTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Footer Editorial -->
           <tr>
             <td style="background: #f8fafc; padding: 35px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0 0 8px; color: #334155; font-size: 14px; font-weight: 700;">${companyName}</p>
@@ -363,7 +336,6 @@ const newsletterTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
@@ -412,8 +384,6 @@ const promotionalTemplate: EmailTemplate = {
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #1a0a14 0%, #2a1520 100%); border-radius: 20px; overflow: visible; box-shadow: 0 0 60px rgba(255, 20, 147, 0.4), 0 0 120px rgba(138, 43, 226, 0.2);">
-          
-          <!-- Urgency Badge Animado -->
           <tr>
             <td align="center" style="padding: 25px 30px 0; position: relative;">
               <table cellpadding="0" cellspacing="0" border="0">
@@ -429,16 +399,12 @@ const promotionalTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Header Explosivo -->
           <tr>
             <td style="padding: 35px 35px 25px; text-align: center;">
               <h1 style="margin: 0 0 15px; background: linear-gradient(135deg, #ff1493 0%, #8a2be2 50%, #4169e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 56px; font-weight: 900; letter-spacing: -2px; text-shadow: 0 0 40px rgba(255,20,147,0.5); line-height: 1;">${mainTitle}</h1>
               <p style="margin: 0; color: #e2b8d4; font-size: 17px; font-weight: 600; line-height: 1.5;">${description}</p>
             </td>
           </tr>
-
-          <!-- Desconto Mega Destacado -->
           <tr>
             <td align="center" style="padding: 0 35px 30px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -454,8 +420,6 @@ const promotionalTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Features Grid Neon -->
           <tr>
             <td style="padding: 0 35px 35px;">
               <table width="100%" cellpadding="0" cellspacing="0">
@@ -482,8 +446,6 @@ const promotionalTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- CTA Ultra Vibrante -->
           <tr>
             <td align="center" style="padding: 0 35px 45px;">
               <table cellpadding="0" cellspacing="0" border="0">
@@ -500,8 +462,6 @@ const promotionalTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
-          <!-- Footer Minimalista -->
           <tr>
             <td style="background: #0f0508; padding: 32px 35px; text-align: center; border-top: 1px solid rgba(255,20,147,0.15);">
               <p style="margin: 0 0 6px; color: #6a4a5a; font-size: 13px; font-weight: 700;">${companyName}</p>
@@ -510,7 +470,6 @@ const promotionalTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
@@ -559,11 +518,8 @@ const returningCustomerTemplate: EmailTemplate = {
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(139,92,246,0.15), 0 0 1px rgba(139,92,246,0.1);">
-          
-          <!-- VIP Header Luxuoso -->
           <tr>
             <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%); padding: 45px 40px 55px; text-align: center; position: relative;">
-              <!-- VIP Badge -->
               <div style="margin-bottom: 22px;">
                 <table cellpadding="0" cellspacing="0" border="0" align="center">
                   <tr>
@@ -573,13 +529,10 @@ const returningCustomerTemplate: EmailTemplate = {
                   </tr>
                 </table>
               </div>
-              
               <h1 style="margin: 0 0 14px; color: #ffffff; font-size: 42px; font-weight: 700; letter-spacing: -0.5px; font-family: 'Cormorant Garamond', serif; line-height: 1.1;">${mainTitle}</h1>
               <p style="margin: 0; color: #f3e8ff; font-size: 17px; font-weight: 500; max-width: 450px; display: inline-block; line-height: 1.5;">${description}</p>
             </td>
           </tr>
-
-          <!-- Destaque do Destino -->
           <tr>
             <td align="center" style="padding: 40px 40px 30px;">
               <table cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px solid #e9d5ff; border-radius: 16px; padding: 28px 35px; box-shadow: 0 4px 16px rgba(139,92,246,0.08);">
@@ -592,8 +545,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Mensagem Personalizada -->
           <tr>
             <td style="padding: 0 40px 30px;">
               <p style="margin: 0; color: #475569; font-size: 16px; line-height: 1.8; text-align: center; font-style: italic;">
@@ -601,8 +552,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
-          <!-- Benefícios VIP Premium -->
           <tr>
             <td style="padding: 0 40px 35px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fde68a; border-radius: 16px; overflow: hidden;">
@@ -632,8 +581,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- CTA Elegante -->
           <tr>
             <td align="center" style="padding: 0 40px 35px;">
               <table cellpadding="0" cellspacing="0" border="0">
@@ -647,8 +594,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
-
-          <!-- Quote Inspiracional -->
           <tr>
             <td style="padding: 0 40px 40px;">
               <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #c084fc; border-radius: 12px; padding: 22px 25px;">
@@ -658,8 +603,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </div>
             </td>
           </tr>
-
-          <!-- Footer Premium -->
           <tr>
             <td style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 35px 40px; text-align: center; border-top: 1px solid #e9d5ff;">
               <p style="margin: 0 0 8px; color: #334155; font-size: 15px; font-weight: 700;">${companyName}</p>
@@ -670,7 +613,6 @@ const returningCustomerTemplate: EmailTemplate = {
               </p>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
@@ -682,25 +624,33 @@ const returningCustomerTemplate: EmailTemplate = {
   }
 }
 
-// Template 5: Pacote de Viagem Premium - Imagens reduzidas
+// Template 5: Pacote de Viagem Premium - Baseado em Brevo Design
+// ✅ IMAGENS DE CONTEÚDO AGORA VÊM DE IMPORTS LOCAIS
 const eventTemplate: EmailTemplate = {
   id: 'event-invitation',
   name: 'Pacote de Viagem Premium',
-  description: 'Template baseado em Brevo com logo, textos e redes sociais — sem images hero e sem grid de pacotes.',
+  description: 'Design profissional baseado no padrão Brevo com logo, divisor, hero image, descrição, botão CTA, seção de pacotes inclusos com imagens e footer com redes sociais',
   category: 'tourism',
   thumbnail: '✈️',
   generate: (data) => {
+    // ✅ Usa imports locais como fallback
     const {
       companyName = 'Sua Agência',
       destination = 'Destino Incrível',
       mainTitle = `Descubra ${destination}`,
-      description = 'Uma experiência única com destinos incríveis e preços especiais!',
+      description = 'Bem-vindo ao pacote premium! Uma experiência única que você não vai esquecer com hospedagem de luxo, guias especializados e momentos inesquecíveis.',
       ctaLink = '#',
-      ctaText = 'Reservar Agora',
+      ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
-      // imagens removidas
-      logoImage = 'https://via.placeholder.com/95x36?text=LOGO'
-    } = data
+      // ✅ IMAGENS DE CONTEÚDO: usam imports locais por padrão
+      heroImage = heroDestinoPremium,
+      teamImage1 = hospedagemLuxo,
+      teamImage2 = refeicoesGourmet,
+      teamImage3 = guiasExperientes,
+      teamImage4 = transporteIncluso,
+      // ⚠️ LOGO continua vindo do data (ou placeholder)
+      logoImage = data.logoImage || 'https://via.placeholder.com/95x36?text=Logo'
+    } = data;
 
     return {
       subject: `✈️ ${mainTitle} | ${destination}`,
@@ -712,89 +662,204 @@ const eventTemplate: EmailTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #ffffff; }
-    a { text-decoration: none; color: #4f1337; }
+    body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
+    a { color: #4f1337; text-decoration: none; }
   </style>
 </head>
-<body>
-
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:auto;background:#ffffff;">
-
-  <!-- LOGO -->
-  <tr>
-    <td align="center" style="padding:14px;">
-      <img src="${logoImage}" alt="${companyName}" style="width:95px;display:block;">
-    </td>
-  </tr>
-
-  <tr><td style="border-top:1px solid #26081a;"></td></tr>
-
-  <!-- TÍTULO -->
-  <tr>
-    <td style="padding:24px 32px 0;">
-      <h2 style="margin:0;color:#4f1337;font-size:26px;font-weight:900;">${mainTitle}</h2>
-    </td>
-  </tr>
-
-  <!-- DESCRIÇÃO -->
-  <tr>
-    <td style="padding:12px 32px 0;">
-      <p style="margin:0;color:#26081a;font-size:16px;line-height:1.5;">${description}</p>
-    </td>
-  </tr>
-
-  <!-- CTA -->
-  <tr>
-    <td align="center" style="padding:24px 32px 0;">
-      <a href="${ctaLink}" style="display:inline-block;background:#4f1337;color:#fff;font-weight:bold;font-size:16px;padding:12px 40px;border-radius:8px;">
-        ${ctaText}
-      </a>
-    </td>
-  </tr>
-
-  <!-- PREÇO -->
-  <tr>
-    <td align="center" style="padding:28px 32px;">
-      <p style="margin:0;color:#4f1337;font-size:28px;font-weight:bold;">${priceInfo}</p>
-    </td>
-  </tr>
-
-  <!-- RODAPÉ + REDES SOCIAIS -->
-  <tr>
-    <td align="center" style="background:#e7e7e7;padding:32px;">
-
-      <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-        <tr>
-          <td style="padding:5px;">
-            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" width="32"></a>
-          </td>
-          <td style="padding:5px;">
-            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" width="32"></a>
-          </td>
-          <td style="padding:5px;">
-            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" width="32"></a>
-          </td>
-          <td style="padding:5px;">
-            <a href="#"><img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" width="32"></a>
-          </td>
-        </tr>
-      </table>
-
-      <p style="margin:0;color:#334155;font-size:15px;font-weight:bold;">${companyName}</p>
-      <p style="margin:4px 0 0;color:#64748b;font-size:12px;">Sua próxima aventura te espera! ✈️</p>
-
-    </td>
-  </tr>
-
-</table>
-
+<body style="margin: 0; padding: 0; background-color: #ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
+          <tr>
+            <td align="center" style="padding: 10px 30px 5px 30px;">
+              <p style="margin: 0; text-align: center;"><a href="#" style="font-size: 12px; color: #26081a;">Visualizar no navegador</a></p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="background-color: #ffffff; padding: 14px 0;">
+              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block;">
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #26081a; height: 0; margin: 0; padding: 0;"></td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 40px 32px 0 32px;">
+              <img src="${heroImage}" alt="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 8px 32px 0 32px;">
+              <h2 style="margin: 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; font-weight: bold; line-height: 1.1;">${mainTitle}</h2>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 8px 32px 0 32px;">
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">${description}</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 8px 32px 0 32px;">
+              <table cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr>
+                  <td style="background-color: #4f1337; border-radius: 8px; padding: 11px 5px; text-align: center;">
+                    <a href="${ctaLink}" style="display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
+                      ${ctaText}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 40px 0 0 0;">
+              <div style="width: 100%; border-top: 8px dotted #4f1337; margin: 0;"></div>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 40px 32px 0 32px;">
+              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">O que está incluído</h2>
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes premium incluem tudo o que você precisa para uma experiência inesquecível e segura.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 16px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
+                <tr>
+                  <td width="50%" align="center" style="padding-right: 8px; padding-bottom: 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center">
+                          <img src="${teamImage1}" alt="Hospedagem Luxo" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-top: 8px;">
+                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Hospedagem Luxo</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="50%" align="center" style="padding-left: 8px; padding-bottom: 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center">
+                          <img src="${teamImage2}" alt="Refeições Gourmet" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-top: 8px;">
+                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Refeições Gourmet</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="50%" align="center" style="padding-right: 8px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center">
+                          <img src="${teamImage3}" alt="Guias Experientes" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-top: 8px;">
+                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Guias Experientes</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="50%" align="center" style="padding-left: 8px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center">
+                          <img src="${teamImage4}" alt="Transporte Incluído" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="center" style="padding-top: 8px;">
+                          <p style="margin: 0; color: #26081a; font-size: 16px; font-weight: normal;">Transporte Incluído</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 40px 32px 0 32px;">
+              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">Informações do Pacote</h2>
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes para ${destination} saem regularmente durante o ano. Consulte a melhor data para sua viagem e aproveite as melhores promoções.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 24px 32px 0 32px;">
+              <p style="margin: 0; color: #4f1337; font-size: 28px; font-weight: bold;">${priceInfo}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #e7e7e7; padding: 32px 32px; text-align: center; margin-top: 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
+                <tr align="center">
+                  <td style="padding: 5px;">
+                    <a href="#" style="display: inline-block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" style="width: 32px; height: 32px; display: block;">
+                    </a>
+                  </td>
+                  <td style="padding: 5px;">
+                    <a href="#" style="display: inline-block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" style="width: 32px; height: 32px; display: block;">
+                    </a>
+                  </td>
+                  <td style="padding: 5px;">
+                    <a href="#" style="display: inline-block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" style="width: 32px; height: 32px; display: block;">
+                    </a>
+                  </td>
+                  <td style="padding: 5px;">
+                    <a href="#" style="display: inline-block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" style="width: 32px; height: 32px; display: block;">
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; font-weight: bold;">${companyName}</p>
+              <p style="margin: 0 0 18px 0; color: #64748b; font-size: 12px;">Sua próxima aventura te espera! ✈️</p>
+              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
+                <tr align="center">
+                  <td style="padding: 0 8px; font-size: 12px;">
+                    <a href="#" style="color: #26081a; text-decoration: none;">Download App</a>
+                  </td>
+                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                    <a href="#" style="color: #26081a; text-decoration: none;">Reservar</a>
+                  </td>
+                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                    <a href="#" style="color: #26081a; text-decoration: none;">Contato</a>
+                  </td>
+                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                    <a href="#" style="color: #26081a; text-decoration: none;">Descadastrar</a>
+                  </td>
+                </tr>
+              </table>
+              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block; margin: 40px auto 0;">
+              <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
       `
     }
   }
 }
-
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   destinationPackageTemplate,
