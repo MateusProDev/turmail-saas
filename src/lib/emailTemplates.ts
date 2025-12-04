@@ -633,12 +633,13 @@ const eventTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
-      // ✅ IMAGENS REAIS DO CLOUDINARY (PNG)
-      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878757/hero-destino-premium_aqxwu4.png',
-      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878755/hospedagem-luxo_rolilw.png',
-      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/refeicoes-gourmet_nfvrwc.png',
-      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/guias-experientes_yerqfr.png',
-      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/transporte-incluso_vnvsm5.png',
+      // 🔄 URLs que você passou
+      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/hero-destino-premium_aqxwu4.jpg',
+      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/hospedagem-luxo_rolilw.jpg',
+      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/refeicoes-gourmet_nfvrwc.jpg',
+      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/guias-experientes_yerqfr.jpg',
+      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/transporte-incluso_m3dzkf.jpg',
+
       // ⚠️ Logo continua vindo do data (permite customização)
       logoImage = data.logoImage || 'https://via.placeholder.com/95x36?text=Logo'
     } = data;
