@@ -1,11 +1,3 @@
-// IMPORTS DAS IMAGENS LOCAIS (React)
-import heroDestinoPremium from '@/assets/images/hero-destino-premium.webp';
-import hospedagemLuxo from '@/assets/images/hospedagem-luxo.webp';
-import refeicoesGourmet from '@/assets/images/refeicoes-gourmet.webp';
-import guiasExperientes from '@/assets/images/guias-experientes.webp';
-import transporteIncluso from '@/assets/images/transporte-incluso.webp';
-
-
 export interface EmailTemplate {
   id: string
   name: string
@@ -626,7 +618,6 @@ const returningCustomerTemplate: EmailTemplate = {
 }
 
 // Template 5: Pacote de Viagem Premium - Baseado em Brevo Design
-// ✅ IMAGENS DE CONTEÚDO AGORA VÊM DE IMPORTS LOCAIS
 const eventTemplate: EmailTemplate = {
   id: 'event-invitation',
   name: 'Pacote de Viagem Premium',
@@ -634,7 +625,6 @@ const eventTemplate: EmailTemplate = {
   category: 'tourism',
   thumbnail: '✈️',
   generate: (data) => {
-    // ✅ Usa imports locais como fallback
     const {
       companyName = 'Sua Agência',
       destination = 'Destino Incrível',
@@ -643,13 +633,13 @@ const eventTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
-      // ✅ IMAGENS DE CONTEÚDO: usam imports locais por padrão
-      heroImage = heroDestinoPremium,
-      teamImage1 = hospedagemLuxo,
-      teamImage2 = refeicoesGourmet,
-      teamImage3 = guiasExperientes,
-      teamImage4 = transporteIncluso,
-      // ⚠️ LOGO continua vindo do data (ou placeholder)
+      // ✅ IMAGENS REAIS DO CLOUDINARY (exceto logo e redes sociais)
+      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877697/hero-destino-premium_bdnrw0.webp',
+      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/hospedagem-luxo_ub9nlj.webp',
+      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/refeicoes-gourmet_xiqven.webp',
+      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/guias-experientes_s6f1uu.webp',
+      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/transporte-incluso_vgnlm8.webp',
+      // ⚠️ Logo continua vindo do data (permite customização)
       logoImage = data.logoImage || 'https://via.placeholder.com/95x36?text=Logo'
     } = data;
 
