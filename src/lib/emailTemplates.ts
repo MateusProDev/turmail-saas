@@ -633,12 +633,12 @@ const eventTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
-      // ✅ IMAGENS REAIS DO CLOUDINARY (exceto logo e redes sociais)
-      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877697/hero-destino-premium_bdnrw0.webp',
-      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/hospedagem-luxo_ub9nlj.webp',
-      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/refeicoes-gourmet_xiqven.webp',
-      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/guias-experientes_s6f1uu.webp',
-      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764877696/transporte-incluso_vgnlm8.webp',
+      // ✅ IMAGENS REAIS DO CLOUDINARY (PNG)
+      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878757/hero-destino-premium_aqxwu4.png',
+      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878755/hospedagem-luxo_rolilw.png',
+      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/refeicoes-gourmet_nfvrwc.png',
+      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/guias-experientes_yerqfr.png',
+      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/v1764878756/transporte-incluso_vnvsm5.png',
       // ⚠️ Logo continua vindo do data (permite customização)
       logoImage = data.logoImage || 'https://via.placeholder.com/95x36?text=Logo'
     } = data;
@@ -664,32 +664,49 @@ const eventTemplate: EmailTemplate = {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
           <tr>
             <td align="center" style="padding: 10px 30px 5px 30px;">
-              <p style="margin: 0; text-align: center;"><a href="#" style="font-size: 12px; color: #26081a;">Visualizar no navegador</a></p>
+              <p style="margin: 0; text-align: center;">
+                <a href="#" style="font-size: 12px; color: #26081a;">Visualizar no navegador</a>
+              </p>
             </td>
           </tr>
+
+          <!-- LOGO -->
           <tr>
             <td align="center" style="background-color: #ffffff; padding: 14px 0;">
               <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block;">
             </td>
           </tr>
+
           <tr>
             <td style="border-top: 1px solid #26081a; height: 0; margin: 0; padding: 0;"></td>
           </tr>
+
+          <!-- HERO -->
           <tr>
             <td align="center" style="padding: 40px 32px 0 32px;">
               <img src="${heroImage}" alt="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
             </td>
           </tr>
+
+          <!-- TÍTULO -->
           <tr>
             <td align="left" style="padding: 8px 32px 0 32px;">
-              <h2 style="margin: 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; font-weight: bold; line-height: 1.1;">${mainTitle}</h2>
+              <h2 style="margin: 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 28px; font-weight: bold; line-height: 1.1;">
+                ${mainTitle}
+              </h2>
             </td>
           </tr>
+
+          <!-- DESCRIÇÃO -->
           <tr>
             <td align="left" style="padding: 8px 32px 0 32px;">
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">${description}</p>
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">
+                ${description}
+              </p>
             </td>
           </tr>
+
+          <!-- CTA -->
           <tr>
             <td align="center" style="padding: 8px 32px 0 32px;">
               <table cellpadding="0" cellspacing="0" border="0" align="center">
@@ -703,17 +720,27 @@ const eventTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
+
+          <!-- DIVISOR -->
           <tr>
             <td align="center" style="padding: 40px 0 0 0;">
               <div style="width: 100%; border-top: 8px dotted #4f1337; margin: 0;"></div>
             </td>
           </tr>
+
+          <!-- O QUE ESTÁ INCLUÍDO -->
           <tr>
             <td align="left" style="padding: 40px 32px 0 32px;">
-              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">O que está incluído</h2>
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes premium incluem tudo o que você precisa para uma experiência inesquecível e segura.</p>
+              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">
+                O que está incluído
+              </h2>
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">
+                Nossos pacotes premium incluem tudo o que você precisa para uma experiência inesquecível e segura.
+              </p>
             </td>
           </tr>
+
+          <!-- GRID 2x2 -->
           <tr>
             <td align="center" style="padding: 16px 24px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
@@ -748,6 +775,7 @@ const eventTemplate: EmailTemplate = {
                   </td>
                 </tr>
               </table>
+
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td width="50%" align="center" style="padding-right: 8px;">
@@ -782,17 +810,27 @@ const eventTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
+
+          <!-- INFORMAÇÕES DO PACOTE -->
           <tr>
             <td align="left" style="padding: 40px 32px 0 32px;">
-              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">Informações do Pacote</h2>
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">Nossos pacotes para ${destination} saem regularmente durante o ano. Consulte a melhor data para sua viagem e aproveite as melhores promoções.</p>
+              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">
+                Informações do Pacote
+              </h2>
+              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">
+                Nossos pacotes para ${destination} saem regularmente durante o ano. Consulte a melhor data para sua viagem e aproveite as melhores promoções.
+              </p>
             </td>
           </tr>
+
+          <!-- PREÇO -->
           <tr>
             <td align="center" style="padding: 24px 32px 0 32px;">
               <p style="margin: 0; color: #4f1337; font-size: 28px; font-weight: bold;">${priceInfo}</p>
             </td>
           </tr>
+
+          <!-- FOOTER -->
           <tr>
             <td style="background-color: #e7e7e7; padding: 32px 32px; text-align: center; margin-top: 40px;">
               <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
@@ -819,8 +857,10 @@ const eventTemplate: EmailTemplate = {
                   </td>
                 </tr>
               </table>
+
               <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; font-weight: bold;">${companyName}</p>
               <p style="margin: 0 0 18px 0; color: #64748b; font-size: 12px;">Sua próxima aventura te espera! ✈️</p>
+
               <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
                 <tr align="center">
                   <td style="padding: 0 8px; font-size: 12px;">
@@ -837,10 +877,12 @@ const eventTemplate: EmailTemplate = {
                   </td>
                 </tr>
               </table>
+
               <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block; margin: 40px auto 0;">
               <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>
@@ -851,6 +893,7 @@ const eventTemplate: EmailTemplate = {
     }
   }
 }
+
 
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   destinationPackageTemplate,
