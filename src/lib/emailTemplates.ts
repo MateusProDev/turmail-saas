@@ -5,6 +5,7 @@ import refeicoesGourmet from '@/assets/images/refeicoes-gourmet.webp';
 import guiasExperientes from '@/assets/images/guias-experientes.webp';
 import transporteIncluso from '@/assets/images/transporte-incluso.webp';
 
+
 export interface EmailTemplate {
   id: string
   name: string
