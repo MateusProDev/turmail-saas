@@ -633,15 +633,14 @@ const eventTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
-      // 🔄 URLs que você passou
-      heroImage = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/hero-destino-premium_aqxwu4.jpg',
-      teamImage1 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/hospedagem-luxo_rolilw.jpg',
-      teamImage2 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/refeicoes-gourmet_nfvrwc.jpg',
-      teamImage3 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/guias-experientes_yerqfr.jpg',
-      teamImage4 = 'https://res.cloudinary.com/ddq2asu2s/image/upload/f_jpg/transporte-incluso_m3dzkf.jpg',
-
+      // 🔄 URLs corrigidas e fallbacks adicionados
+      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/300x200.jpg?text=Team+Image+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/300x200.jpg?text=Team+Image+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/300x200.jpg?text=Team+Image+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/300x200.jpg?text=Team+Image+4',
       // ⚠️ Logo continua vindo do data (permite customização)
-      logoImage = data.logoImage || 'https://via.placeholder.com/95x36?text=Logo'
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/95x36?text=Logo'
     } = data;
 
     return {
@@ -656,6 +655,10 @@ const eventTemplate: EmailTemplate = {
   <style>
     body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
     a { color: #4f1337; text-decoration: none; }
+    img { width: 100%; height: auto; display: block; border-radius: 8px; }
+    .logo { width: 95px; height: auto; display: block; }
+    .cta-button { display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; }
+    .social-icon { width: 32px; height: 32px; display: block; }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #ffffff;">
@@ -663,18 +666,10 @@ const eventTemplate: EmailTemplate = {
     <tr>
       <td align="center" style="padding: 20px;">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
-          <tr>
-            <td align="center" style="padding: 10px 30px 5px 30px;">
-              <p style="margin: 0; text-align: center;">
-                <a href="#" style="font-size: 12px; color: #26081a;">Visualizar no navegador</a>
-              </p>
-            </td>
-          </tr>
-
           <!-- LOGO -->
           <tr>
             <td align="center" style="background-color: #ffffff; padding: 14px 0;">
-              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block;">
+              <img src="${logoImage}" alt="${companyName}" class="logo">
             </td>
           </tr>
 
@@ -682,10 +677,10 @@ const eventTemplate: EmailTemplate = {
             <td style="border-top: 1px solid #26081a; height: 0; margin: 0; padding: 0;"></td>
           </tr>
 
-          <!-- HERO -->
+          <!-- HERO IMAGE -->
           <tr>
             <td align="center" style="padding: 40px 32px 0 32px;">
-              <img src="${heroImage}" alt="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
+              <img src="${heroImage}" alt="${destination}" title="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
             </td>
           </tr>
 
@@ -713,9 +708,7 @@ const eventTemplate: EmailTemplate = {
               <table cellpadding="0" cellspacing="0" border="0" align="center">
                 <tr>
                   <td style="background-color: #4f1337; border-radius: 8px; padding: 11px 5px; text-align: center;">
-                    <a href="${ctaLink}" style="display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px;">
-                      ${ctaText}
-                    </a>
+                    <a href="${ctaLink}" class="cta-button">${ctaText}</a>
                   </td>
                 </tr>
               </table>
@@ -750,7 +743,7 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage1}" alt="Hospedagem Luxo" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                          <img src="${teamImage1}" alt="Hospedagem Luxo" title="Hospedagem Luxo" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
                         </td>
                       </tr>
                       <tr>
@@ -764,7 +757,7 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage2}" alt="Refeições Gourmet" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                          <img src="${teamImage2}" alt="Refeições Gourmet" title="Refeições Gourmet" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
                         </td>
                       </tr>
                       <tr>
@@ -783,7 +776,7 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage3}" alt="Guias Experientes" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                          <img src="${teamImage3}" alt="Guias Experientes" title="Guias Experientes" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
                         </td>
                       </tr>
                       <tr>
@@ -797,7 +790,7 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage4}" alt="Transporte Incluído" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
+                          <img src="${teamImage4}" alt="Transporte Incluído" title="Transporte Incluído" style="width: 100%; max-width: 244px; height: auto; border-radius: 400px; display: block;">
                         </td>
                       </tr>
                       <tr>
@@ -809,18 +802,6 @@ const eventTemplate: EmailTemplate = {
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-
-          <!-- INFORMAÇÕES DO PACOTE -->
-          <tr>
-            <td align="left" style="padding: 40px 32px 0 32px;">
-              <h2 style="margin: 0 0 8px 0; color: #4f1337; font-family: 'Arial Black', Arial, sans-serif; font-size: 24px; font-weight: bold;">
-                Informações do Pacote
-              </h2>
-              <p style="margin: 0; color: #26081a; font-size: 16px; line-height: 1.5;">
-                Nossos pacotes para ${destination} saem regularmente durante o ano. Consulte a melhor data para sua viagem e aproveite as melhores promoções.
-              </p>
             </td>
           </tr>
 
@@ -838,22 +819,22 @@ const eventTemplate: EmailTemplate = {
                 <tr align="center">
                   <td style="padding: 5px;">
                     <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" style="width: 32px; height: 32px; display: block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" class="social-icon">
                     </a>
                   </td>
                   <td style="padding: 5px;">
                     <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" style="width: 32px; height: 32px; display: block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" class="social-icon">
                     </a>
                   </td>
                   <td style="padding: 5px;">
                     <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" style="width: 32px; height: 32px; display: block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" class="social-icon">
                     </a>
                   </td>
                   <td style="padding: 5px;">
                     <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" style="width: 32px; height: 32px; display: block;">
+                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" class="social-icon">
                     </a>
                   </td>
                 </tr>
@@ -879,7 +860,7 @@ const eventTemplate: EmailTemplate = {
                 </tr>
               </table>
 
-              <img src="${logoImage}" alt="${companyName}" style="width: 95px; height: auto; display: block; margin: 40px auto 0;">
+              <img src="${logoImage}" alt="${companyName}" class="logo">
               <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
@@ -895,7 +876,7 @@ const eventTemplate: EmailTemplate = {
   }
 }
 
-
+// Exportação de templates
 export const EMAIL_TEMPLATES: EmailTemplate[] = [
   destinationPackageTemplate,
   newsletterTemplate,

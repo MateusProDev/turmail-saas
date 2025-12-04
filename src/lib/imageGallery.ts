@@ -61,7 +61,7 @@ export async function uploadClientImage(
       )
     }
 
-    // Criar objeto da imagem
+    // Criar objeto da imagemq
     const newImage: ClientImage = {
       id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       url: imageUrl,
