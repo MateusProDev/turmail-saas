@@ -656,7 +656,7 @@ const eventTemplate: EmailTemplate = {
     body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
     a { color: #4f1337; text-decoration: none; }
     img { max-width: 100%; height: auto; display: block; border-radius: 8px; }
-    .logo { width: 100px; height: 100px; display: block; object-fit: cover; } /* Logo quadrada */
+    .logo { width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px; }
     .cta-button { display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; }
     .social-icon { width: 28px; height: 28px; display: block; }
   </style>
@@ -680,7 +680,8 @@ const eventTemplate: EmailTemplate = {
           <!-- HERO IMAGE -->
           <tr>
             <td align="center" style="padding: 40px 32px 0 32px;">
-              <img src="${heroImage}" alt="${destination}" title="${destination}" style="width: 100%; max-width: 536px; height: auto; display: block; border-radius: 8px;">
+              <img src="${heroImage}" alt="${destination}" title="${destination}" 
+                   style="width: 100%; max-width: 600px; height: auto; display: block; border-radius: 8px;">
             </td>
           </tr>
 
@@ -743,7 +744,8 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage1}" alt="Hospedagem Luxo" title="Hospedagem Luxo" style="width: 100%; max-width: 280px; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage1}" alt="Hospedagem Luxo" title="Hospedagem Luxo" 
+                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
                         </td>
                       </tr>
                       <tr>
@@ -757,7 +759,8 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage2}" alt="Refeições Gourmet" title="Refeições Gourmet" style="width: 100%; max-width: 280px; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage2}" alt="Refeições Gourmet" title="Refeições Gourmet" 
+                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
                         </td>
                       </tr>
                       <tr>
@@ -776,7 +779,8 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage3}" alt="Guias Experientes" title="Guias Experientes" style="width: 100%; max-width: 280px; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage3}" alt="Guias Experientes" title="Guias Experientes" 
+                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
                         </td>
                       </tr>
                       <tr>
@@ -790,7 +794,8 @@ const eventTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <img src="${teamImage4}" alt="Transporte Incluído" title="Transporte Incluído" style="width: 100%; max-width: 280px; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage4}" alt="Transporte Incluído" title="Transporte Incluído" 
+                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
                         </td>
                       </tr>
                       <tr>
