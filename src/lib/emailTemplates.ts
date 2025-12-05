@@ -669,7 +669,8 @@ const eventTemplate: EmailTemplate = {
           <!-- LOGO -->
           <tr>
             <td align="center" style="background-color: #ffffff; padding: 14px 0;">
-              <img src="${logoImage}" alt="${companyName}" class="logo"> <!-- Logo quadrada -->
+              <img src="${logoImage}" alt="${companyName}" class="logo" 
+                   style="width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px;"> <!-- Logo quadrada -->
             </td>
           </tr>
 
@@ -865,7 +866,8 @@ const eventTemplate: EmailTemplate = {
                 </tr>
               </table>
 
-              <img src="${logoImage}" alt="${companyName}" class="logo" style="margin-top: 16px;"> <!-- Logo quadrada no footer -->
+              <img src="${logoImage}" alt="${companyName}" class="logo" 
+                   style="margin-top: 16px; width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px;"> <!-- Logo quadrada no footer -->
               <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
