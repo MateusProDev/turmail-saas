@@ -635,11 +635,11 @@ const eventTemplate: EmailTemplate = {
       priceInfo = 'A partir de R$ 3.299',
       // 🔄 URLs corrigidas e fallbacks adicionados
       heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+4',
-      // ⚠️ Logo ajustada para altura fixa de 100px e largura automática
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/250x250.jpg?text=Hospedagem+Luxo',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/250x250.jpg?text=Refeições+Gourmet',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/250x250.jpg?text=Guias+Experientes',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/250x250.jpg?text=Transporte+Incluído',
+      // Logo com altura fixa de 100px e largura automática
       logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/200x100?text=Logo'
     } = data;
 
@@ -655,14 +655,32 @@ const eventTemplate: EmailTemplate = {
   <style>
     body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
     a { color: #4f1337; text-decoration: none; }
-    img { max-width: 100%; height: auto; display: block; border-radius: 8px; }
-    .logo { 
-      height: 100px; /* Altura fixa */
-      width: auto; /* Largura automática */
-      display: block; 
-      object-fit: contain; /* Ajusta a imagem sem distorção */
-      border-radius: 8px; 
+    img { max-width: 100%; height: auto; display: block; }
+    
+    /* Logo container para centralização perfeita */
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
     }
+    
+    /* Logo com altura fixa e largura automática */
+    .logo {
+      height: 100px;
+      width: auto;
+      max-width: 200px; /* Limite máximo para largura */
+      object-fit: contain;
+    }
+    
+    /* Imagens das features - 250x250 */
+    .feature-image {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    
     .cta-button { 
       display: inline-block; 
       padding: 11px 43px; 
@@ -681,10 +699,12 @@ const eventTemplate: EmailTemplate = {
     <tr>
       <td align="center" style="padding: 20px;">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
-          <!-- LOGO -->
+          <!-- LOGO SUPERIOR -->
           <tr>
             <td align="center" style="background-color: #ffffff; padding: 14px 0;">
-              <img src="${logoImage}" alt="${companyName}" class="logo"> <!-- Logo com altura fixa e largura automática -->
+              <div class="logo-container">
+                <img src="${logoImage}" alt="${companyName}" class="logo">
+              </div>
             </td>
           </tr>
 
@@ -750,7 +770,7 @@ const eventTemplate: EmailTemplate = {
             </td>
           </tr>
 
-          <!-- GRID 2x2 -->
+          <!-- GRID 2x2 - Imagens 250x250 -->
           <tr>
             <td align="center" style="padding: 16px 24px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 16px;">
@@ -760,7 +780,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage1}" alt="Hospedagem Luxo" title="Hospedagem Luxo" 
-                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
+                               class="feature-image">
                         </td>
                       </tr>
                       <tr>
@@ -775,7 +795,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage2}" alt="Refeições Gourmet" title="Refeições Gourmet" 
-                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
+                               class="feature-image">
                         </td>
                       </tr>
                       <tr>
@@ -795,7 +815,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage3}" alt="Guias Experientes" title="Guias Experientes" 
-                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
+                               class="feature-image">
                         </td>
                       </tr>
                       <tr>
@@ -810,7 +830,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage4}" alt="Transporte Incluído" title="Transporte Incluído" 
-                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
+                               class="feature-image">
                         </td>
                       </tr>
                       <tr>
@@ -880,7 +900,11 @@ const eventTemplate: EmailTemplate = {
                 </tr>
               </table>
 
-              <img src="${logoImage}" alt="${companyName}" class="logo" style="margin-top: 16px;"> <!-- Logo quadrada no footer -->
+              <!-- LOGO INFERIOR -->
+              <div class="logo-container" style="margin-top: 16px;">
+                <img src="${logoImage}" alt="${companyName}" class="logo">
+              </div>
+              
               <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
