@@ -635,12 +635,12 @@ const eventTemplate: EmailTemplate = {
       priceInfo = 'A partir de R$ 3.299',
       // 🔄 URLs corrigidas e fallbacks adicionados
       heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Team+Image+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Team+Image+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Team+Image+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Team+Image+4',
-      // ⚠️ Logo ajustada para 100x100 pixels (proporção 1:1)
-      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/100x100?text=Logo'
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/500x300.jpg?text=Team+Image+4',
+      // ⚠️ Logo ajustada para altura fixa de 100px e largura automática
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/200x100?text=Logo'
     } = data;
 
     return {
@@ -656,8 +656,23 @@ const eventTemplate: EmailTemplate = {
     body { font-family: 'Arial', 'Helvetica', sans-serif; margin: 0; padding: 0; }
     a { color: #4f1337; text-decoration: none; }
     img { max-width: 100%; height: auto; display: block; border-radius: 8px; }
-    .logo { width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px; }
-    .cta-button { display: inline-block; padding: 11px 43px; background-color: #4f1337; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; }
+    .logo { 
+      height: 100px; /* Altura fixa */
+      width: auto; /* Largura automática */
+      display: block; 
+      object-fit: contain; /* Ajusta a imagem sem distorção */
+      border-radius: 8px; 
+    }
+    .cta-button { 
+      display: inline-block; 
+      padding: 11px 43px; 
+      background-color: #4f1337; 
+      color: #ffffff; 
+      text-decoration: none; 
+      font-size: 16px; 
+      font-weight: bold; 
+      border-radius: 8px; 
+    }
     .social-icon { width: 28px; height: 28px; display: block; }
   </style>
 </head>
@@ -669,8 +684,7 @@ const eventTemplate: EmailTemplate = {
           <!-- LOGO -->
           <tr>
             <td align="center" style="background-color: #ffffff; padding: 14px 0;">
-              <img src="${logoImage}" alt="${companyName}" class="logo" 
-                   style="width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px;"> <!-- Logo quadrada -->
+              <img src="${logoImage}" alt="${companyName}" class="logo"> <!-- Logo com altura fixa e largura automática -->
             </td>
           </tr>
 
@@ -746,7 +760,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage1}" alt="Hospedagem Luxo" title="Hospedagem Luxo" 
-                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
+                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
                         </td>
                       </tr>
                       <tr>
@@ -761,7 +775,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage2}" alt="Refeições Gourmet" title="Refeições Gourmet" 
-                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
+                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
                         </td>
                       </tr>
                       <tr>
@@ -781,7 +795,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage3}" alt="Guias Experientes" title="Guias Experientes" 
-                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
+                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
                         </td>
                       </tr>
                       <tr>
@@ -796,7 +810,7 @@ const eventTemplate: EmailTemplate = {
                       <tr>
                         <td align="center">
                           <img src="${teamImage4}" alt="Transporte Incluído" title="Transporte Incluído" 
-                               style="width: 100%; max-width: 280px; height: auto; display: block; border-radius: 12px;">
+                               style="width: 100%; max-width: 500px; height: 300px; display: block; border-radius: 12px; object-fit: cover;">
                         </td>
                       </tr>
                       <tr>
@@ -866,8 +880,7 @@ const eventTemplate: EmailTemplate = {
                 </tr>
               </table>
 
-              <img src="${logoImage}" alt="${companyName}" class="logo" 
-                   style="margin-top: 16px; width: 100px; height: 100px; display: block; object-fit: cover; border-radius: 8px;"> <!-- Logo quadrada no footer -->
+              <img src="${logoImage}" alt="${companyName}" class="logo" style="margin-top: 16px;"> <!-- Logo quadrada no footer -->
               <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
