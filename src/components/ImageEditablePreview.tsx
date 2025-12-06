@@ -29,41 +29,34 @@ export function ImageEditablePreview({
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
-  // Mapeia IDs de fotos Unsplash para tipos de imagem
-  const templateImageMap: { [key: string]: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' } = {
+  const templateImageMap: Record<string, 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location'> = {
     'photo-1506905925346-21bda4d32df4': 'hero',
     'photo-1476514525535-07fb3b4ae5f1': 'hero',
-    'photo-1530789253388-582c481c54b0': 'hero',
+    'photo-1502602898657-3e91760cbb34': 'hero',
     'photo-1682687220742-aba13b6e50ba': 'hero',
-    'photo-1540541338287-41700207dee6': 'hero',
+    'photo-1682687982501-1e58ab814714': 'hero',
     
-    'photo-1566073771259-6a8506099945': 'team1',
-    'photo-1551882547-ff40c63fe5fa': 'team1',
-    'photo-1520250497591-112f2f40a3f4': 'team1',
+    'photo-1539635278303-d4002c07eae3': 'team1',
     'photo-1542314831-068cd1dbfeeb': 'team1',
-    'photo-1571896349842-33c89424de2d': 'team1',
+    'photo-1551882547-ff40c63fe5fa': 'team1',
+    'photo-1566073771259-6a8506099945': 'team1',
+    'photo-1445019980597-93fa8acb246c': 'team1',
     
-    'photo-1414235077428-338989a2e8c0': 'team2',
     'photo-1517248135467-4c7edcad34c4': 'team2',
-    'photo-1559339352-11d035aa65de': 'team2',
-    'photo-1600585154340-be6161a56a0c': 'team2',
-    'photo-1578474846511-04ba529f0b88': 'team2',
+    'photo-1414235077428-338989a2e8c0': 'team2',
+    'photo-1555396273-367ea4eb4db5': 'team2',
+    'photo-1424847651672-bf20a4b0982b': 'team2',
+    'photo-1546069901-ba9599a7e63c': 'team2',
     
-    'photo-1476900543704-4312b78632f8': 'team3',
-    'photo-1527004013197-933c4bb611b3': 'team3',
-    'photo-1500835556837-99ac94a94552': 'team3',
-    'photo-1507003211169-0a1dd7228f2d': 'team3',
+    'photo-1503457574462-bd27054394c1': 'team3',
     'photo-1469474968028-56623f02e42e': 'team3',
     
     'photo-1544620347-c4fd4a3d5957': 'team4',
-    'photo-1449965408869-eaa3f722e40d': 'team4',
     'photo-1464037866556-6812c9d1c72e': 'team4',
     'photo-1485463611174-f302f6a5c1c9': 'team4',
     
     'photo-1559827260-dc66d52bef19': 'location',
     'photo-1469854523086-cc02fe5d8800': 'location',
-    'photo-1488646953014-85cb44e25828': 'location',
-    'photo-1523906834658-6e24ef2386f9': 'location',
     'photo-1506929562872-bb421503ef21': 'location',
     
     'photo-1499678329028-101435549a4e': 'logo',
@@ -81,6 +74,13 @@ export function ImageEditablePreview({
       /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
       (_match, beforeSrc, srcUrl, afterSrc) => {
         let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
+        
+        // Extrai dimensões da tag img (width e height)
+        const allAttrs = beforeSrc + afterSrc
+        const widthMatch = allAttrs.match(/width=["']?(\d+)["']?/i) || allAttrs.match(/width:\s*(\d+)px/i)
+        const heightMatch = allAttrs.match(/height=["']?(\d+)["']?/i) || allAttrs.match(/height:\s*(\d+)px/i)
+        const width = widthMatch ? widthMatch[1] : '600'
+        const height = heightMatch ? heightMatch[1] : 'auto'
         
         for (const [photoId, type] of Object.entries(templateImageMap)) {
           if (srcUrl.includes(photoId)) {
@@ -109,7 +109,49 @@ export function ImageEditablePreview({
           return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
         }
 
-        return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="position: relative; display: inline-block; width: 100%; cursor: pointer;"><img${beforeSrc}src="${srcUrl}"${afterSrc} style="display: block; width: 100%; height: auto; transition: opacity 0.2s;" /><div class="edit-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;"><span style="background: white; color: #4f1337; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px;">✏️ Editar Imagem</span></div></div>`
+        // Define label e cor por tipo
+        const typeLabels: Record<string, string> = {
+          hero: '🌄 Imagem Principal',
+          logo: '🏢 Logo',
+          team1: '🏨 Hospedagem',
+          team2: '🍽️ Refeições',
+          team3: '👨‍🏫 Guias',
+          team4: '🚌 Transporte',
+          location: '📍 Localização'
+        }
+
+        const typeColors: Record<string, string> = {
+          hero: '#0ea5e9',
+          logo: '#8b5cf6',
+          team1: '#10b981',
+          team2: '#f59e0b',
+          team3: '#ec4899',
+          team4: '#6366f1',
+          location: '#14b8a6'
+        }
+
+        const label = typeLabels[imageType] || 'Imagem'
+        const color = typeColors[imageType] || '#64748b'
+
+        const wrapperStyle = `position: relative; display: inline-block; width: 100%; cursor: pointer; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%); border: 2px dashed ${color}40; border-radius: 8px; min-height: ${height === 'auto' ? '200px' : height + 'px'}; overflow: hidden;`
+        const imgStyle = `display: block; width: 100%; height: ${height === 'auto' ? 'auto' : height + 'px'}; object-fit: cover; transition: opacity 0.2s;`
+        const placeholderStyle = `position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%); color: ${color}; font-weight: 600; font-size: 14px; text-align: center; padding: 20px;`
+        const overlayStyle = `position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;`
+        
+        const iconEmoji = label.split(' ')[0]
+        const dimensions = `${width}px × ${height === 'auto' ? 'Auto' : height + 'px'}`
+
+        return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="${wrapperStyle}">` +
+          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` +
+          `<div class="image-placeholder" style="${placeholderStyle}">` +
+            `<div style="font-size: 48px; margin-bottom: 12px;">${iconEmoji}</div>` +
+            `<div>${label}</div>` +
+            `<div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">${dimensions}</div>` +
+          `</div>` +
+          `<div class="edit-overlay" style="${overlayStyle}">` +
+            `<span style="background: white; color: #4f1337; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px;">✏️ Editar Imagem</span>` +
+          `</div>` +
+        `</div>`
       }
     )
 
@@ -139,7 +181,6 @@ export function ImageEditablePreview({
       const htmlWrapper = wrapper as HTMLElement
       const imageType = htmlWrapper.dataset.imageType
       const overlay = htmlWrapper.querySelector('.edit-overlay') as HTMLElement
-      const img = htmlWrapper.querySelector('img') as HTMLImageElement
 
       const oldHandlers = (htmlWrapper as any).__handlers
       if (oldHandlers) {
@@ -148,171 +189,130 @@ export function ImageEditablePreview({
         htmlWrapper.removeEventListener('click', oldHandlers.click)
       }
 
-      const handleMouseEnter = () => {
-        if (overlay) overlay.style.opacity = '1'
-        if (img) img.style.opacity = '0.8'
-      }
-      
-      const handleMouseLeave = () => {
-        if (overlay) overlay.style.opacity = '0'
-        if (img) img.style.opacity = '1'
-      }
-
-      const handleClick = (e: Event) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (imageType) {
-          setSelectedImage(imageType as any)
+      const handlers = {
+        enter: () => {
+          if (overlay) overlay.style.opacity = '1'
+        },
+        leave: () => {
+          if (overlay) overlay.style.opacity = '0'
+        },
+        click: (e: Event) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (imageType) {
+            setSelectedImage(imageType as any)
+          }
         }
       }
 
-      (htmlWrapper as any).__handlers = {
-        enter: handleMouseEnter,
-        leave: handleMouseLeave,
-        click: handleClick
-      }
-
-      htmlWrapper.addEventListener('mouseenter', handleMouseEnter)
-      htmlWrapper.addEventListener('mouseleave', handleMouseLeave)
-      htmlWrapper.addEventListener('click', handleClick)
+      htmlWrapper.addEventListener('mouseenter', handlers.enter)
+      htmlWrapper.addEventListener('mouseleave', handlers.leave)
+      htmlWrapper.addEventListener('click', handlers.click)
+      
+      ;(htmlWrapper as any).__handlers = handlers
     })
   }
 
   useEffect(() => {
-    if (!previewRef.current) return
+    const updateImageInPreview = () => {
+      if (!selectedImage || !previewRef.current) return
+      
+      const config = imageConfigs.find(c => c.type === selectedImage)
+      if (!config?.imageUrl) return
 
-    imageConfigs.forEach(config => {
-      if (!config.imageUrl) return
-
-      const wrappers = previewRef.current!.querySelectorAll(`[data-image-type="${config.type}"]`)
+      const wrappers = previewRef.current.querySelectorAll('.editable-image-wrapper')
       wrappers.forEach(wrapper => {
-        const img = wrapper.querySelector('img')
-        if (img && img.src !== config.imageUrl) {
-          img.src = config.imageUrl
+        const htmlWrapper = wrapper as HTMLElement
+        if (htmlWrapper.dataset.imageType === selectedImage) {
+          const img = htmlWrapper.querySelector('img') as HTMLImageElement
+          if (img && config.imageUrl) {
+            img.src = config.imageUrl
+          }
         }
       })
-    })
-  }, [imageConfigs])
+    }
 
-  const handleInput = () => {
+    updateImageInPreview()
+  }, [imageConfigs, selectedImage])
+
+  const handleContentEdit = () => {
     if (previewRef.current && onHtmlChange) {
       onHtmlChange(previewRef.current.innerHTML)
     }
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div style={{ position: 'relative', width: '100%', minHeight: '400px' }}>
       <div
         ref={previewRef}
         contentEditable={true}
-        suppressContentEditableWarning={true}
-        onInput={handleInput}
-        onBlur={handleInput}
-        style={{ 
+        onInput={handleContentEdit}
+        style={{
           width: '100%',
           minHeight: '400px',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          padding: '20px',
+          backgroundColor: '#fff',
           outline: 'none',
-          cursor: 'text'
+          overflowY: 'auto',
+          maxHeight: '800px'
         }}
       />
-      
+
       {selectedImage && currentConfig && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(4px)'
-        }}
-        onClick={() => setSelectedImage(null)}
-        >
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '24px',
-            maxWidth: '540px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '30px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
-              paddingBottom: '16px',
-              borderBottom: '2px solid #f1f5f9'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
-                  {currentConfig.label}
-                </h3>
-                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
-                  Selecione ou faça upload de uma imagem
-                </p>
-              </div>
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>
+                Selecionar {currentConfig.label}
+              </h3>
               <button
                 onClick={() => setSelectedImage(null)}
                 style={{
-                  background: '#f1f5f9',
+                  background: 'none',
                   border: 'none',
-                  fontSize: '20px',
+                  fontSize: '24px',
                   cursor: 'pointer',
-                  padding: '8px',
-                  width: '36px',
-                  height: '36px',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '8px',
-                  transition: 'all 0.2s',
-                  color: '#64748b',
-                  fontWeight: '600'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#e2e8f0'
-                  e.currentTarget.style.color = '#1e293b'
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = '#f1f5f9'
-                  e.currentTarget.style.color = '#64748b'
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s'
                 }}
               >
-                ✕
+                ×
               </button>
             </div>
-            
-            {currentConfig.imageUrl && (
-              <div style={{
-                marginBottom: '20px',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                border: '3px solid #e2e8f0',
-                background: '#f8fafc'
-              }}>
-                <img 
-                  src={currentConfig.imageUrl} 
-                  alt={currentConfig.label}
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    maxHeight: '240px',
-                    objectFit: 'cover',
-                    display: 'block'
-                  }}
-                />
-              </div>
-            )}
-            
             <ImageGallerySelector
               clientId={clientId}
               category={currentConfig.category}
