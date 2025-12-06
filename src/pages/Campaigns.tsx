@@ -158,14 +158,14 @@ export default function Campaigns(){
       keyBenefits: keyBenefits.length > 0 ? keyBenefits : undefined,
       priceInfo: 'Condições especiais',
       dateRange: 'Saídas flexíveis',
-      // Adicionar imagens
-      heroImage: heroImage || 'https://via.placeholder.com/536x298?text=Destino+Premium',
-      teamImage1: teamImage1 || 'https://via.placeholder.com/244x122&text=Hospedagem',
-      teamImage2: teamImage2 || 'https://via.placeholder.com/244x122&text=Refeicoes',
-      teamImage3: teamImage3 || 'https://via.placeholder.com/244x122&text=Guias',
-      teamImage4: teamImage4 || 'https://via.placeholder.com/244x122&text=Transporte',
-      locationImage: locationImage || 'https://via.placeholder.com/536x298&text=Local',
-      logoImage: logoImage || 'https://via.placeholder.com/95x36?text=Logo'
+      // Passar imagens (templates já têm defaults do Unsplash)
+      heroImage: heroImage,
+      teamImage1: teamImage1,
+      teamImage2: teamImage2,
+      teamImage3: teamImage3,
+      teamImage4: teamImage4,
+      locationImage: locationImage,
+      logoImage: logoImage
     })
 
     setSubject(generated.subject)
@@ -1456,6 +1456,10 @@ export default function Campaigns(){
                         <ImageEditablePreview
                           clientId={selectedTenant}
                           previewHtml={htmlContent}
+                          onHtmlChange={(newHtml) => {
+                            setHtmlContent(newHtml)
+                            console.log('📝 Preview editado - HTML atualizado')
+                          }}
                           imageConfigs={[
                             {
                               type: 'hero',
@@ -1514,9 +1518,15 @@ export default function Campaigns(){
                           id="visual-editor"
                           contentEditable={true}
                           suppressContentEditableWarning={true}
+                          onInput={(e) => {
+                            // Atualizar HTML em tempo real enquanto edita
+                            const newHtml = e.currentTarget.innerHTML
+                            setHtmlContent(newHtml)
+                          }}
                           onBlur={(e) => {
                             const newHtml = e.currentTarget.innerHTML
                             setHtmlContent(newHtml)
+                            console.log('📝 Conteúdo editado salvo')
                           }}
                           className="p-6 outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-inset min-h-[400px] cursor-text"
                           style={{

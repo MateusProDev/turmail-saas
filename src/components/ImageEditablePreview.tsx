@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ImageGallerySelector } from './ImageGallerySelector'
 import DOMPurify from 'dompurify'
 
@@ -14,14 +14,17 @@ interface ImageEditablePreviewProps {
   clientId: string
   previewHtml: string
   imageConfigs: EditableImageConfig[]
+  onHtmlChange?: (html: string) => void // Callback para sincronizar edições de volta
 }
 
 export function ImageEditablePreview({ 
   clientId, 
   previewHtml, 
-  imageConfigs 
+  imageConfigs,
+  onHtmlChange
 }: ImageEditablePreviewProps) {
   const [selectedImage, setSelectedImage] = useState<'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
@@ -141,13 +144,34 @@ export function ImageEditablePreview({
     return () => window.removeEventListener('editImage', handleEditImage)
   }, [])
 
+  // Update preview HTML when content changes
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.innerHTML = DOMPurify.sanitize(enhancedHtml)
+    }
+  }, [enhancedHtml])
+
+  // Handle content edits
+  const handleInput = () => {
+    if (previewRef.current && onHtmlChange) {
+      onHtmlChange(previewRef.current.innerHTML)
+    }
+  }
+
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Preview HTML - sem botões flutuantes */}
+      {/* Preview HTML - Completamente editável */}
       <div style={{ width: '100%', position: 'relative' }}>
         <div
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(enhancedHtml) }}
-          style={{ width: '100%' }}
+          ref={previewRef}
+          contentEditable={true}
+          suppressContentEditableWarning={true}
+          onInput={handleInput}
+          style={{ 
+            width: '100%',
+            outline: 'none',
+            cursor: 'text'
+          }}
         />
       </div>
       
