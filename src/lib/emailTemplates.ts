@@ -76,15 +76,15 @@ const destinationPackageTemplate: EmailTemplate = {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${mainTitle}</title>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); font-family: 'Segoe UI', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); padding: 30px 10px;">
     <tr>
       <td align="center">
         <!-- HEADER COM LOGO -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); border: 1px solid #e0f2fe;">
           <tr>
-            <td align="center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px;">
-              <img src="${logoImage}" alt="${companyName}" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto;">
+            <td align="center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 25px;">
+              <img src="${logoImage}" alt="${companyName}" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto; opacity: 0.9;">
             </td>
           </tr>
           
@@ -94,8 +94,8 @@ const destinationPackageTemplate: EmailTemplate = {
               <img src="${heroImage}" alt="${destination}" style="width: 100%; height: auto; display: block;">
               <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
-                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.7));">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${mainTitle}</h1>
+                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(15,23,42,0.5));">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 700; text-shadow: 1px 2px 4px rgba(0,0,0,0.4);">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>
@@ -109,19 +109,19 @@ const destinationPackageTemplate: EmailTemplate = {
                 <tr>
                   <td width="65%" style="vertical-align: top; padding-right: 20px;">
                     <p style="margin: 0 0 20px 0; color: #2d3748; font-size: 17px; line-height: 1.7;">${description}</p>
-                    <h3 style="margin: 0 0 15px 0; color: #667eea; font-size: 20px; font-weight: bold;">✨ Incluso no pacote:</h3>
+                    <h3 style="margin: 0 0 15px 0; color: #0ea5e9; font-size: 20px; font-weight: 600;">✨ Incluso no pacote:</h3>
                     <ul style="margin: 0; padding-left: 20px; color: #4a5568; font-size: 15px; line-height: 1.8;">
                       ${keyBenefits.map(benefit => `<li style="margin-bottom: 8px;">${benefit}</li>`).join('')}
                     </ul>
                   </td>
                   <td width="35%" style="vertical-align: top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 25px 20px; text-align: center;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border-radius: 15px; padding: 25px 20px; text-align: center; box-shadow: 0 4px 15px rgba(14,165,233,0.2);">
                       <tr>
                         <td>
-                          <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.9); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">A partir de</p>
-                          <p style="margin: 0 0 10px 0; color: #ffffff; font-size: 28px; font-weight: 900;">${priceInfo.replace('A partir de ', '')}</p>
-                          <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.85); font-size: 12px;">${dateRange}</p>
-                          <a href="${ctaLink}" style="display: block; background: #ffffff; color: #667eea; padding: 14px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">${ctaText}</a>
+                          <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.95); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">A partir de</p>
+                          <p style="margin: 0 0 10px 0; color: #ffffff; font-size: 28px; font-weight: 700;">${priceInfo.replace('A partir de ', '')}</p>
+                          <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.9); font-size: 12px;">${dateRange}</p>
+                          <a href="${ctaLink}" style="display: block; background: #ffffff; color: #0284c7; padding: 14px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">${ctaText}</a>
                         </td>
                       </tr>
                     </table>
@@ -134,7 +134,7 @@ const destinationPackageTemplate: EmailTemplate = {
           <!-- GALERIA VERTICAL 2 ALTAS + 2 HORIZONTAIS -->
           <tr>
             <td style="padding: 0 30px 35px 30px;">
-              <h3 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: bold; text-align: center;">📸 Momentos Inesquecíveis</h3>
+              <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 24px; font-weight: 600; text-align: center;">📸 Momentos Inesquecíveis</h3>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td width="48%" style="padding-right: 10px; vertical-align: top;">
@@ -164,13 +164,13 @@ const destinationPackageTemplate: EmailTemplate = {
 
           <!-- FOOTER -->
           <tr>
-            <td style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); padding: 30px; text-align: center; border-top: 3px solid #667eea;">
-              <p style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px; font-weight: bold;">${companyName}</p>
-              <p style="margin: 0 0 20px 0; color: #718096; font-size: 13px;">Transformando sonhos em viagens ✈️</p>
+            <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 30px; text-align: center; border-top: 2px solid #0ea5e9;">
+              <p style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px; font-weight: 600;">${companyName}</p>
+              <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px;">Transformando sonhos em viagens ✈️</p>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr align="center">
                   <td style="padding: 0 10px; font-size: 12px;">
-                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600;">Política de Privacidade</a>
+                    <a href="#" style="color: #0ea5e9; text-decoration: none; font-weight: 500;">Política de Privacidade</a>
                   </td>
                   <td style="padding: 0 10px; font-size: 12px; color: #cbd5e0;">•</td>
                   <td style="padding: 0 10px; font-size: 12px;">
@@ -229,14 +229,14 @@ const newsletterTemplate: EmailTemplate = {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${mainTitle}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #fafafa; font-family: 'Georgia', serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; padding: 40px 15px;">
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Georgia', serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 15px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
           <!-- LOGO MINIMALISTA -->
           <tr>
-            <td align="center" style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #e5e7eb;">
+            <td align="center" style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f1f5f9;">
               <img src="${logoImage}" alt="${companyName}" style="height: 50px; width: auto; max-width: 150px; display: block; margin: 0 auto;">
             </td>
           </tr>
@@ -251,8 +251,8 @@ const newsletterTemplate: EmailTemplate = {
           <!-- TÍTULO E DESCRIÇÃO COM MUITO ESPAÇO -->
           <tr>
             <td style="padding: 50px 40px 30px 40px;">
-              <h1 style="margin: 0 0 20px 0; color: #1a202c; font-size: 40px; font-weight: normal; line-height: 1.2; font-family: 'Georgia', serif; letter-spacing: -0.5px;">${mainTitle}</h1>
-              <p style="margin: 0; color: #4a5568; font-size: 18px; line-height: 1.8; font-family: 'Georgia', serif;">${description}</p>
+              <h1 style="margin: 0 0 20px 0; color: #0f172a; font-size: 40px; font-weight: normal; line-height: 1.2; font-family: 'Georgia', serif; letter-spacing: -0.5px;">${mainTitle}</h1>
+              <p style="margin: 0; color: #475569; font-size: 18px; line-height: 1.8; font-family: 'Georgia', serif;">${description}</p>
             </td>
           </tr>
 
@@ -366,19 +366,19 @@ const promotionalTemplate: EmailTemplate = {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${mainTitle}</title>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); font-family: 'Impact', Arial Black, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 25px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); font-family: 'Segoe UI', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 25px 10px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 0; overflow: hidden; box-shadow: 0 25px 80px rgba(255,50,100,0.4), 0 0 0 3px #ff3264;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
           
           <!-- HEADER DIAGONAL SPLIT -->
           <tr>
-            <td style="padding: 0; position: relative; background: linear-gradient(145deg, #ff3264 0%, #ff3264 48%, #ffd700 48%, #ffd700 100%); height: 80px;">
+            <td style="padding: 0; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); height: 80px;">
               <table width="100%" cellpadding="0" cellspacing="0" style="height: 80px;">
                 <tr>
                   <td width="50%" align="right" style="padding-right: 15px; vertical-align: middle;">
-                    <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">⚡ ${priceInfo}</p>
+                    <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">✨ ${priceInfo}</p>
                   </td>
                   <td width="50%" align="left" style="padding-left: 15px; vertical-align: middle;">
                     <img src="${logoImage}" alt="${companyName}" style="height: 45px; width: auto; max-width: 150px; display: block;">
@@ -395,7 +395,7 @@ const promotionalTemplate: EmailTemplate = {
               <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
                   <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85));">
-                    <h1 style="margin: 0; color: #ffd700; font-size: 44px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; text-shadow: 3px 3px 0px #ff3264, -1px -1px 0px #000;">${mainTitle}</h1>
+                    <h1 style="margin: 0; color: #ffffff; font-size: 44px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>
@@ -404,11 +404,11 @@ const promotionalTemplate: EmailTemplate = {
 
           <!-- DESCRIÇÃO E COUNTDOWN -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #252545 100%); padding: 35px 30px; text-align: center;">
-              <p style="margin: 0 0 25px 0; color: #ffffff; font-size: 18px; line-height: 1.6; font-family: Arial, sans-serif; font-weight: normal;">${description}</p>
-              <div style="background: rgba(255,50,100,0.2); border: 2px dashed #ff3264; border-radius: 10px; padding: 20px; margin: 0 auto; max-width: 400px;">
-                <p style="margin: 0 0 10px 0; color: #ffd700; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-family: Arial, sans-serif; font-weight: bold;">⏰ OFERTA EXPIRA EM</p>
-                <p style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 1px;">${dateRange}</p>
+            <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 35px 30px; text-align: center;">
+              <p style="margin: 0 0 25px 0; color: #475569; font-size: 18px; line-height: 1.6; font-family: Arial, sans-serif; font-weight: normal;">${description}</p>
+              <div style="background: #e0f2fe; border: 2px solid #0ea5e9; border-radius: 10px; padding: 20px; margin: 0 auto; max-width: 400px;">
+                <p style="margin: 0 0 10px 0; color: #0369a1; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; font-family: Arial, sans-serif; font-weight: 600;">⏰ OFERTA EXPIRA EM</p>
+                <p style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">${dateRange}</p>
               </div>
             </td>
           </tr>
@@ -416,7 +416,7 @@ const promotionalTemplate: EmailTemplate = {
           <!-- CÍRCULOS SOBREPOSTOS COM IMAGENS -->
           <tr>
             <td style="padding: 40px 30px; background: #ffffff;">
-              <h2 style="margin: 0 0 30px 0; color: #1a1a2e; font-size: 32px; font-weight: 900; text-align: center; text-transform: uppercase;">🔥 DESTINOS INCRÍVEIS</h2>
+              <h2 style="margin: 0 0 30px 0; color: #0f172a; font-size: 28px; font-weight: 600; text-align: center;">🌍 Destinos Incríveis</h2>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding-bottom: 20px;">
