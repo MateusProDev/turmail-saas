@@ -99,7 +99,7 @@ export function ImageEditablePreview({
         // Se não encontrou, verifica contra as configurações atuais
         if (!imageType) {
           for (const config of imageConfigs) {
-            if (config.imageUrl && srcUrl.includes(config.imageUrl)) {
+            if (config.imageUrl && (srcUrl === config.imageUrl || srcUrl.includes(config.imageUrl))) {
               imageType = config.type
               break
             }
@@ -114,13 +114,14 @@ export function ImageEditablePreview({
           }
         }
 
-        // Se não identificou o tipo, não torna editável
+        // Se não identificou o tipo, retorna a imagem normal
         if (!imageType) return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
 
         return `
           <div 
             class="editable-image-wrapper" 
             data-image-type="${imageType}"
+            contenteditable="false"
             style="position: relative; display: inline-block; width: 100%; cursor: pointer;"
           >
             <img${beforeSrc}src="${srcUrl}"${afterSrc} style="display: block; width: 100%; height: auto; transition: opacity 0.2s;" />
@@ -155,45 +156,94 @@ export function ImageEditablePreview({
     setProcessedHtml(html)
   }, [previewHtml, imageConfigs])
 
-  // Atualiza o conteúdo do preview e adiciona event listeners
+  // Atualiza o conteúdo do preview APENAS na primeira vez
   useEffect(() => {
-    if (previewRef.current && processedHtml) {
+    if (previewRef.current && processedHtml && !previewRef.current.innerHTML) {
       previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
-
-      // Adiciona event listeners aos wrappers de imagem
-      const wrappers = previewRef.current.querySelectorAll('.editable-image-wrapper')
       
-      wrappers.forEach(wrapper => {
-        const htmlWrapper = wrapper as HTMLElement
-        const imageType = htmlWrapper.dataset.imageType
-        const overlay = htmlWrapper.querySelector('.edit-overlay') as HTMLElement
-
-        // Hover effect
-        const handleMouseEnter = () => {
-          if (overlay) overlay.style.opacity = '1'
-        }
-        
-        const handleMouseLeave = () => {
-          if (overlay) overlay.style.opacity = '0'
-        }
-
-        // Click to edit
-        const handleClick = (e: Event) => {
-          e.preventDefault()
-          e.stopPropagation()
-          if (imageType) {
-            setSelectedImage(imageType as any)
-          }
-        }
-
-        htmlWrapper.addEventListener('mouseenter', handleMouseEnter)
-        htmlWrapper.addEventListener('mouseleave', handleMouseLeave)
-        htmlWrapper.addEventListener('click', handleClick)
-      })
+      // Adiciona event listeners após inserir o HTML
+      setupImageListeners()
     }
   }, [processedHtml])
 
-  // Sincroniza edições de texto de volta
+  // Reaplica listeners quando processedHtml muda (nova imagem selecionada)
+  useEffect(() => {
+    if (previewRef.current && previewRef.current.innerHTML) {
+      setupImageListeners()
+    }
+  }, [imageConfigs])
+
+  // Função para configurar event listeners nas imagens
+  const setupImageListeners = () => {
+    if (!previewRef.current) return
+
+    const wrappers = previewRef.current.querySelectorAll('.editable-image-wrapper')
+    
+    wrappers.forEach(wrapper => {
+      const htmlWrapper = wrapper as HTMLElement
+      const imageType = htmlWrapper.dataset.imageType
+      const overlay = htmlWrapper.querySelector('.edit-overlay') as HTMLElement
+      const img = htmlWrapper.querySelector('img') as HTMLImageElement
+
+      // Remove listeners antigos
+      const oldHandlers = (htmlWrapper as any).__handlers
+      if (oldHandlers) {
+        htmlWrapper.removeEventListener('mouseenter', oldHandlers.enter)
+        htmlWrapper.removeEventListener('mouseleave', oldHandlers.leave)
+        htmlWrapper.removeEventListener('click', oldHandlers.click)
+      }
+
+      // Hover effect
+      const handleMouseEnter = () => {
+        if (overlay) overlay.style.opacity = '1'
+        if (img) img.style.opacity = '0.8'
+      }
+      
+      const handleMouseLeave = () => {
+        if (overlay) overlay.style.opacity = '0'
+        if (img) img.style.opacity = '1'
+      }
+
+      // Click to edit
+      const handleClick = (e: Event) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (imageType) {
+          setSelectedImage(imageType as any)
+        }
+      }
+
+      // Guarda referências
+      (htmlWrapper as any).__handlers = {
+        enter: handleMouseEnter,
+        leave: handleMouseLeave,
+        click: handleClick
+      }
+
+      htmlWrapper.addEventListener('mouseenter', handleMouseEnter)
+      htmlWrapper.addEventListener('mouseleave', handleMouseLeave)
+      htmlWrapper.addEventListener('click', handleClick)
+    })
+  }
+
+  // Atualiza apenas as imagens quando usuário seleciona nova
+  useEffect(() => {
+    if (!previewRef.current) return
+
+    imageConfigs.forEach(config => {
+      if (!config.imageUrl) return
+
+      const wrappers = previewRef.current!.querySelectorAll(`[data-image-type="${config.type}"]`)
+      wrappers.forEach(wrapper => {
+        const img = wrapper.querySelector('img')
+        if (img && img.src !== config.imageUrl) {
+          img.src = config.imageUrl
+        }
+      })
+    })
+  }, [imageConfigs])
+
+  // Sincroniza edições de texto de volta (com debounce)
   const handleInput = () => {
     if (previewRef.current && onHtmlChange) {
       onHtmlChange(previewRef.current.innerHTML)
