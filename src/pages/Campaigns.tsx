@@ -1454,11 +1454,11 @@ export default function Campaigns(){
                     <div className="w-full bg-white overflow-auto" style={{maxHeight: '700px'}}>
                       {showPreview && selectedTenant && (
                         <ImageEditablePreview
+                          key={`${activeTemplate}-${htmlContent.length}`}
                           clientId={selectedTenant}
                           previewHtml={htmlContent}
                           onHtmlChange={(newHtml) => {
                             setHtmlContent(newHtml)
-                            console.log('📝 Preview editado - HTML atualizado')
                           }}
                           imageConfigs={[
                             {

@@ -117,7 +117,8 @@ export function ImageEditablePreview({
   }, [previewHtml, imageConfigs])
 
   useEffect(() => {
-    if (previewRef.current && processedHtml && !previewRef.current.innerHTML) {
+    if (previewRef.current && processedHtml) {
+      // Sempre atualiza o HTML quando processedHtml muda
       previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
       setupImageListeners()
     }
