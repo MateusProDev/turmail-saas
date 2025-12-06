@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './Login.css'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../lib/firebase'
@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   sendPasswordResetEmail,
   sendEmailVerification
@@ -26,6 +28,65 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
+  // Verificar resultado do redirect do Google OAuth
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth)
+        if (result && result.user) {
+          setLoading(true)
+          const user = result.user
+
+          // Criar documento do usuário se não existir
+          try {
+            const init = makeInitialUserData(user.uid, user.email)
+            if (!init.company) init.company = { name: '', website: '' }
+            init.company.name = user.displayName || ''
+            init.photoURL = user.photoURL || ''
+            init.displayName = user.displayName || ''
+            await setDoc(doc(db, 'users', user.uid), init, { merge: true })
+
+            // Iniciar trial
+            try {
+              await fetch('/api/start-trial', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
+              })
+            } catch (trialErr) {
+              console.error('failed to start trial', trialErr)
+            }
+
+            // Criar tenant
+            try {
+              const token = await user.getIdToken()
+              await fetch('/api/tenant/create-tenant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ name: user.displayName || `Account ${user.uid}` }),
+              })
+            } catch (tenantErr) {
+              console.error('failed to create tenant', tenantErr)
+            }
+          } catch (setErr) {
+            console.error('failed to create user doc', setErr)
+          }
+
+          navigate('/dashboard')
+        }
+      } catch (err: any) {
+        console.error('Redirect result error:', err)
+        if (err.code && err.code !== 'auth/popup-closed-by-user') {
+          setError('Erro ao fazer login com Google')
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkRedirectResult()
+  }, [navigate])
+
   // Validação de senha forte
   const validatePassword = (pwd: string): string | null => {
     if (pwd.length < 8) return 'A senha deve ter no mínimo 8 caracteres'
@@ -45,45 +106,56 @@ export default function Login() {
       provider.setCustomParameters({
         prompt: 'select_account'
       })
-      const result = await signInWithPopup(auth, provider)
-      const user = result.user
 
-      // Criar documento do usuário se não existir
-      try {
-        const init = makeInitialUserData(user.uid, user.email)
-        if (!init.company) init.company = { name: '', website: '' }
-        init.company.name = user.displayName || ''
-        init.photoURL = user.photoURL || ''
-        init.displayName = user.displayName || ''
-        await setDoc(doc(db, 'users', user.uid), init, { merge: true })
+      // Em produção, usar redirect; em desenvolvimento, usar popup
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      
+      if (isLocalhost) {
+        // Popup funciona bem em localhost
+        const result = await signInWithPopup(auth, provider)
+        const user = result.user
 
-        // Iniciar trial
+        // Criar documento do usuário se não existir
         try {
-          await fetch('/api/start-trial', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
-          })
-        } catch (trialErr) {
-          console.error('failed to start trial', trialErr)
+          const init = makeInitialUserData(user.uid, user.email)
+          if (!init.company) init.company = { name: '', website: '' }
+          init.company.name = user.displayName || ''
+          init.photoURL = user.photoURL || ''
+          init.displayName = user.displayName || ''
+          await setDoc(doc(db, 'users', user.uid), init, { merge: true })
+
+          // Iniciar trial
+          try {
+            await fetch('/api/start-trial', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
+            })
+          } catch (trialErr) {
+            console.error('failed to start trial', trialErr)
+          }
+
+          // Criar tenant
+          try {
+            const token = await user.getIdToken()
+            await fetch('/api/tenant/create-tenant', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ name: user.displayName || `Account ${user.uid}` }),
+            })
+          } catch (tenantErr) {
+            console.error('failed to create tenant', tenantErr)
+          }
+        } catch (setErr) {
+          console.error('failed to create user doc', setErr)
         }
 
-        // Criar tenant
-        try {
-          const token = await user.getIdToken()
-          await fetch('/api/tenant/create-tenant', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ name: user.displayName || `Account ${user.uid}` }),
-          })
-        } catch (tenantErr) {
-          console.error('failed to create tenant', tenantErr)
-        }
-      } catch (setErr) {
-        console.error('failed to create user doc', setErr)
+        navigate('/dashboard')
+      } else {
+        // Em produção, usar redirect (mais confiável)
+        await signInWithRedirect(auth, provider)
+        // O resultado será tratado no useEffect através do getRedirectResult
       }
-
-      navigate('/dashboard')
     } catch (err: any) {
       console.error('Google sign-in error:', err)
       if (err.code === 'auth/popup-closed-by-user') {
