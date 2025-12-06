@@ -133,23 +133,23 @@ export function ImageEditablePreview({
         const label = typeLabels[imageType] || 'Imagem'
         const color = typeColors[imageType] || '#64748b'
 
-        const wrapperStyle = `position: relative; display: inline-block; width: 100%; cursor: pointer; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%); border: 2px dashed ${color}40; border-radius: 8px; min-height: ${height === 'auto' ? '200px' : height + 'px'}; overflow: hidden;`
-        const imgStyle = `display: block; width: 100%; height: ${height === 'auto' ? 'auto' : height + 'px'}; object-fit: cover; transition: opacity 0.2s;`
-        const placeholderStyle = `position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%); color: ${color}; font-weight: 600; font-size: 14px; text-align: center; padding: 20px;`
-        const overlayStyle = `position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; pointer-events: none;`
+        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%) !important; border: 2px dashed ${color}40 !important; border-radius: 8px !important; min-height: ${height === 'auto' ? '200px' : height + 'px'} !important; height: ${height === 'auto' ? 'auto' : height + 'px'} !important; overflow: hidden !important;`
+        const imgStyle = `display: block !important; width: 100% !important; height: ${height === 'auto' ? 'auto' : height + 'px'} !important; object-fit: cover !important; transition: opacity 0.2s !important;`
+        const placeholderStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%) !important; color: ${color} !important; font-weight: 600 !important; font-size: 14px !important; text-align: center !important; padding: 20px !important;`
+        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important;`
         
         const iconEmoji = label.split(' ')[0]
         const dimensions = `${width}px × ${height === 'auto' ? 'Auto' : height + 'px'}`
 
         return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="${wrapperStyle}">` +
-          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` +
+          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onerror="this.style.opacity='0';" />` +
           `<div class="image-placeholder" style="${placeholderStyle}">` +
-            `<div style="font-size: 48px; margin-bottom: 12px;">${iconEmoji}</div>` +
-            `<div>${label}</div>` +
-            `<div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">${dimensions}</div>` +
+            `<div style="font-size: 48px !important; margin-bottom: 12px !important;">${iconEmoji}</div>` +
+            `<div style="font-size: 16px !important; font-weight: 600 !important;">${label}</div>` +
+            `<div style="font-size: 13px !important; margin-top: 8px !important; opacity: 0.8 !important; font-weight: 500 !important;">${dimensions}</div>` +
           `</div>` +
           `<div class="edit-overlay" style="${overlayStyle}">` +
-            `<span style="background: white; color: #4f1337; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px;">✏️ Editar Imagem</span>` +
+            `<span style="background: white !important; color: #4f1337 !important; padding: 8px 16px !important; border-radius: 6px !important; font-weight: 600 !important; font-size: 14px !important;">✏️ Editar Imagem</span>` +
           `</div>` +
         `</div>`
       }
