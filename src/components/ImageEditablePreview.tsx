@@ -24,11 +24,12 @@ export function ImageEditablePreview({
   onHtmlChange
 }: ImageEditablePreviewProps) {
   const [selectedImage, setSelectedImage] = useState<'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null>(null)
+  const [processedHtml, setProcessedHtml] = useState('')
   const previewRef = useRef<HTMLDivElement>(null)
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
-  // Create a map of image URLs from template defaults (Unsplash URLs)
+  // Mapeia IDs de fotos Unsplash para tipos de imagem
   const templateImageMap: { [key: string]: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' } = {
     // Unsplash URLs from templates (hero images)
     'photo-1506905925346-21bda4d32df4': 'hero',
@@ -76,82 +77,123 @@ export function ImageEditablePreview({
     'photo-1560179707-f14e90ef3623': 'logo'
   }
 
-  // Build enhanced HTML with image wrappers
-  let enhancedHtml = previewHtml
+  // Processa o HTML adicionando interatividade às imagens
+  useEffect(() => {
+    let html = previewHtml
 
-  // Add interactive wrapper to all images
-  enhancedHtml = enhancedHtml.replace(
-    /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
-    (_match, beforeSrc, srcUrl, afterSrc) => {
-      // Determine image type by checking URL
-      let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
-      
-      // Check Unsplash photo ID in URL
-      for (const [photoId, type] of Object.entries(templateImageMap)) {
-        if (srcUrl.includes(photoId)) {
-          imageType = type
-          break
-        }
-      }
-      
-      // Fallback: check against current config URLs
-      if (!imageType) {
-        for (const config of imageConfigs) {
-          if (srcUrl === config.imageUrl || srcUrl.includes(config.imageUrl)) {
-            imageType = config.type
+    // Substitui cada imagem por uma versão editável com overlay
+    html = html.replace(
+      /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
+      (_match, beforeSrc, srcUrl, afterSrc) => {
+        // Identifica o tipo de imagem pela URL
+        let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
+        
+        // Verifica se é uma foto do Unsplash
+        for (const [photoId, type] of Object.entries(templateImageMap)) {
+          if (srcUrl.includes(photoId)) {
+            imageType = type
             break
           }
         }
-      }
-
-      // If we found a matching type, replace with user's selected image if available
-      if (imageType) {
-        const config = imageConfigs.find(c => c.type === imageType)
-        if (config?.imageUrl) {
-          srcUrl = config.imageUrl
+        
+        // Se não encontrou, verifica contra as configurações atuais
+        if (!imageType) {
+          for (const config of imageConfigs) {
+            if (config.imageUrl && srcUrl.includes(config.imageUrl)) {
+              imageType = config.type
+              break
+            }
+          }
         }
+
+        // Se encontrou o tipo, usa a imagem do usuário se disponível
+        if (imageType) {
+          const config = imageConfigs.find(c => c.type === imageType)
+          if (config?.imageUrl) {
+            srcUrl = config.imageUrl
+          }
+        }
+
+        // Se não identificou o tipo, não torna editável
+        if (!imageType) return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
+
+        return `
+          <div 
+            class="editable-image-wrapper" 
+            data-image-type="${imageType}"
+            style="position: relative; display: inline-block; width: 100%; cursor: pointer;"
+          >
+            <img${beforeSrc}src="${srcUrl}"${afterSrc} style="display: block; width: 100%; height: auto; transition: opacity 0.2s;" />
+            <div class="edit-overlay" style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0,0,0,0.5);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              opacity: 0;
+              transition: opacity 0.2s;
+              pointer-events: none;
+            ">
+              <span style="
+                background: white;
+                color: #4f1337;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 14px;
+              ">✏️ Editar Imagem</span>
+            </div>
+          </div>
+        `
       }
+    )
 
-      // Extract width for container
-      const allAttrs = beforeSrc + afterSrc
-      const widthMatch = allAttrs.match(/(?:width|max-width):\s*([0-9]+)px/i) || allAttrs.match(/width=["']?([0-9]+)["']?/i)
-      const width = widthMatch ? widthMatch[1] : '600'
+    setProcessedHtml(html)
+  }, [previewHtml, imageConfigs])
 
-      return `
-        <span 
-          class="image-edit-container" 
-          data-image-type="${imageType}"
-          data-width="${width}"
-          onmouseover="this.classList.add('hovered')"
-          onmouseout="this.classList.remove('hovered')"
-          onclick="window.dispatchEvent(new CustomEvent('editImage', { detail: { type: '${imageType}' } }))"
-        >
-          <img${beforeSrc}src="${srcUrl}"${afterSrc} style="cursor: pointer; display: block; transition: opacity 0.2s;" />
-          <span class="image-edit-btn">✏️ Editar</span>
-        </span>
-      `
-    }
-  )
-
-  // Handle image click events
+  // Atualiza o conteúdo do preview e adiciona event listeners
   useEffect(() => {
-    const handleEditImage = (event: Event) => {
-      const customEvent = event as CustomEvent
-      setSelectedImage(customEvent.detail.type)
+    if (previewRef.current && processedHtml) {
+      previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
+
+      // Adiciona event listeners aos wrappers de imagem
+      const wrappers = previewRef.current.querySelectorAll('.editable-image-wrapper')
+      
+      wrappers.forEach(wrapper => {
+        const htmlWrapper = wrapper as HTMLElement
+        const imageType = htmlWrapper.dataset.imageType
+        const overlay = htmlWrapper.querySelector('.edit-overlay') as HTMLElement
+
+        // Hover effect
+        const handleMouseEnter = () => {
+          if (overlay) overlay.style.opacity = '1'
+        }
+        
+        const handleMouseLeave = () => {
+          if (overlay) overlay.style.opacity = '0'
+        }
+
+        // Click to edit
+        const handleClick = (e: Event) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (imageType) {
+            setSelectedImage(imageType as any)
+          }
+        }
+
+        htmlWrapper.addEventListener('mouseenter', handleMouseEnter)
+        htmlWrapper.addEventListener('mouseleave', handleMouseLeave)
+        htmlWrapper.addEventListener('click', handleClick)
+      })
     }
+  }, [processedHtml])
 
-    window.addEventListener('editImage', handleEditImage)
-    return () => window.removeEventListener('editImage', handleEditImage)
-  }, [])
-
-  // Update preview HTML when content changes
-  useEffect(() => {
-    if (previewRef.current) {
-      previewRef.current.innerHTML = DOMPurify.sanitize(enhancedHtml)
-    }
-  }, [enhancedHtml])
-
-  // Handle content edits
+  // Sincroniza edições de texto de volta
   const handleInput = () => {
     if (previewRef.current && onHtmlChange) {
       onHtmlChange(previewRef.current.innerHTML)
@@ -160,69 +202,20 @@ export function ImageEditablePreview({
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Preview HTML - Completamente editável */}
-      <div style={{ width: '100%', position: 'relative' }}>
-        <div
-          ref={previewRef}
-          contentEditable={true}
-          suppressContentEditableWarning={true}
-          onInput={handleInput}
-          style={{ 
-            width: '100%',
-            outline: 'none',
-            cursor: 'text'
-          }}
-        />
-      </div>
-      
-      {/* Tooltip flutuante ao passar mouse */}
-      <style>{`
-        .image-edit-container {
-          position: relative;
-          display: inline-block;
-          width: 100%;
-        }
-
-        .image-edit-container img {
-          width: 100%;
-          height: auto;
-          display: block;
-          transition: opacity 0.2s ease, filter 0.2s ease;
-        }
-
-        .image-edit-container:hover img {
-          opacity: 0.7;
-          filter: brightness(0.8);
-        }
-
-        .image-edit-btn {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(79, 19, 55, 0.95);
-          color: white;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 13px;
-          font-weight: 700;
-          white-space: nowrap;
-          z-index: 100;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          pointer-events: none;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-          cursor: pointer;
-        }
-
-        .image-edit-container:hover .image-edit-btn {
-          opacity: 1;
-        }
-
-        .image-edit-container.hovered .image-edit-btn {
-          opacity: 1;
-        }
-      `}</style>
+      {/* Preview editável */}
+      <div
+        ref={previewRef}
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+        onInput={handleInput}
+        onBlur={handleInput}
+        style={{ 
+          width: '100%',
+          minHeight: '400px',
+          outline: 'none',
+          cursor: 'text'
+        }}
+      />
       
       {/* Modal de seleção de imagem */}
       {selectedImage && currentConfig && (
@@ -232,38 +225,41 @@ export function ImageEditablePreview({
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(0,0,0,0.7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
+          zIndex: 9999,
           backdropFilter: 'blur(4px)'
-        }}>
+        }}
+        onClick={() => setSelectedImage(null)}
+        >
           <div style={{
             background: 'white',
             borderRadius: '16px',
             padding: '24px',
-            maxWidth: '520px',
+            maxWidth: '540px',
             width: '90%',
-            maxHeight: '85vh',
+            maxHeight: '90vh',
             overflow: 'auto',
-            boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-            animation: 'slideIn 0.3s ease'
-          }}>
+            boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '20px',
-              paddingBottom: '12px',
-              borderBottom: '1px solid #e2e8f0'
+              paddingBottom: '16px',
+              borderBottom: '2px solid #f1f5f9'
             }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#1e293b' }}>
                   {currentConfig.label}
                 </h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
-                  {currentConfig.imageUrl ? 'Clique para mudar' : 'Adicione uma imagem'}
+                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
+                  Selecione ou faça upload de uma imagem
                 </p>
               </div>
               <button
@@ -271,20 +267,27 @@ export function ImageEditablePreview({
                 style={{
                   background: '#f1f5f9',
                   border: 'none',
-                  fontSize: '24px',
+                  fontSize: '20px',
                   cursor: 'pointer',
-                  padding: '4px',
-                  width: '40px',
-                  height: '40px',
+                  padding: '8px',
+                  width: '36px',
+                  height: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '8px',
-                  transition: 'background 0.2s',
-                  color: '#64748b'
+                  transition: 'all 0.2s',
+                  color: '#64748b',
+                  fontWeight: '600'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#e2e8f0'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#e2e8f0'
+                  e.currentTarget.style.color = '#1e293b'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#f1f5f9'
+                  e.currentTarget.style.color = '#64748b'
+                }}
               >
                 ✕
               </button>
@@ -293,10 +296,11 @@ export function ImageEditablePreview({
             {/* Preview da imagem atual */}
             {currentConfig.imageUrl && (
               <div style={{
-                marginBottom: '16px',
+                marginBottom: '20px',
                 borderRadius: '12px',
                 overflow: 'hidden',
-                border: '2px solid #e2e8f0'
+                border: '3px solid #e2e8f0',
+                background: '#f8fafc'
               }}>
                 <img 
                   src={currentConfig.imageUrl} 
@@ -304,7 +308,7 @@ export function ImageEditablePreview({
                   style={{
                     width: '100%',
                     height: 'auto',
-                    maxHeight: '200px',
+                    maxHeight: '240px',
                     objectFit: 'cover',
                     display: 'block'
                   }}
@@ -318,27 +322,14 @@ export function ImageEditablePreview({
               selectedImageUrl={currentConfig.imageUrl}
               onImageSelect={(url) => {
                 currentConfig.onImageSelect(url)
-                setTimeout(() => setSelectedImage(null), 200)
+                setTimeout(() => setSelectedImage(null), 300)
               }}
-              label={currentConfig.label}
+              label=""
               allowUpload={true}
             />
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   )
 }
