@@ -56,7 +56,6 @@ export function ImageEditablePreview({
     'photo-1544620347-c4fd4a3d5957': 'team4',
     'photo-1449965408869-eaa3f722e40d': 'team4',
     'photo-1464037866556-6812c9d1c72e': 'team4',
-    'photo-1464037866556-6812c9d1c72e': 'team4',
     'photo-1485463611174-f302f6a5c1c9': 'team4',
     
     // Location images
@@ -80,7 +79,7 @@ export function ImageEditablePreview({
   // Add interactive wrapper to all images
   enhancedHtml = enhancedHtml.replace(
     /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
-    (match, beforeSrc, srcUrl, afterSrc) => {
+    (_match, beforeSrc, srcUrl, afterSrc) => {
       // Determine image type by checking URL
       let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
       
