@@ -14,6 +14,6 @@ export async function createCheckoutSession(priceId: string) {
   if (!json) {
     console.error('[createCheckoutSession] empty json response')
     throw new Error('Failed to create checkout session: empty response')
-  }
+  } 
   return json
 }
