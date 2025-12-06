@@ -192,7 +192,7 @@ export default function Campaigns(){
         console.log('✅ Preview atualizado! Tamanho:', renderedHtml.length)
       }
     })
-  }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits])
+  }, [activeTemplate, companyName, destination, productName, mainTitle, description, ctaLink, keyBenefits, heroImage, teamImage1, teamImage2, teamImage3, teamImage4, locationImage, logoImage])
 
   // Preview automático removido - agora só mostra ao selecionar template manualmente
 

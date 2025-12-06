@@ -25,56 +25,94 @@ export function ImageEditablePreview({
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
-  // Map placeholders to config types and replace with actual URLs
-  let enhancedHtml = previewHtml
-  
-  const placeholderMap: { [key: string]: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' } = {
-    'Destino+Premium': 'hero',
-    'text=Hospedagem': 'team1',
-    'text=Refeicoes': 'team2',
-    'text=Guias+Experientes': 'team3',
-    'text=Transporte': 'team4',
-    'Local': 'location',
-    'text=Logo': 'logo'
+  // Create a map of image URLs from template defaults (Unsplash URLs)
+  const templateImageMap: { [key: string]: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' } = {
+    // Unsplash URLs from templates (hero images)
+    'photo-1506905925346-21bda4d32df4': 'hero',
+    'photo-1476514525535-07fb3b4ae5f1': 'hero',
+    'photo-1530789253388-582c481c54b0': 'hero',
+    'photo-1682687220742-aba13b6e50ba': 'hero',
+    'photo-1540541338287-41700207dee6': 'hero',
+    
+    // Team/content images
+    'photo-1566073771259-6a8506099945': 'team1',
+    'photo-1551882547-ff40c63fe5fa': 'team1',
+    'photo-1520250497591-112f2f40a3f4': 'team1',
+    'photo-1542314831-068cd1dbfeeb': 'team1',
+    'photo-1571896349842-33c89424de2d': 'team1',
+    
+    'photo-1414235077428-338989a2e8c0': 'team2',
+    'photo-1517248135467-4c7edcad34c4': 'team2',
+    'photo-1559339352-11d035aa65de': 'team2',
+    'photo-1600585154340-be6161a56a0c': 'team2',
+    'photo-1578474846511-04ba529f0b88': 'team2',
+    
+    'photo-1476900543704-4312b78632f8': 'team3',
+    'photo-1527004013197-933c4bb611b3': 'team3',
+    'photo-1500835556837-99ac94a94552': 'team3',
+    'photo-1507003211169-0a1dd7228f2d': 'team3',
+    'photo-1469474968028-56623f02e42e': 'team3',
+    
+    'photo-1544620347-c4fd4a3d5957': 'team4',
+    'photo-1449965408869-eaa3f722e40d': 'team4',
+    'photo-1464037866556-6812c9d1c72e': 'team4',
+    'photo-1464037866556-6812c9d1c72e': 'team4',
+    'photo-1485463611174-f302f6a5c1c9': 'team4',
+    
+    // Location images
+    'photo-1559827260-dc66d52bef19': 'location',
+    'photo-1469854523086-cc02fe5d8800': 'location',
+    'photo-1488646953014-85cb44e25828': 'location',
+    'photo-1523906834658-6e24ef2386f9': 'location',
+    'photo-1506929562872-bb421503ef21': 'location',
+    
+    // Logo images
+    'photo-1499678329028-101435549a4e': 'logo',
+    'photo-1527192491265-7e15c55b1ed2': 'logo',
+    'photo-1486406146926-c627a92ad1ab': 'logo',
+    'photo-1568992687947-868a62a9f521': 'logo',
+    'photo-1560179707-f14e90ef3623': 'logo'
   }
 
-  // Replace placeholder URLs with actual image URLs and add click handlers
-  Object.entries(placeholderMap).forEach(([placeholder, imageType]) => {
-    const config = imageConfigs.find(c => c.type === imageType)
-    if (!config) return
-
-    // Use actual image URL if available, otherwise use placeholder
-    const imageUrl = config.imageUrl || `https://via.placeholder.com/400?${placeholder}`
-    
-    // Create a pattern that matches the placeholder in various formats
-    const patterns = [
-      new RegExp(`https://via\\.placeholder\\.com/[0-9]+x?[0-9]*[&?]text=${placeholder.replace(/\+/g, '\\+')}`, 'g'),
-      new RegExp(`https://via\\.placeholder\\.com/[0-9]+x?[0-9]*[&?]${placeholder}`, 'g'),
-      new RegExp(`https://via\\.placeholder\\.com/[^"]*${placeholder.replace(/\?/g, '\\?').replace(/\+/g, '\\+')}[^"]*`, 'g')
-    ]
-    
-    patterns.forEach(pattern => {
-      enhancedHtml = enhancedHtml.replace(pattern, imageUrl)
-    })
-  })
+  // Build enhanced HTML with image wrappers
+  let enhancedHtml = previewHtml
 
   // Add interactive wrapper to all images
   enhancedHtml = enhancedHtml.replace(
-    /<img([^>]*?)>/g,
-    (_, attrs) => {
-      // Find which image type this is
+    /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
+    (match, beforeSrc, srcUrl, afterSrc) => {
+      // Determine image type by checking URL
       let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
       
-      if (attrs.includes('Logo')) imageType = 'logo'
-      else if (attrs.includes('Destino+Premium')) imageType = 'hero'
-      else if (attrs.includes('Hospedagem')) imageType = 'team1'
-      else if (attrs.includes('Refeicoes')) imageType = 'team2'
-      else if (attrs.includes('Guias')) imageType = 'team3'
-      else if (attrs.includes('Transporte')) imageType = 'team4'
-      else if (attrs.includes('Local')) imageType = 'location'
+      // Check Unsplash photo ID in URL
+      for (const [photoId, type] of Object.entries(templateImageMap)) {
+        if (srcUrl.includes(photoId)) {
+          imageType = type
+          break
+        }
+      }
+      
+      // Fallback: check against current config URLs
+      if (!imageType) {
+        for (const config of imageConfigs) {
+          if (srcUrl === config.imageUrl || srcUrl.includes(config.imageUrl)) {
+            imageType = config.type
+            break
+          }
+        }
+      }
 
-      // Extract width and max-width from style or img attributes
-      const widthMatch = attrs.match(/(?:width|max-width):\s*([0-9]+)px/i) || attrs.match(/width="([0-9]+)"/i)
+      // If we found a matching type, replace with user's selected image if available
+      if (imageType) {
+        const config = imageConfigs.find(c => c.type === imageType)
+        if (config?.imageUrl) {
+          srcUrl = config.imageUrl
+        }
+      }
+
+      // Extract width for container
+      const allAttrs = beforeSrc + afterSrc
+      const widthMatch = allAttrs.match(/(?:width|max-width):\s*([0-9]+)px/i) || allAttrs.match(/width=["']?([0-9]+)["']?/i)
       const width = widthMatch ? widthMatch[1] : '600'
 
       return `
@@ -86,7 +124,7 @@ export function ImageEditablePreview({
           onmouseout="this.classList.remove('hovered')"
           onclick="window.dispatchEvent(new CustomEvent('editImage', { detail: { type: '${imageType}' } }))"
         >
-          <img${attrs} style="cursor: pointer; display: block; transition: opacity 0.2s;" />
+          <img${beforeSrc}src="${srcUrl}"${afterSrc} style="cursor: pointer; display: block; transition: opacity 0.2s;" />
           <span class="image-edit-btn">✏️ Editar</span>
         </span>
       `
