@@ -79,12 +79,17 @@ export function ImageEditablePreview({
 
   // Processa o HTML adicionando interatividade às imagens
   useEffect(() => {
+    console.log('🔄 Processando HTML, tamanho original:', previewHtml.length)
     let html = previewHtml
+    let replacementCount = 0
 
     // Substitui cada imagem por uma versão editável com overlay
     html = html.replace(
       /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi,
       (_match, beforeSrc, srcUrl, afterSrc) => {
+        replacementCount++
+        console.log(`📸 Processando imagem ${replacementCount}: ${srcUrl.substring(0, 80)}...`)
+        
         // Identifica o tipo de imagem pela URL
         let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
         
@@ -92,6 +97,7 @@ export function ImageEditablePreview({
         for (const [photoId, type] of Object.entries(templateImageMap)) {
           if (srcUrl.includes(photoId)) {
             imageType = type
+            console.log(`  ✅ Identificada como ${type} (Unsplash)`)
             break
           }
         }
@@ -101,6 +107,7 @@ export function ImageEditablePreview({
           for (const config of imageConfigs) {
             if (config.imageUrl && (srcUrl === config.imageUrl || srcUrl.includes(config.imageUrl))) {
               imageType = config.type
+              console.log(`  ✅ Identificada como ${config.type} (Config)`)
               break
             }
           }
@@ -110,12 +117,16 @@ export function ImageEditablePreview({
         if (imageType) {
           const config = imageConfigs.find(c => c.type === imageType)
           if (config?.imageUrl) {
+            console.log(`  🔄 Substituindo por imagem do usuário: ${config.imageUrl.substring(0, 60)}...`)
             srcUrl = config.imageUrl
           }
         }
 
         // Se não identificou o tipo, retorna a imagem normal
-        if (!imageType) return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
+        if (!imageType) {
+          console.log(`  ⚠️ Tipo não identificado, mantendo imagem original`)
+          return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
+        }
 
         return `
           <div 
@@ -153,16 +164,25 @@ export function ImageEditablePreview({
       }
     )
 
+    console.log(`📸 Total de substituições: ${replacementCount}`)
+    console.log('📸 Tamanho HTML processado:', html.length)
     setProcessedHtml(html)
   }, [previewHtml, imageConfigs])
 
   // Atualiza o conteúdo do preview APENAS na primeira vez
   useEffect(() => {
     if (previewRef.current && processedHtml && !previewRef.current.innerHTML) {
+      console.log('📸 Inserindo HTML inicial no preview, tamanho:', processedHtml.length)
+      console.log('📸 Primeira imagem no HTML:', processedHtml.match(/<img[^>]*src=["']([^"']+)["']/)?.[1])
       previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
       
       // Adiciona event listeners após inserir o HTML
       setupImageListeners()
+      
+      // Log para debug
+      const imgs = previewRef.current.querySelectorAll('img')
+      console.log(`📸 Total de imagens renderizadas: ${imgs.length}`)
+      imgs.forEach((img, i) => console.log(`  Imagem ${i + 1}: ${img.src.substring(0, 80)}...`))
     }
   }, [processedHtml])
 
