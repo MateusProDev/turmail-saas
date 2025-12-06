@@ -39,11 +39,11 @@ export interface EmailContent {
   html: string
 }
 
-// Template 1: Pacote de Destino Premium
+// Template 1: Pacote de Destino Premium - HERO FULL + SIDEBAR CARDS
 const destinationPackageTemplate: EmailTemplate = {
   id: 'destination-package',
   name: 'Pacote de Destino Premium',
-  description: 'Design ultra-moderno com gradientes vibrantes e seções impactantes para destacar destinos paradisíacos',
+  description: 'Design com hero full-width, cards laterais flutuantes e layout magazine com imagens verticais',
   category: 'tourism',
   thumbnail: '🏖️',
   generate: (data) => {
@@ -56,7 +56,13 @@ const destinationPackageTemplate: EmailTemplate = {
       ctaText = 'Reservar Agora',
       keyBenefits = ['Guias especializados', 'Hospedagem 5 estrelas', 'Transfer incluído'],
       priceInfo = 'A partir de R$ 2.999',
-      dateRange = 'Saídas diárias'
+      dateRange = 'Saídas diárias',
+      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/280x400.jpg?text=Imagem+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/280x400.jpg?text=Imagem+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Imagem+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Imagem+4',
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/200x80?text=Logo'
     } = data
 
     return {
@@ -69,113 +75,110 @@ const destinationPackageTemplate: EmailTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${mainTitle}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  </style>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 10px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <!-- HEADER COM LOGO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
           <tr>
-            <td style="padding: 30px 40px; background: #ffffff;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+            <td align="center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 25px;">
+              <img src="${logoImage}" alt="${companyName}" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto;">
+            </td>
+          </tr>
+          
+          <!-- HERO FULL WIDTH -->
+          <tr>
+            <td style="padding: 0; position: relative;">
+              <img src="${heroImage}" alt="${destination}" style="width: 100%; height: auto; display: block;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
-                  <td>
-                    <h1 style="margin: 0; color: #1e293b; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">${companyName}</h1>
-                  </td>
-                  <td align="right">
-                    <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;">Premium Travel</span>
+                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <!-- DESCRIÇÃO + PREÇO SIDEBAR -->
           <tr>
-            <td style="position: relative; padding: 0;">
+            <td style="padding: 35px 30px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background: linear-gradient(135deg, rgba(102,126,234,0.95) 0%, rgba(118,75,162,0.95) 100%); padding: 60px 40px; text-align: center;">
-                    <p style="margin: 0 0 10px; color: #e0e7ff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;">🌟 OFERTA EXCLUSIVA</p>
-                    <h2 style="margin: 0 0 15px; color: #ffffff; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -1px;">${mainTitle}</h2>
-                    <p style="margin: 0; color: #c7d2fe; font-size: 18px; font-weight: 500; max-width: 450px; margin: 0 auto;">${description}</p>
-                    <div style="display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); border-radius: 50px; padding: 12px 28px; margin-top: 25px;">
-                      <p style="margin: 0; color: #ffffff; font-size: 15px; font-weight: 700;">📍 ${destination}</p>
-                    </div>
+                  <td width="65%" style="vertical-align: top; padding-right: 20px;">
+                    <p style="margin: 0 0 20px 0; color: #2d3748; font-size: 17px; line-height: 1.7;">${description}</p>
+                    <h3 style="margin: 0 0 15px 0; color: #667eea; font-size: 20px; font-weight: bold;">✨ Incluso no pacote:</h3>
+                    <ul style="margin: 0; padding-left: 20px; color: #4a5568; font-size: 15px; line-height: 1.8;">
+                      ${keyBenefits.map(benefit => `<li style="margin-bottom: 8px;">${benefit}</li>`).join('')}
+                    </ul>
+                  </td>
+                  <td width="35%" style="vertical-align: top;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 25px 20px; text-align: center;">
+                      <tr>
+                        <td>
+                          <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.9); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">A partir de</p>
+                          <p style="margin: 0 0 10px 0; color: #ffffff; font-size: 28px; font-weight: 900;">${priceInfo.replace('A partir de ', '')}</p>
+                          <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.85); font-size: 12px;">${dateRange}</p>
+                          <a href="${ctaLink}" style="display: block; background: #ffffff; color: #667eea; padding: 14px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">${ctaText}</a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <!-- GALERIA VERTICAL 2 ALTAS + 2 HORIZONTAIS -->
           <tr>
-            <td style="padding: 50px 40px;">
-              <h3 style="margin: 0 0 30px; color: #1e293b; font-size: 24px; font-weight: 800; text-align: center;">✨ Experiência Completa</h3>
+            <td style="padding: 0 30px 35px 30px;">
+              <h3 style="margin: 0 0 20px 0; color: #1a202c; font-size: 24px; font-weight: bold; text-align: center;">📸 Momentos Inesquecíveis</h3>
               <table width="100%" cellpadding="0" cellspacing="0">
-                ${keyBenefits.map((benefit, index) => `
-                  <tr>
-                    <td style="padding: 15px 0;">
-                      <table width="100%" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td width="50" style="vertical-align: top;">
-                            <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #ffffff; font-weight: 800; text-align: center; line-height: 44px;">${index + 1}</div>
-                          </td>
-                          <td style="padding-left: 15px;">
-                            <p style="margin: 0; color: #334155; font-size: 16px; font-weight: 600; line-height: 1.5;">${benefit}</p>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                `).join('')}
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px; overflow: hidden; border: 2px solid #e2e8f0;">
                 <tr>
-                  <td width="50%" style="padding: 30px; text-align: center; border-right: 2px solid #e2e8f0;">
-                    <p style="margin: 0 0 8px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">💰 Investimento</p>
-                    <p style="margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; font-weight: 800;">${priceInfo}</p>
+                  <td width="48%" style="padding-right: 10px; vertical-align: top;">
+                    <img src="${teamImage1}" alt="Galeria 1" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
                   </td>
-                  <td width="50%" style="padding: 30px; text-align: center;">
-                    <p style="margin: 0 0 8px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">📅 Saídas</p>
-                    <p style="margin: 0; color: #1e293b; font-size: 18px; font-weight: 700;">${dateRange}</p>
+                  <td width="48%" style="padding-left: 10px; vertical-align: top;">
+                    <img src="${teamImage2}" alt="Galeria 2" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 12px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="48%" style="padding-right: 6px;">
+                          <img src="${teamImage3}" alt="Galeria 3" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                        </td>
+                        <td width="48%" style="padding-left: 6px;">
+                          <img src="${teamImage4}" alt="Galeria 4" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <!-- FOOTER -->
           <tr>
-            <td style="padding: 0 40px 50px;" align="center">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50px; box-shadow: 0 10px 30px rgba(102,126,234,0.4);">
-                    <a href="${ctaLink}" style="display: inline-block; padding: 20px 50px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
-                      ${ctaText} →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin: 20px 0 0; color: #64748b; font-size: 13px;">
-                💬 <strong>Dúvidas?</strong> Nossa equipe está pronta para ajudar!
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background: #0f172a; padding: 40px; text-align: center;">
-              <p style="margin: 0 0 5px; color: #ffffff; font-size: 16px; font-weight: 700;">${companyName}</p>
-              <p style="margin: 0 0 20px; color: #94a3b8; font-size: 13px;">Transformando sonhos em realidade desde 2024</p>
+            <td style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); padding: 30px; text-align: center; border-top: 3px solid #667eea;">
+              <p style="margin: 0 0 10px 0; color: #2d3748; font-size: 16px; font-weight: bold;">${companyName}</p>
+              <p style="margin: 0 0 20px 0; color: #718096; font-size: 13px;">Transformando sonhos em viagens ✈️</p>
               <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0; color: #64748b; font-size: 11px; line-height: 1.6;">
-                      © 2024 ${companyName}. Todos os direitos reservados.<br>
-                      <a href="#" style="color: #667eea; text-decoration: none;">Preferências</a> | 
-                      <a href="#" style="color: #667eea; text-decoration: none;">Descadastrar</a>
-                    </p>
+                <tr align="center">
+                  <td style="padding: 0 10px; font-size: 12px;">
+                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600;">Política de Privacidade</a>
+                  </td>
+                  <td style="padding: 0 10px; font-size: 12px; color: #cbd5e0;">•</td>
+                  <td style="padding: 0 10px; font-size: 12px;">
+                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600;">Contato</a>
+                  </td>
+                  <td style="padding: 0 10px; font-size: 12px; color: #cbd5e0;">•</td>
+                  <td style="padding: 0 10px; font-size: 12px;">
+                    <a href="#" style="color: #a0aec0; text-decoration: none;">Descadastrar</a>
                   </td>
                 </tr>
               </table>
@@ -192,11 +195,11 @@ const destinationPackageTemplate: EmailTemplate = {
   }
 }
 
-// Template 2: Newsletter Magazine-Style Ultra Moderna
+// Template 2: Newsletter Magazine-Style - MINIMALISTA GRID MASONRY
 const newsletterTemplate: EmailTemplate = {
   id: 'newsletter',
   name: 'Newsletter Magazine Premium',
-  description: 'Newsletter estilo revista com layout editorial sofisticado, seções em cards e tipografia impecável',
+  description: 'Newsletter minimalista com grid assimétrico estilo Pinterest, tipografia serif elegante e espaçamento generoso',
   category: 'newsletter',
   thumbnail: '📰',
   generate: (data) => {
@@ -205,7 +208,14 @@ const newsletterTemplate: EmailTemplate = {
       mainTitle = 'Novidades do Mês',
       description = 'Confira os melhores destinos e dicas para sua próxima viagem',
       ctaLink = '#',
-      ctaText = 'Ver Todas as Ofertas'
+      ctaText = 'Ver Todas as Ofertas',
+      keyBenefits = ['Destinos exclusivos', 'Dicas de viagem', 'Ofertas especiais'],
+      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x300.jpg?text=Hero+Image',
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/380x280.jpg?text=Imagem+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/180x280.jpg?text=Imagem+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/280x180.jpg?text=Imagem+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/280x180.jpg?text=Imagem+4',
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/150x50?text=Logo'
     } = data
 
     return {
@@ -217,82 +227,59 @@ const newsletterTemplate: EmailTemplate = {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-  </style>
+  <title>${mainTitle}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #fafafa;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; padding: 20px 10px;">
+<body style="margin: 0; padding: 0; background-color: #fafafa; font-family: 'Georgia', serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; padding: 40px 15px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff;">
+          <!-- LOGO MINIMALISTA -->
           <tr>
-            <td style="padding: 35px 40px 25px; border-bottom: 1px solid #e5e7eb;">
+            <td align="center" style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #e5e7eb;">
+              <img src="${logoImage}" alt="${companyName}" style="height: 50px; width: auto; max-width: 150px; display: block; margin: 0 auto;">
+            </td>
+          </tr>
+          
+          <!-- HERO WIDE BAIXO -->
+          <tr>
+            <td style="padding: 0;">
+              <img src="${heroImage}" alt="${mainTitle}" style="width: 100%; height: auto; display: block;">
+            </td>
+          </tr>
+
+          <!-- TÍTULO E DESCRIÇÃO COM MUITO ESPAÇO -->
+          <tr>
+            <td style="padding: 50px 40px 30px 40px;">
+              <h1 style="margin: 0 0 20px 0; color: #1a202c; font-size: 40px; font-weight: normal; line-height: 1.2; font-family: 'Georgia', serif; letter-spacing: -0.5px;">${mainTitle}</h1>
+              <p style="margin: 0; color: #4a5568; font-size: 18px; line-height: 1.8; font-family: 'Georgia', serif;">${description}</p>
+            </td>
+          </tr>
+
+          <!-- GRID MASONRY ASSIMÉTRICO -->
+          <tr>
+            <td style="padding: 0 40px 40px 40px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td width="70%">
-                    <h1 style="margin: 0 0 5px; color: #0f172a; font-size: 30px; font-weight: 900; letter-spacing: -1px; font-family: 'Playfair Display', serif;">${companyName}</h1>
-                    <p style="margin: 0; color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Travel Magazine</p>
+                  <!-- Imagem 1 GRANDE -->
+                  <td width="68%" style="vertical-align: top; padding-right: 10px; padding-bottom: 10px;">
+                    <img src="${teamImage1}" alt="Destaque 1" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                   </td>
-                  <td width="30%" align="right" style="vertical-align: bottom;">
-                    <p style="margin: 0; color: #94a3b8; font-size: 12px; font-weight: 600;">${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 40px 40px 35px;">
-              <p style="margin: 0 0 8px; color: #8b5cf6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px;">✦ EDIÇÃO ESPECIAL</p>
-              <h2 style="margin: 0 0 18px; color: #1e293b; font-size: 38px; font-weight: 900; line-height: 1.1; letter-spacing: -0.8px; font-family: 'Playfair Display', serif;">${mainTitle}</h2>
-              <p style="margin: 0; color: #475569; font-size: 17px; font-weight: 400; line-height: 1.7; max-width: 480px;">${description}</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 35px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-                <tr>
-                  <td style="padding: 30px;">
-                    <div style="width: 50px; height: 3px; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; margin-bottom: 18px;"></div>
-                    <h3 style="margin: 0 0 12px; color: #0f172a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">🌴 Destino em Destaque</h3>
-                    <p style="margin: 0 0 18px; color: #334155; font-size: 15px; line-height: 1.7;">
-                      Descubra praias paradisíacas, cultura vibrante e gastronomia excepcional. Um destino que combina aventura, relaxamento e experiências autênticas.
-                    </p>
-                    <a href="${ctaLink}" style="color: #667eea; text-decoration: none; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">
-                      Explorar este destino →
-                    </a>
+                  <!-- Imagem 2 ESTREITA ALTA -->
+                  <td width="30%" style="vertical-align: top; padding-left: 0;">
+                    <img src="${teamImage2}" alt="Destaque 2" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                   </td>
                 </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 35px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td width="48%" style="vertical-align: top; padding-right: 10px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius: 14px; border: 1px solid #fde68a; overflow: hidden; height: 100%;">
+                  <!-- Imagens 3 e 4 LADO A LADO -->
+                  <td colspan="2" style="padding-top: 10px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="padding: 25px;">
-                          <div style="width: 45px; height: 3px; background: linear-gradient(90deg, #f59e0b, #d97706); border-radius: 3px; margin-bottom: 15px;"></div>
-                          <h3 style="margin: 0 0 10px; color: #78350f; font-size: 18px; font-weight: 800;">💡 Dica Expert</h3>
-                          <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
-                            Reserve com 60+ dias e garanta até 30% OFF em pacotes selecionados.
-                          </p>
+                        <td width="49%" style="padding-right: 5px;">
+                          <img src="${teamImage3}" alt="Destaque 3" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                         </td>
-                      </tr>
-                    </table>
-                  </td>
-                  <td width="48%" style="vertical-align: top; padding-left: 10px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%); border-radius: 14px; border: 1px solid #c4b5fd; overflow: hidden; height: 100%;">
-                      <tr>
-                        <td style="padding: 25px;">
-                          <div style="width: 45px; height: 3px; background: linear-gradient(90deg, #8b5cf6, #7c3aed); border-radius: 3px; margin-bottom: 15px;"></div>
-                          <h3 style="margin: 0 0 10px; color: #5b21b6; font-size: 18px; font-weight: 800;">🎁 Exclusivo</h3>
-                          <p style="margin: 0; color: #6b21a8; font-size: 14px; line-height: 1.6;">
-                            Primeira viagem com 15% OFF usando cupom <strong>PRIMEIRA15</strong>.
-                          </p>
+                        <td width="49%" style="padding-left: 5px;">
+                          <img src="${teamImage4}" alt="Destaque 4" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                         </td>
                       </tr>
                     </table>
@@ -301,31 +288,34 @@ const newsletterTemplate: EmailTemplate = {
               </table>
             </td>
           </tr>
+
+          <!-- LISTA MINIMALISTA -->
           <tr>
-            <td style="padding: 15px 40px;">
-              <div style="height: 1px; background: linear-gradient(90deg, transparent, #e2e8f0, transparent);"></div>
+            <td style="padding: 0 40px 40px 40px;">
+              <div style="border-top: 1px solid #e5e7eb; padding-top: 30px;">
+                <h3 style="margin: 0 0 25px 0; color: #2d3748; font-size: 14px; font-weight: normal; text-transform: uppercase; letter-spacing: 2px; font-family: Arial, sans-serif;">Nesta Edição</h3>
+                ${keyBenefits.map((benefit, index) => `
+                  <p style="margin: ${index === 0 ? '0' : '15px'} 0 0 0; padding-bottom: 15px; ${index < keyBenefits.length - 1 ? 'border-bottom: 1px solid #f7fafc;' : ''} color: #4a5568; font-size: 16px; line-height: 1.6; font-family: 'Georgia', serif;">${benefit}</p>
+                `).join('')}
+              </div>
             </td>
           </tr>
+
+          <!-- CTA MINIMALISTA -->
           <tr>
-            <td align="center" style="padding: 30px 40px 40px;">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td align="center" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; box-shadow: 0 8px 24px rgba(15,23,42,0.25);">
-                    <a href="${ctaLink}" style="display: inline-block; padding: 18px 45px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
-                      ${ctaText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
+            <td align="center" style="padding: 0 40px 50px 40px;">
+              <a href="${ctaLink}" style="display: inline-block; padding: 16px 50px; background-color: #1a202c; color: #ffffff; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; font-family: Arial, sans-serif; font-weight: normal;">${ctaText}</a>
             </td>
           </tr>
+
+          <!-- FOOTER CLEAN -->
           <tr>
-            <td style="background: #f8fafc; padding: 35px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0 0 8px; color: #334155; font-size: 14px; font-weight: 700;">${companyName}</p>
-              <p style="margin: 0 0 18px; color: #64748b; font-size: 12px; font-style: italic;">Sua próxima aventura começa aqui ✈️</p>
-              <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600;">Preferências</a> · 
-                <a href="#" style="color: #94a3b8; text-decoration: none;">Descadastrar</a>
+            <td style="background-color: #f7fafc; padding: 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 15px 0; color: #2d3748; font-size: 14px; font-weight: normal; font-family: 'Georgia', serif;">${companyName}</p>
+              <p style="margin: 0 0 25px 0; color: #a0aec0; font-size: 12px; line-height: 1.6; font-family: Arial, sans-serif;">Você recebeu este e-mail porque se inscreveu<br>em nosso boletim informativo.</p>
+              <p style="margin: 0; color: #cbd5e0; font-size: 11px; font-family: Arial, sans-serif;">
+                <a href="#" style="color: #718096; text-decoration: none; margin: 0 8px;">Preferências</a> ·
+                <a href="#" style="color: #cbd5e0; text-decoration: none; margin: 0 8px;">Descadastrar</a>
               </p>
             </td>
           </tr>
@@ -340,11 +330,11 @@ const newsletterTemplate: EmailTemplate = {
   }
 }
 
-// Template 3: Promocional Ultra Urgente - Neon Power
+// Template 3: Promocional Ultra Urgente - DIAGONAL SPLIT BOLD
 const promotionalTemplate: EmailTemplate = {
   id: 'promotional',
   name: 'Flash Sale Neon',
-  description: 'Design ultra-vibrante com gradientes neon, efeitos de urgência e elementos de gamificação para máxima conversão',
+  description: 'Design ousado com split diagonal, countdown visual, gradientes vibrantes e fotos em círculos sobrepostos',
   category: 'promotional',
   thumbnail: '⚡',
   generate: (data) => {
@@ -355,7 +345,14 @@ const promotionalTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Garantir Desconto',
       priceInfo = '50% OFF',
-      dateRange = 'Válido até 31/12'
+      dateRange = 'Válido até 31/12',
+      keyBenefits = ['Todos os destinos', 'Sem taxas extras', 'Pagamento facilitado'],
+      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x350.jpg?text=Hero+Image',
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+4',
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/180x60?text=Logo'
     } = data
 
     return {
@@ -367,99 +364,130 @@ const promotionalTemplate: EmailTemplate = {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-  </style>
+  <title>${mainTitle}</title>
 </head>
-<body style="margin: 0; padding: 0; background: #050505;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #1a0a0f 100%); padding: 20px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); font-family: 'Impact', Arial Black, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%); padding: 25px 10px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #1a0a14 0%, #2a1520 100%); border-radius: 20px; overflow: visible; box-shadow: 0 0 60px rgba(255, 20, 147, 0.4), 0 0 120px rgba(138, 43, 226, 0.2);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 0; overflow: hidden; box-shadow: 0 25px 80px rgba(255,50,100,0.4), 0 0 0 3px #ff3264;">
+          
+          <!-- HEADER DIAGONAL SPLIT -->
           <tr>
-            <td align="center" style="padding: 25px 30px 0; position: relative;">
-              <table cellpadding="0" cellspacing="0" border="0">
+            <td style="padding: 0; position: relative; background: linear-gradient(145deg, #ff3264 0%, #ff3264 48%, #ffd700 48%, #ffd700 100%); height: 80px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="height: 80px;">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #ff1493 0%, #ff6b6b 50%, #ffd700 100%); border-radius: 30px; padding: 3px; box-shadow: 0 0 25px rgba(255,20,147,0.6);">
-                    <div style="background: #1a0a14; border-radius: 27px; padding: 10px 24px;">
-                      <p style="margin: 0; background: linear-gradient(135deg, #ff1493, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">
-                        ⚡ TEMPO LIMITADO ⚡
-                      </p>
-                    </div>
+                  <td width="50%" align="right" style="padding-right: 15px; vertical-align: middle;">
+                    <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">⚡ ${priceInfo}</p>
+                  </td>
+                  <td width="50%" align="left" style="padding-left: 15px; vertical-align: middle;">
+                    <img src="${logoImage}" alt="${companyName}" style="height: 45px; width: auto; max-width: 150px; display: block;">
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <!-- HERO COM OVERLAY -->
           <tr>
-            <td style="padding: 35px 35px 25px; text-align: center;">
-              <h1 style="margin: 0 0 15px; background: linear-gradient(135deg, #ff1493 0%, #8a2be2 50%, #4169e1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 56px; font-weight: 900; letter-spacing: -2px; text-shadow: 0 0 40px rgba(255,20,147,0.5); line-height: 1;">${mainTitle}</h1>
-              <p style="margin: 0; color: #e2b8d4; font-size: 17px; font-weight: 600; line-height: 1.5;">${description}</p>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 0 35px 30px;">
-              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <td style="padding: 0; position: relative;">
+              <img src="${heroImage}" alt="${mainTitle}" style="width: 100%; height: auto; display: block;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #ff1493 0%, #ff6b6b 50%, #ffd700 100%); border-radius: 20px; padding: 4px; box-shadow: 0 15px 50px rgba(255,20,147,0.5), 0 0 80px rgba(138,43,226,0.3);">
-                    <div style="background: linear-gradient(135deg, #2a0a1e 0%, #3a1528 100%); border-radius: 16px; padding: 45px 35px; text-align: center;">
-                      <p style="margin: 0 0 12px; color: #ff8dc7; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px;">💎 DESCONTO EXCLUSIVO</p>
-                      <p style="margin: 0; background: linear-gradient(135deg, #ffffff 0%, #ffd700 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 84px; font-weight: 900; line-height: 0.9; text-shadow: 0 4px 20px rgba(255,215,0,0.4);">${priceInfo}</p>
-                      <p style="margin: 12px 0 0; color: #c084a8; font-size: 14px; font-weight: 700;">Em todos os pacotes</p>
-                    </div>
+                  <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85));">
+                    <h1 style="margin: 0; color: #ffd700; font-size: 44px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; text-shadow: 3px 3px 0px #ff3264, -1px -1px 0px #000;">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <!-- DESCRIÇÃO E COUNTDOWN -->
           <tr>
-            <td style="padding: 0 35px 35px;">
+            <td style="background: linear-gradient(135deg, #1a1a2e 0%, #252545 100%); padding: 35px 30px; text-align: center;">
+              <p style="margin: 0 0 25px 0; color: #ffffff; font-size: 18px; line-height: 1.6; font-family: Arial, sans-serif; font-weight: normal;">${description}</p>
+              <div style="background: rgba(255,50,100,0.2); border: 2px dashed #ff3264; border-radius: 10px; padding: 20px; margin: 0 auto; max-width: 400px;">
+                <p style="margin: 0 0 10px 0; color: #ffd700; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-family: Arial, sans-serif; font-weight: bold;">⏰ OFERTA EXPIRA EM</p>
+                <p style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 1px;">${dateRange}</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- CÍRCULOS SOBREPOSTOS COM IMAGENS -->
+          <tr>
+            <td style="padding: 40px 30px; background: #ffffff;">
+              <h2 style="margin: 0 0 30px 0; color: #1a1a2e; font-size: 32px; font-weight: 900; text-align: center; text-transform: uppercase;">🔥 DESTINOS INCRÍVEIS</h2>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td width="32%" align="center" style="padding: 8px;">
-                    <div style="background: linear-gradient(135deg, rgba(65,105,225,0.15) 0%, rgba(138,43,226,0.15) 100%); border: 2px solid rgba(65,105,225,0.3); border-radius: 14px; padding: 22px 15px; box-shadow: 0 0 20px rgba(65,105,225,0.2);">
-                      <p style="margin: 0 0 8px; font-size: 36px; filter: drop-shadow(0 0 10px rgba(65,105,225,0.8));">🌍</p>
-                      <p style="margin: 0; color: #a3c3ff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Todos Destinos</p>
-                    </div>
-                  </td>
-                  <td width="32%" align="center" style="padding: 8px;">
-                    <div style="background: linear-gradient(135deg, rgba(255,20,147,0.15) 0%, rgba(255,107,107,0.15) 100%); border: 2px solid rgba(255,20,147,0.3); border-radius: 14px; padding: 22px 15px; box-shadow: 0 0 20px rgba(255,20,147,0.2);">
-                      <p style="margin: 0 0 8px; font-size: 36px; filter: drop-shadow(0 0 10px rgba(255,20,147,0.8));">⚡</p>
-                      <p style="margin: 0; color: #ffadd2; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Sem Taxas</p>
-                    </div>
-                  </td>
-                  <td width="32%" align="center" style="padding: 8px;">
-                    <div style="background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,140,0,0.15) 100%); border: 2px solid rgba(255,215,0,0.3); border-radius: 14px; padding: 22px 15px; box-shadow: 0 0 20px rgba(255,215,0,0.2);">
-                      <p style="margin: 0 0 8px; font-size: 36px; filter: drop-shadow(0 0 10px rgba(255,215,0,0.8));">⏰</p>
-                      <p style="margin: 0; color: #ffe78a; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${dateRange}</p>
-                    </div>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+                      <tr>
+                        <td style="position: relative;">
+                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
+                            <img src="${teamImage1}" alt="Destino 1" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                          </div>
+                        </td>
+                        <td style="position: relative;">
+                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ffd700; box-shadow: 0 8px 25px rgba(255,215,0,0.4); display: inline-block; margin: 0 -15px;">
+                            <img src="${teamImage2}" alt="Destino 2" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 0 35px 45px;">
-              <table cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); border-radius: 60px; padding: 4px; box-shadow: 0 12px 35px rgba(255,215,0,0.5), 0 0 60px rgba(255,140,0,0.3);">
-                    <a href="${ctaLink}" style="display: block; background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #1a0a00; text-decoration: none; padding: 22px 55px; border-radius: 56px; font-weight: 900; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(255,255,255,0.3);">
-                      ${ctaText} 🚀
-                    </a>
+                  <td align="center">
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+                      <tr>
+                        <td style="position: relative;">
+                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #00d9ff; box-shadow: 0 8px 25px rgba(0,217,255,0.4); display: inline-block; margin: 0 -15px;">
+                            <img src="${teamImage3}" alt="Destino 3" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                          </div>
+                        </td>
+                        <td style="position: relative;">
+                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
+                            <img src="${teamImage4}" alt="Destino 4" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
-              <p style="margin: 18px 0 0; color: #8a6b7a; font-size: 13px; font-weight: 600;">
-                ⏰ <strong style="color: #ff8dc7;">ÚLTIMAS UNIDADES!</strong> Ação termina em breve.
-              </p>
             </td>
           </tr>
+
+          <!-- BENEFÍCIOS BOLD -->
           <tr>
-            <td style="background: #0f0508; padding: 32px 35px; text-align: center; border-top: 1px solid rgba(255,20,147,0.15);">
-              <p style="margin: 0 0 6px; color: #6a4a5a; font-size: 13px; font-weight: 700;">${companyName}</p>
-              <p style="margin: 0; color: #4a3a4a; font-size: 11px;">
-                <a href="#" style="color: #6a4a5a; text-decoration: none; font-weight: 600;">Descadastrar</a>
+            <td style="padding: 0 30px 35px 30px; background: #ffffff;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${keyBenefits.map((benefit, index) => `
+                  <tr>
+                    <td style="padding: 12px 20px; background: ${index % 2 === 0 ? 'linear-gradient(90deg, #ff3264, #ff6b9d)' : 'linear-gradient(90deg, #ffd700, #ffed4e)'}; margin-bottom: 10px; border-radius: 50px;">
+                      <p style="margin: 0; color: ${index % 2 === 0 ? '#ffffff' : '#1a1a2e'}; font-size: 15px; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px;">✓ ${benefit}</p>
+                    </td>
+                  </tr>
+                  ${index < keyBenefits.length - 1 ? '<tr><td style="height: 10px;"></td></tr>' : ''}
+                `).join('')}
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA MEGA BOLD -->
+          <tr>
+            <td align="center" style="padding: 0 30px 45px 30px; background: #ffffff;">
+              <a href="${ctaLink}" style="display: block; background: linear-gradient(135deg, #ff3264 0%, #ffd700 100%); color: #1a1a2e; padding: 22px 50px; border-radius: 60px; text-decoration: none; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 15px 40px rgba(255,50,100,0.5), 0 0 0 4px rgba(255,215,0,0.3); text-align: center;">${ctaText} 🚀</a>
+              <p style="margin: 20px 0 0 0; color: #ff3264; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">⚡ VAGAS LIMITADAS!</p>
+            </td>
+          </tr>
+
+          <!-- FOOTER DARK -->
+          <tr>
+            <td style="background: #1a1a2e; padding: 30px; text-align: center; border-top: 3px solid #ff3264;">
+              <p style="margin: 0 0 8px 0; color: #ffffff; font-size: 16px; font-weight: 900; text-transform: uppercase;">${companyName}</p>
+              <p style="margin: 0; color: #888; font-size: 11px; font-family: Arial, sans-serif; font-weight: normal;">
+                <a href="#" style="color: #ff3264; text-decoration: none; font-weight: bold;">Descadastrar</a>
               </p>
             </td>
           </tr>
@@ -474,11 +502,11 @@ const promotionalTemplate: EmailTemplate = {
   }
 }
 
-// Template 4: VIP Cliente Recorrente - Luxo Personalizado
+// Template 4: VIP Cliente Recorrente - POLAROID LUXURY COM MOLDURAS
 const returningCustomerTemplate: EmailTemplate = {
   id: 'returning-customer',
   name: 'Bem-vindo de Volta VIP',
-  description: 'Template premium personalizado com design luxuoso, elementos VIP e tratamento exclusivo para clientes recorrentes',
+  description: 'Template luxuoso com polaroids rotacionados, molduras douradas, ribbon VIP e layout de revista de luxo',
   category: 'retention',
   thumbnail: '🎯',
   generate: (data) => {
@@ -489,7 +517,13 @@ const returningCustomerTemplate: EmailTemplate = {
       description = 'Sabemos que você adora viajar. Temos novidades perfeitas para você!',
       ctaLink = '#',
       ctaText = 'Explorar Destinos',
-      keyBenefits = ['Desconto exclusivo para clientes VIP', 'Consultoria personalizada', 'Flexibilidade total']
+      keyBenefits = ['Desconto exclusivo para clientes VIP', 'Consultoria personalizada', 'Flexibilidade total'],
+      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/540x360.jpg?text=Hero+Image',
+      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+1',
+      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+2',
+      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+3',
+      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+4',
+      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/160x70?text=Logo'
     } = data
 
     return {
@@ -502,107 +536,112 @@ const returningCustomerTemplate: EmailTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;600;700&display=swap');
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { font-family: 'Palatino', 'Times New Roman', serif; }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 20px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f5f5dc 0%, #e8d5b7 100%);">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f5f5dc 0%, #e8d5b7 100%); padding: 30px 10px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(139,92,246,0.15), 0 0 1px rgba(139,92,246,0.1);">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border: 8px solid #d4af37; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
           <tr>
-            <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%); padding: 45px 40px 55px; text-align: center; position: relative;">
-              <div style="margin-bottom: 22px;">
-                <table cellpadding="0" cellspacing="0" border="0" align="center">
-                  <tr>
-                    <td style="background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.4); border-radius: 25px; padding: 10px 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                      <p style="margin: 0; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2.5px;">⭐ CLIENTE VIP</p>
-                    </td>
-                  </tr>
-                </table>
+            <td style="background: linear-gradient(135deg, #d4af37 0%, #f4d03f 50%, #d4af37 100%); padding: 15px;">
+              <p style="margin: 0; color: #1a1a1a; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; text-align: center;">⭐ Cliente VIP ⭐</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 40px 30px;">
+              <img src="${logoImage}" alt="${companyName}" style="height: 70px; width: auto; margin-bottom: 25px;">
+              <h1 style="margin: 0; color: #2c1810; font-size: 36px;">${mainTitle}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <div style="border: 5px solid #d4af37; padding: 8px;">
+                <img src="${heroImage}" alt="${destination}" style="width: 100%; height: auto;">
               </div>
-              <h1 style="margin: 0 0 14px; color: #ffffff; font-size: 42px; font-weight: 700; letter-spacing: -0.5px; font-family: 'Cormorant Garamond', serif; line-height: 1.1;">${mainTitle}</h1>
-              <p style="margin: 0; color: #f3e8ff; font-size: 17px; font-weight: 500; max-width: 450px; display: inline-block; line-height: 1.5;">${description}</p>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 40px 40px 30px;">
-              <table cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 2px solid #e9d5ff; border-radius: 16px; padding: 28px 35px; box-shadow: 0 4px 16px rgba(139,92,246,0.08);">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0 0 8px; color: #7c3aed; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">🌍 Seu Próximo Destino</p>
-                    <p style="margin: 0; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 34px; font-weight: 800; letter-spacing: -0.5px; font-family: 'Cormorant Garamond', serif;">${destination}</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 30px;">
-              <p style="margin: 0; color: #475569; font-size: 16px; line-height: 1.8; text-align: center; font-style: italic;">
-                Adoramos ter você conosco novamente! 🌟 Preparamos algo especial pensando no seu perfil de viajante.
-              </p>
             </td>
           </tr>
           <tr>
             <td style="padding: 0 40px 35px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #fde68a; border-radius: 16px; overflow: hidden;">
+              <p style="margin: 0; color: #4a4a4a; font-size: 17px; line-height: 1.8; text-align: center; font-style: italic;">${description}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 20px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding: 30px;">
-                    <p style="margin: 0 0 20px; color: #78350f; font-size: 17px; font-weight: 800; text-align: center; letter-spacing: 0.3px;">🎁 Vantagens Exclusivas VIP</p>
-                    ${keyBenefits.map((benefit, index) => `
-                      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: ${index < keyBenefits.length - 1 ? '12px' : '0'};">
-                        <tr>
-                          <td style="background: #ffffff; border-radius: 10px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(120,53,15,0.08);">
-                            <table width="100%" cellpadding="0" cellspacing="0">
-                              <tr>
-                                <td width="30" style="vertical-align: middle;">
-                                  <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 12px; font-weight: 900; text-align: center; line-height: 24px;">✓</div>
-                                </td>
-                                <td style="padding-left: 12px;">
-                                  <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600; line-height: 1.4;">${benefit}</p>
-                                </td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-                    `).join('')}
+                  <td width="48%" align="center" style="padding: 10px;">
+                    <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                      <img src="${teamImage1}" alt="1" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Luxo & Conforto</p>
+                    </div>
+                  </td>
+                  <td width="48%" align="center" style="padding: 10px;">
+                    <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                      <img src="${teamImage2}" alt="2" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Gastronomia</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="48%" align="center" style="padding: 10px;">
+                    <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                      <img src="${teamImage3}" alt="3" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Experiências</p>
+                    </div>
+                  </td>
+                  <td width="48%" align="center" style="padding: 10px;">
+                    <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                      <img src="${teamImage4}" alt="4" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Aventuras</p>
+                    </div>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td align="center" style="padding: 0 40px 35px;">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border-radius: 50px; box-shadow: 0 8px 25px rgba(124,58,237,0.35);">
-                    <a href="${ctaLink}" style="display: inline-block; padding: 20px 48px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
-                      ${ctaText} ✨
-                    </a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #c084fc; border-radius: 12px; padding: 22px 25px;">
-                <p style="margin: 0; color: #64748b; font-size: 14px; font-style: italic; text-align: center; line-height: 1.7;">
-                  “A melhor viagem é aquela que ainda não fizemos.” ✈️
-                </p>
+            <td style="padding: 0 35px 35px;">
+              <div style="background: #fffef7; border: 3px solid #d4af37; border-radius: 8px; padding: 30px 25px;">
+                <h3 style="margin: 0 0 25px 0; color: #2c1810; font-size: 22px; text-align: center; text-transform: uppercase;">✨ Privilégios VIP ✨</h3>
+                ${keyBenefits.map((benefit, index) => `
+                  <div style="margin-bottom: ${index < keyBenefits.length - 1 ? '18px' : '0'}; padding-bottom: ${index < keyBenefits.length - 1 ? '18px' : '0'}; ${index < keyBenefits.length - 1 ? 'border-bottom: 1px dashed #d4af37;' : ''}">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="40" align="center">
+                          <span style="display: inline-block; width: 32px; height: 32px; background: #d4af37; border-radius: 50%; line-height: 32px; color: #1a1a1a; font-weight: bold;">✓</span>
+                        </td>
+                        <td style="padding-left: 15px;">
+                          <p style="margin: 0; color: #2c1810; font-size: 16px; font-weight: 600;">${benefit}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                `).join('')}
               </div>
             </td>
           </tr>
           <tr>
-            <td style="background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); padding: 35px 40px; text-align: center; border-top: 1px solid #e9d5ff;">
-              <p style="margin: 0 0 8px; color: #334155; font-size: 15px; font-weight: 700;">${companyName}</p>
-              <p style="margin: 0 0 18px; color: #64748b; font-size: 12px; font-style: italic;">Obrigado por confiar em nós! 💜</p>
-              <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                <a href="#" style="color: #7c3aed; text-decoration: none; font-weight: 600;">Gerenciar preferências</a> · 
-                <a href="#" style="color: #94a3b8; text-decoration: none;">Descadastrar</a>
+            <td align="center" style="padding: 0 35px 45px;">
+              <a href="${ctaLink}" style="display: inline-block; background: linear-gradient(135deg, #d4af37, #f4d03f); color: #1a1a1a; padding: 18px 50px; border-radius: 50px; text-decoration: none; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 10px 30px rgba(212,175,55,0.5);">${ctaText} ✨</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <div style="border-left: 4px solid #d4af37; padding: 20px 25px;">
+                <p style="margin: 0; color: #666; font-size: 15px; font-style: italic;">"Viajar é a única coisa que você compra que te torna mais rico."</p>
+                <p style="margin: 10px 0 0; color: #d4af37; font-size: 13px; font-weight: bold;">— Provérbio</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: linear-gradient(135deg, #2c1810, #3d2415); padding: 35px 30px; text-align: center; border-top: 3px solid #d4af37;">
+              <p style="margin: 0 0 15px; color: #d4af37; font-size: 18px; font-weight: bold;">${companyName}</p>
+              <p style="margin: 0 0 20px; color: #c9b998; font-size: 13px;">Obrigado por ser um cliente VIP.</p>
+              <p style="margin: 0; color: #8b7355; font-size: 11px;">
+                <a href="#" style="color: #d4af37; text-decoration: none;">Preferências</a> · 
+                <a href="#" style="color: #8b7355; text-decoration: none;">Descadastrar</a>
               </p>
             </td>
           </tr>
