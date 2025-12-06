@@ -57,12 +57,12 @@ const destinationPackageTemplate: EmailTemplate = {
       keyBenefits = ['Guias especializados', 'Hospedagem 5 estrelas', 'Transfer incluído'],
       priceInfo = 'A partir de R$ 2.999',
       dateRange = 'Saídas diárias',
-      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/280x400.jpg?text=Imagem+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/280x400.jpg?text=Imagem+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Imagem+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/280x200.jpg?text=Imagem+4',
-      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/200x80?text=Logo'
+      heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
+      teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=280&h=400&fit=crop',
+      teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=280&h=400&fit=crop',
+      teamImage3 = data.teamImage3?.trim() || 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=280&h=200&fit=crop',
+      teamImage4 = data.teamImage4?.trim() || 'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=280&h=200&fit=crop',
+      logoImage = data.logoImage?.trim() || 'https://images.unsplash.com/photo-1499678329028-101435549a4e?w=200&h=80&fit=crop'
     } = data
 
     return {
@@ -210,12 +210,12 @@ const newsletterTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Ver Todas as Ofertas',
       keyBenefits = ['Destinos exclusivos', 'Dicas de viagem', 'Ofertas especiais'],
-      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x300.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/380x280.jpg?text=Imagem+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/180x280.jpg?text=Imagem+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/280x180.jpg?text=Imagem+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/280x180.jpg?text=Imagem+4',
-      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/150x50?text=Logo'
+      heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=300&fit=crop',
+      teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1504150558240-0b4fd8946624?w=380&h=280&fit=crop',
+      teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=180&h=280&fit=crop',
+      teamImage3 = data.teamImage3?.trim() || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=280&h=180&fit=crop',
+      teamImage4 = data.teamImage4?.trim() || 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=280&h=180&fit=crop',
+      logoImage = data.logoImage?.trim() || 'https://images.unsplash.com/photo-1499678329028-101435549a4e?w=150&h=50&fit=crop'
     } = data
 
     return {
@@ -347,12 +347,12 @@ const promotionalTemplate: EmailTemplate = {
       priceInfo = '50% OFF',
       dateRange = 'Válido até 31/12',
       keyBenefits = ['Todos os destinos', 'Sem taxas extras', 'Pagamento facilitado'],
-      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x350.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/200x200.jpg?text=Imagem+4',
-      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/180x60?text=Logo'
+      heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&h=300&fit=crop',
+      teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=250&h=250&fit=crop',
+      teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=250&h=250&fit=crop',
+      teamImage3 = data.teamImage3?.trim() || 'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=250&h=250&fit=crop',
+      teamImage4 = data.teamImage4?.trim() || 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=250&h=250&fit=crop',
+      logoImage = data.logoImage?.trim() || 'https://images.unsplash.com/photo-1499678329028-101435549a4e?w=180&h=60&fit=crop'
     } = data
 
     return {
@@ -518,12 +518,12 @@ const returningCustomerTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Explorar Destinos',
       keyBenefits = ['Desconto exclusivo para clientes VIP', 'Consultoria personalizada', 'Flexibilidade total'],
-      heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/540x360.jpg?text=Hero+Image',
-      teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+1',
-      teamImage2 = data.teamImage2?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+2',
-      teamImage3 = data.teamImage3?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+3',
-      teamImage4 = data.teamImage4?.trim() || 'https://via.placeholder.com/240x320.jpg?text=Polaroid+4',
-      logoImage = data.logoImage?.trim() || 'https://via.placeholder.com/160x70?text=Logo'
+      heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=540&h=360&fit=crop',
+      teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=240&h=320&fit=crop',
+      teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=240&h=320&fit=crop',
+      teamImage3 = data.teamImage3?.trim() || 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=240&h=320&fit=crop',
+      teamImage4 = data.teamImage4?.trim() || 'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=240&h=320&fit=crop',
+      logoImage = data.logoImage?.trim() || 'https://images.unsplash.com/photo-1499678329028-101435549a4e?w=160&h=70&fit=crop'
     } = data
 
     return {
