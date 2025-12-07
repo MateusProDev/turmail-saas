@@ -291,19 +291,21 @@ export function ImageEditablePreview({
             style={{
               backgroundColor: 'white',
               borderRadius: '12px',
-              padding: '24px',
-              maxWidth: '650px',
+              padding: '20px',
+              maxWidth: '550px',
               width: '100%',
-              maxHeight: '80vh',
-              overflow: 'auto',
+              maxHeight: '70vh',
+              overflow: 'hidden',
               position: 'relative',
-              margin: 'auto'
+              margin: 'auto',
+              display: 'flex',
+              flexDirection: 'column'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
-                Selecionar {currentConfig.label}
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+                {currentConfig.label}
               </h3>
               <button
                 onClick={() => setSelectedImage(null)}
@@ -325,17 +327,19 @@ export function ImageEditablePreview({
                 ×
               </button>
             </div>
-            <ImageGallerySelector
-              clientId={clientId}
-              category={currentConfig.category}
-              selectedImageUrl={currentConfig.imageUrl}
-              onImageSelect={(url) => {
-                currentConfig.onImageSelect(url)
-                setTimeout(() => setSelectedImage(null), 300)
-              }}
-              label=""
-              allowUpload={true}
-            />
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <ImageGallerySelector
+                clientId={clientId}
+                category={currentConfig.category}
+                selectedImageUrl={currentConfig.imageUrl}
+                onImageSelect={(url) => {
+                  currentConfig.onImageSelect(url)
+                  setTimeout(() => setSelectedImage(null), 300)
+                }}
+                label=""
+                allowUpload={true}
+              />
+            </div>
           </div>
         </div>,
         document.body

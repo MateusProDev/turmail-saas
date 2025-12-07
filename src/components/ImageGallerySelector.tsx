@@ -88,41 +88,111 @@ export const ImageGallerySelector: React.FC<ImageGallerySelectorProps> = ({
     }
   }
 
+  // Quando usado dentro de outro modal (sem label), mostrar apenas a grid
+  const isInlineMode = !label || label === ''
+
   return (
-    <div className="image-gallery-selector">
-      <label className="selector-label">{label}</label>
+    <div className="image-gallery-selector" style={isInlineMode ? { height: '100%', display: 'flex', flexDirection: 'column' } : {}}>
+      {!isInlineMode && <label className="selector-label">{label}</label>}
       
-      {/* Preview da imagem selecionada */}
-      <div className="image-preview-container">
-        {selectedImageUrl ? (
-          <div className="image-preview">
-            <img src={selectedImageUrl} alt="Imagem selecionada" />
-            <div className="preview-overlay">
+      {/* Preview da imagem selecionada - apenas se não estiver no modo inline */}
+      {!isInlineMode && (
+        <div className="image-preview-container">
+          {selectedImageUrl ? (
+            <div className="image-preview">
+              <img src={selectedImageUrl} alt="Imagem selecionada" />
+              <div className="preview-overlay">
+                <button 
+                  type="button"
+                  onClick={() => setShowGallery(!showGallery)}
+                  className="btn-change"
+                >
+                  Mudar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="no-image-placeholder">
+              <p>Nenhuma imagem selecionada</p>
               <button 
                 type="button"
                 onClick={() => setShowGallery(!showGallery)}
-                className="btn-change"
+                className="btn-select"
               >
-                Mudar
+                Selecionar Imagem
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="no-image-placeholder">
-            <p>Nenhuma imagem selecionada</p>
-            <button 
-              type="button"
-              onClick={() => setShowGallery(!showGallery)}
-              className="btn-select"
-            >
-              Selecionar Imagem
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
-      {/* Modal de galeria - Renderizado via Portal para cobrir toda a página */}
-      {showGallery && createPortal(
+      {/* Se estiver no modo inline, mostrar grid diretamente */}
+      {isInlineMode && (
+        <>
+          {error && <div className="error-message" style={{ margin: '0 0 12px 0' }}>{error}</div>}
+
+          {/* Upload de nova imagem */}
+          {allowUpload && (
+            <div className="upload-section" style={{ padding: '0 0 12px 0', border: 'none', background: 'transparent' }}>
+              <label className="upload-label">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  style={{ display: 'none' }}
+                />
+                <span className={uploading ? 'uploading' : ''}>
+                  {uploading ? '⏳ Enviando...' : '➕ Fazer Upload'}
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Grid de imagens inline */}
+          <div className="gallery-grid" style={{ flex: 1, maxHeight: 'none', padding: 0 }}>
+            {loading ? (
+              <p className="loading">Carregando imagens...</p>
+            ) : gallery.length === 0 ? (
+              <p className="empty">Nenhuma imagem na galeria</p>
+            ) : (
+              gallery.map(image => (
+                <div 
+                  key={image.id}
+                  className={`gallery-item ${selectedImageUrl === image.url ? 'selected' : ''}`}
+                >
+                  <img 
+                    src={image.url} 
+                    alt={image.name}
+                    onClick={() => handleImageSelect(image.url)}
+                  />
+                  <div className="item-overlay">
+                    <button
+                      type="button"
+                      onClick={() => handleImageSelect(image.url)}
+                      className="btn-select-img"
+                      title="Selecionar"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(image.id)}
+                      className="btn-delete-img"
+                      title="Remover"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Modal de galeria - Renderizado via Portal para cobrir toda a página (apenas se não for inline) */}
+      {!isInlineMode && showGallery && createPortal(
         <div className="gallery-modal">
           <div className="gallery-content">
             <div className="gallery-header">
