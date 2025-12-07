@@ -14,6 +14,7 @@ export default function Dashboard(){
   const [subscription, setSubscription] = useState<any>(null)
   const [brevoStats, setBrevoStats] = useState<any>(null)
   const [loadingBrevo, setLoadingBrevo] = useState(false)
+  const [tenantId, setTenantId] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -30,6 +31,35 @@ export default function Dashboard(){
     if (menuOpen) document.addEventListener('click', handleDocClick)
     return () => document.removeEventListener('click', handleDocClick)
   }, [menuOpen])
+
+  // Buscar tenant do usuário
+  useEffect(() => {
+    if (!user) return
+    
+    try {
+      // Primeiro, tentar buscar pelo ownerUid
+      const tenantsRef = collection(db, 'tenants')
+      const qByOwner = query(tenantsRef, where('ownerUid', '==', user.uid), limit(1))
+      
+      const unsub = onSnapshot(qByOwner, (snap) => {
+        if (!snap.empty) {
+          const tenantDoc = snap.docs[0]
+          console.log('[Dashboard] Found tenant by ownerUid:', tenantDoc.id)
+          setTenantId(tenantDoc.id)
+        } else {
+          console.log('[Dashboard] No tenant found for user')
+          setTenantId(null)
+        }
+      }, (err) => {
+        console.error('[Dashboard] Error in tenant listener:', err)
+        setTenantId(null)
+      })
+      
+      return () => unsub()
+    } catch (e) {
+      console.error('[Dashboard] Error setting up tenant listener:', e)
+    }
+  }, [user])
 
   // subscription listener (ownerUid preferred, fallback to email)
   useEffect(() => {
@@ -118,15 +148,15 @@ export default function Dashboard(){
 
   // Buscar estatísticas da Brevo
   useEffect(() => {
-    if (!user || !subscription) return
+    if (!user || !tenantId) return
     
     const fetchBrevoStats = async () => {
       try {
         setLoadingBrevo(true)
         const token = await user.getIdToken()
-        console.log('[Dashboard] Fetching Brevo stats for tenant:', subscription.id)
+        console.log('[Dashboard] Fetching Brevo stats for tenant:', tenantId)
         
-        const resp = await fetch(`/api/get-brevo-stats?tenantId=${subscription.id}`, {
+        const resp = await fetch(`/api/get-brevo-stats?tenantId=${tenantId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -159,7 +189,7 @@ export default function Dashboard(){
     // Recarregar stats a cada 5 minutos
     const interval = setInterval(fetchBrevoStats, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [user, subscription])
+  }, [user, tenantId])
 
   // derived metrics (hooks must be called unconditionally)
   // Removed unused getOpenRateNumeric function
