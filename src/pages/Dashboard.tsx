@@ -902,12 +902,6 @@ export default function Dashboard(){
                 )}
               </div>
             </section>
-
-            {/* Activity Feed */}
-            <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Atividade Recente</h2>
-              <ActivityFeed campaigns={campaigns} />
-            </section>
           </main>
         </div>
       </div>
@@ -915,67 +909,3 @@ export default function Dashboard(){
   )
 }
 
-function ActivityFeed({ campaigns }: { campaigns: any[] }) {
-  if (!campaigns || campaigns.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <p className="text-slate-500 font-medium">Nenhuma atividade recente</p>
-        <p className="text-slate-400 text-sm mt-1">Sua atividade aparecerá aqui</p>
-      </div>
-    )
-  }
-  
-  return (
-    <div className="space-y-4">
-      {campaigns.map(c => (
-        <div key={c.id} className="flex items-start space-x-4 p-3 rounded-xl bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
-          <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0"></div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="text-sm font-medium text-slate-900 truncate">
-                {c.subject || c.title || c.name || 'Campanha'}
-              </h4>
-              <span className="text-xs text-slate-500 whitespace-nowrap ml-2">
-                {c.createdAt ? new Date((c.createdAt?.seconds || c.createdAt) * (c.createdAt?.seconds ? 1000 : 1)).toLocaleDateString('pt-BR') : ''}
-              </span>
-            </div>
-            <div className="text-xs text-slate-600 space-x-3">
-              <span>{(c.metrics?.sent ?? c.sent ?? c.sentCount) ? `${c.metrics?.sent ?? c.sent ?? c.sentCount} enviados` : 'Agendada/rascunho'}</span>
-              <span>•</span>
-              {/* <span>{(() => {
-                const num = getOpenRateNumeric(c)
-                if (typeof num === 'number') return `${Math.round(num * 100) / 100}%`
-                const opens = c?.metrics?.opens ?? c?.opens ?? c?.stats?.opens
-                return typeof opens === 'number' ? `${opens} aberturas` : '—'
-              })()}</span> */}
-              <span>•</span>
-              <span className={`font-medium ${
-                c.status === 'sent' ? 'text-green-600' :
-                c.status === 'scheduled' ? 'text-blue-600' :
-                c.status === 'draft' ? 'text-yellow-600' :
-                c.status === 'active' ? 'text-green-600' :
-                c.status === 'completed' ? 'text-blue-600' :
-                'text-slate-600'
-              }`}>
-                {(() => {
-                  const s = c.status || ''
-                  if (s === 'sent') return 'Enviado'
-                  if (s === 'scheduled') return 'Agendada'
-                  if (s === 'draft') return 'Rascunho'
-                  if (s === 'active') return 'Ativo'
-                  if (s === 'completed') return 'Concluído'
-                  return s || '—'
-                })()}
-              </span>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}

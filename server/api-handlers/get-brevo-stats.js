@@ -210,8 +210,9 @@ export async function getBrevoStats(req, res) {
     const campaignsPromise = axios.get('https://api.brevo.com/v3/emailCampaigns', {
       headers,
       params: {
-        limit: 10,
-        offset: 0
+        limit: 50,
+        offset: 0,
+        sort: 'desc'
       }
     }).catch(e => {
       campaignsError = e.response?.data || e.message
@@ -225,11 +226,25 @@ export async function getBrevoStats(req, res) {
       campaignsPromise
     ])
 
+    const campaignsData = campaignsRes?.data?.campaigns || []
+    console.log('[get-brevo-stats] Campaigns data:', {
+      hasCampaignsRes: !!campaignsRes,
+      hasData: !!campaignsRes?.data,
+      campaignsArray: Array.isArray(campaignsData),
+      count: campaignsData.length,
+      firstCampaign: campaignsData[0] ? {
+        id: campaignsData[0].id,
+        name: campaignsData[0].name,
+        subject: campaignsData[0].subject
+      } : null
+    })
+
     if (debug) {
       console.log('[get-brevo-stats] Results:', {
         account: !!accountRes?.data,
         emailStats: !!emailStatsRes?.data,
         campaigns: !!campaignsRes?.data,
+        campaignsCount: campaignsData.length,
         errors: { accountError, emailStatsError, campaignsError }
       })
     }
@@ -237,7 +252,7 @@ export async function getBrevoStats(req, res) {
     const stats = {
       account: accountRes?.data || null,
       emailStats: emailStatsRes?.data || null,
-      campaigns: campaignsRes?.data || null,
+      campaigns: campaignsData,
       timestamp: new Date().toISOString(),
       errors: {
         account: accountError,
