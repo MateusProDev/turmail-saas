@@ -31,33 +31,53 @@ if (!ENCRYPTION_KEY) {
   process.exit(1)
 }
 
-// Decrypt Brevo API key
-function decryptKey(encryptedData) {
+// Decrypt Brevo API key (compatible with get-brevo-stats.js)
+function decryptKey(encrypted) {
+  const key = ENCRYPTION_KEY
+  
+  if (!encrypted || typeof encrypted !== 'string' || !key) {
+    throw new Error('Invalid encrypted data or missing encryption key')
+  }
+
   try {
-    // Try GCM format first (JSON)
-    const parsed = JSON.parse(encryptedData)
-    const keyBuffer = Buffer.from(ENCRYPTION_KEY, 'hex')
-    const iv = Buffer.from(parsed.iv, 'base64')
-    const tag = Buffer.from(parsed.tag, 'base64')
-    const encrypted = Buffer.from(parsed.data, 'base64')
+    // Try GCM format (JSON with iv, tag, data)
+    const parsed = JSON.parse(encrypted)
+    if (parsed.iv && parsed.data) {
+      const keyBuffer = Buffer.from(key, 'base64')
+      if (keyBuffer.length !== 32) {
+        throw new Error(`Invalid key length: ${keyBuffer.length} bytes (expected 32)`)
+      }
+      
+      const iv = Buffer.from(parsed.iv, 'base64')
+      const encData = Buffer.from(parsed.data, 'base64')
+      const tag = parsed.tag ? Buffer.from(parsed.tag, 'base64') : null
+      
+      const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv)
+      if (tag) decipher.setAuthTag(tag)
+      
+      const decrypted = Buffer.concat([decipher.update(encData), decipher.final()])
+      return decrypted.toString('utf8')
+    }
+  } catch (e) {
+    // Not JSON or GCM failed, try CBC
+    console.log('[Decrypt] GCM failed, trying CBC format:', e.message)
+  }
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv)
-    decipher.setAuthTag(tag)
-
-    let decrypted = decipher.update(encrypted, null, 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
-  } catch (err) {
-    // Try CBC format (legacy)
-    const keyBuffer = Buffer.from(ENCRYPTION_KEY, 'hex')
-    const [ivHex, encHex] = encryptedData.split(':')
+  try {
+    // CBC format (ivHex:encHex)
+    const [ivHex, encHex] = encrypted.split(':')
+    if (!ivHex || !encHex) {
+      throw new Error('Invalid CBC format')
+    }
     const iv = Buffer.from(ivHex, 'hex')
-    const encrypted = Buffer.from(encHex, 'hex')
-
+    const enc = Buffer.from(encHex, 'hex')
+    const keyBuffer = Buffer.from(key, 'hex')
     const decipher = crypto.createDecipheriv('aes-256-cbc', keyBuffer, iv)
-    let decrypted = decipher.update(encrypted, null, 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
+    let dec = decipher.update(enc, undefined, 'utf8')
+    dec += decipher.final('utf8')
+    return dec
+  } catch (e) {
+    throw new Error(`Decryption failed: ${e.message}`)
   }
 }
 
@@ -66,22 +86,39 @@ async function setupBrevoWebhook(tenantId, webhookUrl) {
   console.log(`📍 Webhook URL: ${webhookUrl}\n`)
 
   try {
-    // Get tenant settings
-    const settingsRef = db.collection('tenants').doc(tenantId).collection('settings').doc('secrets')
-    const settingsDoc = await settingsRef.get()
+    // Get tenant secrets
+    const secretsRef = db.collection('tenants').doc(tenantId).collection('settings').doc('secrets')
+    const secretsDoc = await secretsRef.get()
 
-    if (!settingsDoc.exists) {
-      throw new Error('Tenant settings not found')
+    if (!secretsDoc.exists) {
+      throw new Error('Tenant secrets not found')
     }
 
-    const settings = settingsDoc.data()
-    const activeKeyId = settings.activeBrevoKeyId
+    const secrets = secretsDoc.data()
+    const activeKeyId = secrets.activeKeyId
 
-    if (!activeKeyId || !settings.brevoKeys?.[activeKeyId]) {
-      throw new Error('No active Brevo API key found')
+    if (!activeKeyId) {
+      throw new Error('No active Brevo API key ID found')
     }
 
-    const encryptedKey = settings.brevoKeys[activeKeyId].apiKey
+    // Get the actual key from settings/keys/list/{keyId}
+    const keyRef = db.collection('tenants').doc(tenantId)
+      .collection('settings').doc('keys')
+      .collection('list').doc(activeKeyId)
+    
+    const keyDoc = await keyRef.get()
+
+    if (!keyDoc.exists) {
+      throw new Error(`Key ${activeKeyId} not found in settings/keys/list`)
+    }
+
+    const keyData = keyDoc.data()
+    const encryptedKey = keyData.brevoApiKey
+
+    if (!encryptedKey) {
+      throw new Error('Brevo API key not found in key document')
+    }
+
     const brevoApiKey = decryptKey(encryptedKey)
 
     console.log('✅ Brevo API key decrypted successfully\n')
@@ -123,9 +160,11 @@ async function setupBrevoWebhook(tenantId, webhookUrl) {
     console.log('✅ Webhook created successfully!')
     console.log('\nWebhook details:')
     console.log('  ID:', data.id)
-    console.log('  URL:', data.url)
-    console.log('  Events:', data.events.join(', '))
-    console.log('  Type:', data.type)
+    console.log('  URL:', data.url || webhookUrl)
+    if (data.events && Array.isArray(data.events)) {
+      console.log('  Events:', data.events.join(', '))
+    }
+    console.log('  Type:', data.type || 'transactional')
     console.log('\n📊 Now your campaigns will automatically track:')
     console.log('  • Emails delivered')
     console.log('  • Emails opened (unique opens)')
