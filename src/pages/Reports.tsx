@@ -176,15 +176,30 @@ export default function Reports() {
       return []
     }
     
+    // Log first campaign structure for debugging
+    if (campaigns[0]) {
+      console.log('[Reports] First campaign structure:', {
+        id: campaigns[0].id,
+        subject: campaigns[0].subject,
+        to: campaigns[0].to?.length,
+        metrics: campaigns[0].metrics,
+        sent: campaigns[0].sent
+      })
+    }
+    
     const processed = campaigns
       .map(c => {
-        const sent = c.metrics?.sent ?? c.sent ?? 0
+        // Get metrics from various possible locations
+        const sent = c.metrics?.sent ?? c.to?.length ?? c.sent ?? 0
         const opens = c.metrics?.opens ?? c.opens ?? 0
         const clicks = c.metrics?.clicks ?? c.clicks ?? 0
         const delivered = c.metrics?.delivered ?? c.delivered ?? sent
+        const uniqueOpeners = c.metrics?.uniqueOpeners?.length ?? 0
+        const uniqueClickers = c.metrics?.uniqueClickers?.length ?? 0
         
-        const openRate = delivered > 0 ? (opens / delivered) * 100 : 0
-        const clickRate = delivered > 0 ? (clicks / delivered) * 100 : 0
+        // Use unique opens/clicks for rates (more accurate)
+        const openRate = delivered > 0 ? (uniqueOpeners / delivered) * 100 : 0
+        const clickRate = delivered > 0 ? (uniqueClickers / delivered) * 100 : 0
         const engagement = openRate + (clickRate * 2) // Weight clicks more
         
         return {
