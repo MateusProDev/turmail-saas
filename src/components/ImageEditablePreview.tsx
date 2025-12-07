@@ -27,6 +27,7 @@ export function ImageEditablePreview({
   const [selectedImage, setSelectedImage] = useState<'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null>(null)
   const [processedHtml, setProcessedHtml] = useState('')
   const previewRef = useRef<HTMLDivElement>(null)
+  const isEditingRef = useRef(false)
 
   const currentConfig = selectedImage ? imageConfigs.find(c => c.type === selectedImage) : null
 
@@ -105,13 +106,13 @@ export function ImageEditablePreview({
 
         // Wrapper sem bordas visíveis, apenas container para a imagem
         // contenteditable="false" impede que a imagem seja editada como texto
-        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; overflow: hidden !important; user-select: none !important;`
+        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; overflow: visible !important; user-select: none !important;`
         
         // Imagem visível por padrão, ocupa todo o espaço
         const imgStyle = `display: block !important; width: 100% !important; height: auto !important; object-fit: cover !important; transition: filter 0.2s !important; pointer-events: none !important;`
         
-        // Overlay que aparece apenas no hover
-        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
+        // Overlay que aparece apenas no hover - z-index alto para ficar sobre textos absolutos
+        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 1000 !important;`
 
         return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="${wrapperStyle}">` +
           `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" />` +
@@ -127,9 +128,11 @@ export function ImageEditablePreview({
 
   useEffect(() => {
     if (previewRef.current && processedHtml) {
-      // Sempre atualiza o HTML quando processedHtml muda
-      previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
-      setupImageListeners()
+      // Só atualiza se não estiver editando
+      if (!isEditingRef.current) {
+        previewRef.current.innerHTML = DOMPurify.sanitize(processedHtml)
+        setupImageListeners()
+      }
     }
   }, [processedHtml])
 
@@ -210,14 +213,48 @@ export function ImageEditablePreview({
     }
   }
 
+  const handleInput = () => {
+    isEditingRef.current = true
+    handleContentEdit()
+  }
+
+  const handleBlur = () => {
+    isEditingRef.current = false
+    handleContentEdit()
+  }
+
+  const handleFocus = () => {
+    isEditingRef.current = true
+  }
+
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '400px' }}>
+      <style>{`
+        .editable-image-wrapper:hover ~ table,
+        .editable-image-wrapper:hover ~ *:not(.edit-overlay) {
+          pointer-events: none !important;
+        }
+        .editable-image-wrapper:hover .edit-overlay {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        }
+        td:has(> .editable-image-wrapper) {
+          position: relative !important;
+        }
+        td:has(> .editable-image-wrapper) > table:not(.editable-image-wrapper *) {
+          pointer-events: auto !important;
+        }
+        .editable-image-wrapper:hover {
+          z-index: 10 !important;
+        }
+      `}</style>
       <div
         ref={previewRef}
         contentEditable={true}
         suppressContentEditableWarning={true}
-        onInput={handleContentEdit}
-        onBlur={handleContentEdit}
+        onInput={handleInput}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
         spellCheck={false}
         style={{
           width: '100%',
