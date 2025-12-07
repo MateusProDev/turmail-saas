@@ -100,6 +100,10 @@ export default function Login() {
           // Verificar se há plano pendente
           const hasPendingPlan = await processPendingPlan(user)
           if (hasPendingPlan) {
+            // processPendingPlan já faz o redirecionamento
+            return
+          }
+
           navigate('/dashboard')
         } else {
           console.log('ℹ️ [Redirect Check] Nenhum resultado de redirect (normal se não houver login recente)')
@@ -114,10 +118,6 @@ export default function Login() {
       } finally {
         setLoading(false)
       }
-    }
-
-    checkRedirectResult()
-  }, [navigate])
     }
 
     checkRedirectResult()
