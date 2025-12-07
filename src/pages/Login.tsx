@@ -235,15 +235,13 @@ export default function Login() {
       })
       console.log('🔵 [Google Login] Provider configurado')
 
-      // Em produção, usar redirect; em desenvolvimento, usar popup
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      console.log('🔵 [Google Login] É localhost?', isLocalhost)
+      // TEMPORÁRIO: Usar popup em todos os ambientes até configurar Google Cloud Console
+      console.log('🔵 [Google Login] Usando signInWithPopup (funciona sem configuração extra)')
       
-      if (isLocalhost) {
-        console.log('🔵 [Google Login] Usando signInWithPopup...')
-        // Popup funciona bem em localhost
+      try {
         const result = await signInWithPopup(auth, provider)
         const user = result.user
+        console.log('✅ [Google Login POPUP] Login bem-sucedido:', user.email)
 
         // Criar documento do usuário se não existir
         try {
@@ -288,18 +286,20 @@ export default function Login() {
         }
 
         navigate('/dashboard')
-      } else {
-        // Em produção, usar redirect (mais confiável)
-        console.log('🟢 [Google Login PRODUÇÃO] Usando signInWithRedirect...')
-        console.log('🟢 [Google Login PRODUÇÃO] Auth Object:', auth)
-        console.log('🟢 [Google Login PRODUÇÃO] Provider:', provider)
-        
-        await signInWithRedirect(auth, provider)
-        console.log('🟢 [Google Login PRODUÇÃO] signInWithRedirect executado - redirecionando...')
-        // O resultado será tratado no useEffect através do getRedirectResult
+      } catch (err: any) {
+        console.error('❌ [Google Login POPUP] ERRO:', err)
+        console.error('❌ [Google Login] Código do erro:', err.code)
+        console.error('❌ [Google Login] Mensagem:', err.message)
+        if (err.code === 'auth/popup-closed-by-user') {
+          setError('Login cancelado')
+        } else if (err.code === 'auth/popup-blocked') {
+          setError('Pop-up bloqueado. Permita pop-ups para este site.')
+        } else {
+          setError('Erro ao fazer login com Google: ' + err.message)
+        }
       }
     } catch (err: any) {
-      console.error('❌ [Google Login] ERRO:', err)
+      console.error('❌ [Google Login] ERRO GERAL:', err)
       console.error('❌ [Google Login] Código do erro:', err.code)
       console.error('❌ [Google Login] Mensagem:', err.message)
       console.error('❌ [Google Login] Stack:', err.stack)
