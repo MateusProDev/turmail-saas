@@ -198,20 +198,20 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
       if (debug) console.warn('[sendHelper] failed to infer sender name from tenant/user', e)
     }
   }
+  // SMTP mode: only used if API key starts with xsmtp (deprecated, kept for backwards compatibility)
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
     if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)', { tenantId })
 
     if (!smtpLogin) {
       console.error('[sendHelper] SMTP login not configured', tenantId)
       throw new Error('SMTP login not configured. Please set BREVO_SMTP_LOGIN in environment variables or configure in tenant settings.')
-    } throw new Error('SMTP login not configured for this tenant. Please add SMTP Login in Settings.')
     }
 
     const transporter = nodemailer.createTransport({
       host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
       port: Number(process.env.BREVO_SMTP_PORT || 587),
       secure: false,
-      auth: { user: smtpUser, pass: apiKey },
+      auth: { user: smtpLogin, pass: apiKey },
     })
 
     // If payload contains placeholders ({{name}} etc.) and there are multiple recipients,
@@ -235,12 +235,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
         } catch (e) {
           console.error('[sendHelper][smtp] send error for', r.email, e && (e.response || e.message || e))
           results.push({ to: r.email, status: 500, error: e && (e.response?.data || e.message || String(e)) })
-    const transporter = nodemailer.createTransport({
-      host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
-      port: Number(process.env.BREVO_SMTP_PORT || 587),
-      secure: false,
-      auth: { user: smtpLogin, pass: apiKey },
-    })y {
+        }
+      }
+      return { status: 207, data: { results } }
+    }
+
+    // Batch send without personalization
+    try {
       const mailOptions = {
         from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
         to: recipients.map(r => r.email).join(','),
