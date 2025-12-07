@@ -15,8 +15,6 @@ import { doc, setDoc } from 'firebase/firestore'
 import makeInitialUserData from '../lib/initUser'
 
 export default function Login() {
-  console.log('🟣 [COMPONENTE] Login.tsx montado/renderizado')
-  
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -33,12 +31,6 @@ export default function Login() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   
   useEffect(() => {
-    console.log('🟣 [USEEFFECT] Componente montado - verificando handleGoogleSignIn')
-    console.log('🟣 [USEEFFECT] handleGoogleSignIn existe?', typeof handleGoogleSignIn)
-    console.log('🟣 [USEEFFECT] Loading state:', loading)
-    console.log('🟣 [USEEFFECT] IsSignup:', isSignup)
-    console.log('🟣 [USEEFFECT] ShowResetPassword:', showResetPassword)
-    
     const params = new URLSearchParams(window.location.search)
     if (params.get('signup') === '1') {
       setIsSignup(true)
@@ -54,33 +46,15 @@ export default function Login() {
         console.error('Error parsing pending plan:', e)
       }
     }
-    
-    // Testar se conseguimos acessar o botão
-    setTimeout(() => {
-      const googleButton = document.querySelector('button[style*="border: 3px solid red"]')
-      console.log('🟣 [USEEFFECT] Botão Google encontrado?', !!googleButton)
-      if (googleButton) {
-        console.log('🟣 [USEEFFECT] Botão disabled?', googleButton.hasAttribute('disabled'))
-        console.log('🟣 [USEEFFECT] Botão visível?', window.getComputedStyle(googleButton).display !== 'none')
-      }
-    }, 1000)
   }, [])
 
   // Verificar resultado do redirect do Google OAuth
   useEffect(() => {
     const checkRedirectResult = async () => {
-      console.log('🔄 [Redirect Check] Verificando resultado do redirect...')
-      console.log('🔄 [Redirect Check] URL atual:', window.location.href)
-      console.log('🔄 [Redirect Check] Search params:', window.location.search)
-      
       try {
         const result = await getRedirectResult(auth)
-        console.log('🔄 [Redirect Check] Resultado:', result)
         
         if (result && result.user) {
-          console.log('✅ [Redirect Check] Usuário autenticado:', result.user.email)
-          console.log('✅ [Redirect Check] UID:', result.user.uid)
-          console.log('✅ [Redirect Check] Display Name:', result.user.displayName)
           setLoading(true)
           const user = result.user
 
@@ -127,13 +101,9 @@ export default function Login() {
           }
 
           navigate('/dashboard')
-        } else {
-          console.log('ℹ️ [Redirect Check] Nenhum resultado de redirect (normal se não houver login recente)')
         }
       } catch (err: any) {
-        console.error('❌ [Redirect Check] ERRO:', err)
-        console.error('❌ [Redirect Check] Código:', err.code)
-        console.error('❌ [Redirect Check] Mensagem:', err.message)
+        console.error('Redirect result error:', err)
         if (err.code && err.code !== 'auth/popup-closed-by-user') {
           setError('Erro ao fazer login com Google')
         }
@@ -221,10 +191,6 @@ export default function Login() {
 
   // Login com Google
   const handleGoogleSignIn = async () => {
-    console.log('🔵 [Google Login] Iniciando login com Google...')
-    console.log('🔵 [Google Login] Hostname:', window.location.hostname)
-    console.log('🔵 [Google Login] Auth Domain:', (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN)
-    
     setLoading(true)
     setError('')
     try {
@@ -232,15 +198,10 @@ export default function Login() {
       provider.setCustomParameters({
         prompt: 'select_account'
       })
-      console.log('🔵 [Google Login] Provider configurado')
-
-      // TEMPORÁRIO: Usar popup em todos os ambientes até configurar Google Cloud Console
-      console.log('🔵 [Google Login] Usando signInWithPopup (funciona sem configuração extra)')
       
       try {
         const result = await signInWithPopup(auth, provider)
         const user = result.user
-        console.log('✅ [Google Login POPUP] Login bem-sucedido:', user.email)
 
         // Criar documento do usuário se não existir
         try {
@@ -286,9 +247,7 @@ export default function Login() {
 
         navigate('/dashboard')
       } catch (err: any) {
-        console.error('❌ [Google Login POPUP] ERRO:', err)
-        console.error('❌ [Google Login] Código do erro:', err.code)
-        console.error('❌ [Google Login] Mensagem:', err.message)
+        console.error('Google sign-in error:', err)
         if (err.code === 'auth/popup-closed-by-user') {
           setError('Login cancelado')
         } else if (err.code === 'auth/popup-blocked') {
@@ -298,10 +257,7 @@ export default function Login() {
         }
       }
     } catch (err: any) {
-      console.error('❌ [Google Login] ERRO GERAL:', err)
-      console.error('❌ [Google Login] Código do erro:', err.code)
-      console.error('❌ [Google Login] Mensagem:', err.message)
-      console.error('❌ [Google Login] Stack:', err.stack)
+      console.error('Google login error:', err)
       if (err.code === 'auth/popup-closed-by-user') {
         setError('Login cancelado')
       } else if (err.code === 'auth/popup-blocked') {
@@ -598,14 +554,7 @@ export default function Login() {
               <div>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    console.log('🔴 [BOTÃO] Clique detectado no botão Google')
-                    console.log('🔴 [BOTÃO] Loading state:', loading)
-                    console.log('🔴 [BOTÃO] Chamando handleGoogleSignIn...')
-                    handleGoogleSignIn()
-                  }}
+                  onClick={handleGoogleSignIn}
                   disabled={loading}
                   className="w-full flex items-center justify-center py-3 px-4 border-2 border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
                 >
