@@ -103,10 +103,11 @@ export function ImageEditablePreview({
         }
 
         // Wrapper sem bordas visíveis, apenas container para a imagem
-        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; overflow: hidden !important;`
+        // contenteditable="false" impede que a imagem seja editada como texto
+        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; overflow: hidden !important; user-select: none !important;`
         
         // Imagem visível por padrão, ocupa todo o espaço
-        const imgStyle = `display: block !important; width: 100% !important; height: auto !important; object-fit: cover !important; transition: filter 0.2s !important;`
+        const imgStyle = `display: block !important; width: 100% !important; height: auto !important; object-fit: cover !important; transition: filter 0.2s !important; pointer-events: none !important;`
         
         // Overlay que aparece apenas no hover
         const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
@@ -202,7 +203,9 @@ export function ImageEditablePreview({
 
   const handleContentEdit = () => {
     if (previewRef.current && onHtmlChange) {
-      onHtmlChange(previewRef.current.innerHTML)
+      // Captura o HTML editado, preservando a formatação
+      const editedHtml = previewRef.current.innerHTML
+      onHtmlChange(editedHtml)
     }
   }
 
@@ -211,7 +214,10 @@ export function ImageEditablePreview({
       <div
         ref={previewRef}
         contentEditable={true}
+        suppressContentEditableWarning={true}
         onInput={handleContentEdit}
+        onBlur={handleContentEdit}
+        spellCheck={false}
         style={{
           width: '100%',
           minHeight: '400px',
@@ -219,7 +225,8 @@ export function ImageEditablePreview({
           borderRadius: '8px',
           padding: '20px',
           backgroundColor: '#fff',
-          outline: 'none'
+          outline: 'none',
+          cursor: 'text'
         }}
       />
 
