@@ -493,248 +493,6 @@ export default function Campaigns(){
                   </div>
                 </div>
               </div>
-
-              {/* Contacts Selection Modal */}
-              {showContactsModal && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
-                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowContactsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6 my-auto">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
-                    <div className="max-h-64 overflow-auto space-y-2">
-                      {contacts.length === 0 ? (
-                        <div className="text-sm text-slate-500">Nenhum contato disponível</div>
-                      ) : (
-                        contacts.map(c => (
-                          <label key={c.id} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
-                            <div>
-                              <div className="font-medium text-slate-900">{c.name || c.email}</div>
-                              <div className="text-xs text-slate-500">{c.email}</div>
-                            </div>
-                            <input type="checkbox" checked={!!selectedContactIds[c.id]} onChange={(e) => setSelectedContactIds(prev => ({ ...prev, [c.id]: e.target.checked }))} />
-                          </label>
-                        ))
-                      )}
-                    </div>
-                    <div className="mt-4 flex justify-end space-x-2">
-                      <button onClick={() => setShowContactsModal(false)} className="px-4 py-2 border rounded">Cancelar</button>
-                      <button onClick={() => {
-                        const selected = contacts.filter(c => selectedContactIds[c.id])
-                        const emails = selected.map(s => s.email).filter(Boolean)
-                        const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
-                        const merged = Array.from(new Set([...existing, ...emails]))
-                        setRecipientsText(merged.join('\n'))
-                          // keep selectedContactIds so modal reflects selection if reopened
-                        setShowContactsModal(false)
-                      }} className="px-4 py-2 bg-indigo-600 text-white rounded">Adicionar Selecionados</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Recipients 'Ver todos' modal */}
-              {showRecipientsModal && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
-                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowRecipientsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6 my-auto">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Todos os Destinatários</h3>
-                    <div className="max-h-64 overflow-auto space-y-2">
-                      {recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).length === 0 ? (
-                        <div className="text-sm text-slate-500">Nenhum destinatário</div>
-                      ) : (
-                        recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).map((r, i) => (
-                          <div key={i} className="p-2 rounded border border-slate-100">{r}</div>
-                        ))
-                      )}
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                      <button onClick={() => setShowRecipientsModal(false)} className="px-4 py-2 border rounded">Fechar</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {/* Variants Modal */}
-              {showVariantsModal && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
-                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowVariantsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[90vh] my-auto">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Variações Geradas</h3>
-                      <div className="flex items-center space-x-2">
-                        <button onClick={() => {
-                          try {
-                            const data = JSON.stringify(variants, null, 2)
-                            const blob = new Blob([data], { type: 'application/json' })
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url
-                            a.download = `${companyName || 'variantes'}.json`
-                            a.click()
-                            URL.revokeObjectURL(url)
-                          } catch (e:any) { console.warn(e); setResult('Erro ao exportar JSON') }
-                        }} className="px-3 py-2 border rounded">Exportar JSON</button>
-                        <button onClick={() => setShowVariantsModal(false)} className="px-3 py-2 bg-slate-100 rounded">Fechar</button>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      {variants.length === 0 ? (
-                        <div className="text-sm text-slate-500">Nenhuma variação gerada.</div>
-                      ) : (
-                        variants.map((variant, idx) => (
-                          <div key={idx} className="p-4 border rounded-lg bg-white">
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex-1">
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="font-semibold text-lg">#{idx + 1} - {variant.subject}</div>
-          <div className={`px-2 py-1 rounded text-xs font-medium ${
-            (variant.score || 0) >= 80 ? 'bg-green-100 text-green-800' :
-            (variant.score || 0) >= 60 ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
-          }`}>
-            Score: {variant.score}/100
-          </div>
-        </div>
-        <div className="text-sm text-slate-600 mb-1">{variant.preheader}</div>
-        <div className="flex space-x-2 text-xs text-slate-500">
-          <span>Tom: {variant.tone}</span>
-          <span>•</span>
-          <span>Leitura: {variant.metadata?.readingLevel}</span>
-          <span>•</span>
-          <span>Palavras: {variant.metadata?.wordCount}</span>
-        </div>
-      </div>
-      <div className="flex space-x-2 ml-4">
-        <button 
-          onClick={() => {
-            setSubject(variant.subject)
-            setPreheader(variant.preheader)
-            setHtmlContent(variant.html)
-            setResult(`✅ Variação #${idx + 1} inserida`)
-            setShowVariantsModal(false)
-          }}
-          className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-        >
-          Usar
-        </button>
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(variant.html)
-              setResult('📋 HTML copiado')
-            } catch {
-              setResult('❌ Erro ao copiar')
-            }
-          }}
-          className="px-3 py-2 border border-slate-300 rounded text-sm hover:bg-slate-50"
-        >
-          Copiar
-        </button>
-      </div>
-    </div>
-    <div className="mt-3 prose max-w-none text-sm border-t pt-3" 
-         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(variant.html, variant.subject, variant.preheader)) }} />
-  </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Template Selector Modal */}
-              {showTemplateSelector && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto" onClick={() => setShowTemplateSelector(false)}>
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden my-auto" onClick={(e) => e.stopPropagation()}>
-                    
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold">📧 Escolha um Template</h2>
-                          <p className="text-purple-100 text-sm mt-1">Selecione um modelo profissional para sua campanha</p>
-                        </div>
-                        <button
-                          onClick={() => setShowTemplateSelector(false)}
-                          className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-                        >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Templates Grid */}
-                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {EMAIL_TEMPLATES.map((template) => (
-                          <div
-                            key={template.id}
-                            className={`bg-white rounded-xl border-2 transition-all cursor-pointer overflow-hidden group ${
-                              activeTemplate === template.id 
-                                ? 'border-purple-500 ring-2 ring-purple-200' 
-                                : 'border-slate-200 hover:border-purple-400'
-                            }`}
-                            onClick={() => {
-                              // Apply template and activate real-time sync
-                              const isSameTemplate = activeTemplate === template.id
-                              setActiveTemplate(template.id)
-                              setShowTemplateSelector(false)
-                              setResult(`✅ Template "${template.name}" aplicado! Os campos do formulário agora atualizam o template automaticamente.`)
-                              
-                              // Se for o mesmo template, forçar atualização do preview
-                              if (isSameTemplate) {
-                                requestAnimationFrame(() => {
-                                  const editor = document.getElementById('visual-editor')
-                                  if (editor && htmlContent) {
-                                    editor.innerHTML = DOMPurify.sanitize(htmlContent)
-                                    console.log('🔄 Preview forçado para template já ativo:', template.id)
-                                  }
-                                })
-                              }
-                            }}
-                          >
-                            {/* Thumbnail */}
-                            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 h-32 flex items-center justify-center group-hover:scale-105 transition-transform">
-                              <div className="text-5xl">{template.thumbnail}</div>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-4">
-                              <h3 className="font-bold text-slate-900 mb-1">{template.name}</h3>
-                              <p className="text-xs text-slate-600 line-clamp-2 mb-3">{template.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
-                                  template.category === 'tourism' ? 'bg-blue-100 text-blue-700' :
-                                  template.category === 'promotional' ? 'bg-red-100 text-red-700' :
-                                  template.category === 'newsletter' ? 'bg-purple-100 text-purple-700' :
-                                  template.category === 'event' ? 'bg-green-100 text-green-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                  {template.category === 'tourism' ? 'Turismo' :
-                                   template.category === 'promotional' ? 'Promocional' :
-                                   template.category === 'newsletter' ? 'Newsletter' :
-                                   template.category === 'event' ? 'Evento' : 'Fidelização'}
-                                </span>
-                                <button className="text-purple-600 text-sm font-semibold hover:text-purple-700">
-                                  Usar →
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                        <p className="text-sm text-blue-800">
-                          <strong>💡 Dica:</strong> Após selecionar um template, você pode personalizá-lo completamente editando o conteúdo HTML abaixo.
-                        </p>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="space-y-6">
@@ -1879,6 +1637,251 @@ export default function Campaigns(){
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAIS - Renderizados fora do formulário para cobrir toda a página */}
+        
+        {/* Contacts Selection Modal */}
+        {showContactsModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowContactsModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6 my-auto">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
+              <div className="max-h-64 overflow-auto space-y-2">
+                {contacts.length === 0 ? (
+                  <div className="text-sm text-slate-500">Nenhum contato disponível</div>
+                ) : (
+                  contacts.map(c => (
+                    <label key={c.id} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
+                      <div>
+                        <div className="font-medium text-slate-900">{c.name || c.email}</div>
+                        <div className="text-xs text-slate-500">{c.email}</div>
+                      </div>
+                      <input type="checkbox" checked={!!selectedContactIds[c.id]} onChange={(e) => setSelectedContactIds(prev => ({ ...prev, [c.id]: e.target.checked }))} />
+                    </label>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 flex justify-end space-x-2">
+                <button onClick={() => setShowContactsModal(false)} className="px-4 py-2 border rounded">Cancelar</button>
+                <button onClick={() => {
+                  const selected = contacts.filter(c => selectedContactIds[c.id])
+                  const emails = selected.map(s => s.email).filter(Boolean)
+                  const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
+                  const merged = Array.from(new Set([...existing, ...emails]))
+                  setRecipientsText(merged.join('\n'))
+                    // keep selectedContactIds so modal reflects selection if reopened
+                  setShowContactsModal(false)
+                }} className="px-4 py-2 bg-indigo-600 text-white rounded">Adicionar Selecionados</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recipients 'Ver todos' modal */}
+        {showRecipientsModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowRecipientsModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6 my-auto">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">Todos os Destinatários</h3>
+              <div className="max-h-64 overflow-auto space-y-2">
+                {recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).length === 0 ? (
+                  <div className="text-sm text-slate-500">Nenhum destinatário</div>
+                ) : (
+                  recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).map((r, i) => (
+                    <div key={i} className="p-2 rounded border border-slate-100">{r}</div>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button onClick={() => setShowRecipientsModal(false)} className="px-4 py-2 border rounded">Fechar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Variants Modal */}
+        {showVariantsModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowVariantsModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[90vh] my-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Variações Geradas</h3>
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => {
+                    try {
+                      const data = JSON.stringify(variants, null, 2)
+                      const blob = new Blob([data], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = `${companyName || 'variantes'}.json`
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    } catch (e:any) { console.warn(e); setResult('Erro ao exportar JSON') }
+                  }} className="px-3 py-2 border rounded">Exportar JSON</button>
+                  <button onClick={() => setShowVariantsModal(false)} className="px-3 py-2 bg-slate-100 rounded">Fechar</button>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {variants.length === 0 ? (
+                  <div className="text-sm text-slate-500">Nenhuma variação gerada.</div>
+                ) : (
+                  variants.map((variant, idx) => (
+                    <div key={idx} className="p-4 border rounded-lg bg-white">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="font-semibold text-lg">#{idx + 1} - {variant.subject}</div>
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              (variant.score || 0) >= 80 ? 'bg-green-100 text-green-800' :
+                              (variant.score || 0) >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              Score: {variant.score}/100
+                            </div>
+                          </div>
+                          <div className="text-sm text-slate-600 mb-1">{variant.preheader}</div>
+                          <div className="flex space-x-2 text-xs text-slate-500">
+                            <span>Tom: {variant.tone}</span>
+                            <span>•</span>
+                            <span>Leitura: {variant.metadata?.readingLevel}</span>
+                            <span>•</span>
+                            <span>Palavras: {variant.metadata?.wordCount}</span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          <button 
+                            onClick={() => {
+                              setSubject(variant.subject)
+                              setPreheader(variant.preheader)
+                              setHtmlContent(variant.html)
+                              setResult(`✅ Variação #${idx + 1} inserida`)
+                              setShowVariantsModal(false)
+                            }}
+                            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                          >
+                            Usar
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(variant.html)
+                                setResult('📋 HTML copiado')
+                              } catch {
+                                setResult('❌ Erro ao copiar')
+                              }
+                            }}
+                            className="px-3 py-2 border border-slate-300 rounded text-sm hover:bg-slate-50"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-3 prose max-w-none text-sm border-t pt-3" 
+                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderTemplate(variant.html, variant.subject, variant.preheader)) }} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Template Selector Modal */}
+        {showTemplateSelector && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto" onClick={() => setShowTemplateSelector(false)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden my-auto" onClick={(e) => e.stopPropagation()}>
+              
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">📧 Escolha um Template</h2>
+                    <p className="text-purple-100 text-sm mt-1">Selecione um modelo profissional para sua campanha</p>
+                  </div>
+                  <button
+                    onClick={() => setShowTemplateSelector(false)}
+                    className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Templates Grid */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {EMAIL_TEMPLATES.map((template) => (
+                    <div
+                      key={template.id}
+                      className={`bg-white rounded-xl border-2 transition-all cursor-pointer overflow-hidden group ${
+                        activeTemplate === template.id 
+                          ? 'border-purple-500 ring-2 ring-purple-200' 
+                          : 'border-slate-200 hover:border-purple-400'
+                      }`}
+                      onClick={() => {
+                        // Apply template and activate real-time sync
+                        const isSameTemplate = activeTemplate === template.id
+                        setActiveTemplate(template.id)
+                        setShowTemplateSelector(false)
+                        setResult(`✅ Template "${template.name}" aplicado! Os campos do formulário agora atualizam o template automaticamente.`)
+                        
+                        // Se for o mesmo template, forçar atualização do preview
+                        if (isSameTemplate) {
+                          requestAnimationFrame(() => {
+                            const editor = document.getElementById('visual-editor')
+                            if (editor && htmlContent) {
+                              editor.innerHTML = DOMPurify.sanitize(htmlContent)
+                              console.log('🔄 Preview forçado para template já ativo:', template.id)
+                            }
+                          })
+                        }
+                      }}
+                    >
+                      {/* Thumbnail */}
+                      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 h-32 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="text-5xl">{template.thumbnail}</div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-4">
+                        <h3 className="font-bold text-slate-900 mb-1">{template.name}</h3>
+                        <p className="text-xs text-slate-600 line-clamp-2 mb-3">{template.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                            template.category === 'tourism' ? 'bg-blue-100 text-blue-700' :
+                            template.category === 'promotional' ? 'bg-red-100 text-red-700' :
+                            template.category === 'newsletter' ? 'bg-purple-100 text-purple-700' :
+                            template.category === 'event' ? 'bg-green-100 text-green-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {template.category === 'tourism' ? 'Turismo' :
+                             template.category === 'promotional' ? 'Promocional' :
+                             template.category === 'newsletter' ? 'Newsletter' :
+                             template.category === 'event' ? 'Evento' : 'Fidelização'}
+                          </span>
+                          <button className="text-purple-600 text-sm font-semibold hover:text-purple-700">
+                            Usar →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>💡 Dica:</strong> Após selecionar um template, você pode personalizá-lo completamente editando o conteúdo HTML abaixo.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         )}
