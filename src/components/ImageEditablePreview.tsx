@@ -254,9 +254,7 @@ export function ImageEditablePreview({
           borderRadius: '8px',
           padding: '20px',
           backgroundColor: '#fff',
-          outline: 'none',
-          overflowY: 'auto',
-          maxHeight: '800px'
+          outline: 'none'
         }}
       />
 

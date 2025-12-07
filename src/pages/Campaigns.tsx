@@ -642,7 +642,7 @@ export default function Campaigns(){
               
               {/* Template Selector Modal */}
               {showTemplateSelector && (
-                <div className="fixed inset-0 z-60 flex items-start justify-center p-4 pt-20 overflow-y-auto" onClick={() => setShowTemplateSelector(false)}>
+                <div className="fixed inset-0 z-60 flex items-center justify-center p-4" onClick={() => setShowTemplateSelector(false)}>
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                   <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     
@@ -1473,10 +1473,10 @@ export default function Campaigns(){
                       </div>
                     </div>
                     {/* Preview Real - Editor Visual com Overlays Clicáveis */}
-                    <div className="w-full bg-slate-100 overflow-auto flex justify-center" style={{height: 'calc(100vh - 300px)', minHeight: '500px', maxHeight: '800px'}}>
-                      <div className={`bg-white transition-all duration-300 ${
-                        mobilePreview ? 'w-[375px] shadow-2xl' : 'w-full'
-                      }`} style={{height: 'fit-content'}}>
+                    <div className="w-full bg-slate-100 overflow-y-auto flex justify-center p-4" style={{height: 'calc(100vh - 250px)', minHeight: '600px'}}>
+                      <div className={`bg-white transition-all duration-300 h-fit ${
+                        mobilePreview ? 'w-full max-w-[375px] shadow-2xl mx-auto' : 'w-full max-w-[800px]'
+                      }`}>
                       {showPreview && selectedTenant && (
                         <ImageEditablePreview
                           key={`${activeTemplate}-${htmlContent.length}`}
