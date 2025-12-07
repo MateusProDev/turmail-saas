@@ -133,23 +133,27 @@ export function ImageEditablePreview({
         const label = typeLabels[imageType] || 'Imagem'
         const color = typeColors[imageType] || '#64748b'
 
-        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%) !important; border: 2px dashed ${color}40 !important; border-radius: 8px !important; min-height: ${height === 'auto' ? '200px' : height + 'px'} !important; height: ${height === 'auto' ? 'auto' : height + 'px'} !important; overflow: hidden !important;`
-        const imgStyle = `display: block !important; width: 100% !important; height: ${height === 'auto' ? 'auto' : height + 'px'} !important; object-fit: cover !important; transition: opacity 0.2s !important;`
-        const placeholderStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%) !important; color: ${color} !important; font-weight: 600 !important; font-size: 14px !important; text-align: center !important; padding: 20px !important;`
-        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important;`
+        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%) !important; border: 2px dashed ${color}40 !important; border-radius: 8px !important; min-height: ${height === 'auto' ? '200px' : height + 'px'} !important; overflow: hidden !important;`
+        
+        const placeholderStyle = `position: relative !important; width: 100% !important; height: ${height === 'auto' ? '200px' : height + 'px'} !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%) !important; color: ${color} !important; font-weight: 600 !important; font-size: 14px !important; text-align: center !important; padding: 20px !important;`
+        
+        const imgStyle = `position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; transition: opacity 0.3s !important; z-index: 1 !important;`
+        
+        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.6) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
         
         const iconEmoji = label.split(' ')[0]
         const dimensions = `${width}px × ${height === 'auto' ? 'Auto' : height + 'px'}`
 
         return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="${wrapperStyle}">` +
-          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onerror="this.style.opacity='0';" />` +
           `<div class="image-placeholder" style="${placeholderStyle}">` +
-            `<div style="font-size: 48px !important; margin-bottom: 12px !important;">${iconEmoji}</div>` +
-            `<div style="font-size: 16px !important; font-weight: 600 !important;">${label}</div>` +
-            `<div style="font-size: 13px !important; margin-top: 8px !important; opacity: 0.8 !important; font-weight: 500 !important;">${dimensions}</div>` +
+            `<div style="font-size: 48px !important; margin-bottom: 12px !important; opacity: 0.6 !important;">${iconEmoji}</div>` +
+            `<div style="font-size: 14px !important; font-weight: 600 !important; opacity: 0.8 !important;">${label}</div>` +
+            `<div style="font-size: 11px !important; margin-top: 6px !important; opacity: 0.6 !important; font-weight: 500 !important;">${dimensions}</div>` +
+            `<div style="font-size: 12px !important; margin-top: 12px !important; opacity: 0.7 !important; padding: 6px 12px !important; background: ${color}20 !important; border-radius: 4px !important;">Clique para adicionar</div>` +
           `</div>` +
+          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onload="this.style.opacity='1';" onerror="this.style.opacity='0';" />` +
           `<div class="edit-overlay" style="${overlayStyle}">` +
-            `<span style="background: white !important; color: #4f1337 !important; padding: 8px 16px !important; border-radius: 6px !important; font-weight: 600 !important; font-size: 14px !important;">✏️ Editar Imagem</span>` +
+            `<span style="background: white !important; color: #1e293b !important; padding: 10px 20px !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 14px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;">📸 Alterar Imagem</span>` +
           `</div>` +
         `</div>`
       }
@@ -266,12 +270,13 @@ export function ImageEditablePreview({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px'
+            zIndex: 10000,
+            padding: '20px',
+            overflow: 'auto'
           }}
           onClick={() => setSelectedImage(null)}
         >
@@ -283,7 +288,9 @@ export function ImageEditablePreview({
               maxWidth: '900px',
               width: '100%',
               maxHeight: '90vh',
-              overflow: 'auto'
+              overflow: 'auto',
+              position: 'relative',
+              margin: 'auto'
             }}
             onClick={(e) => e.stopPropagation()}
           >

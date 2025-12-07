@@ -113,8 +113,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   padding: 20px;
+  overflow: auto;
 }
 
 .gallery-content {
@@ -122,11 +123,12 @@
   border-radius: 12px;
   width: 100%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  margin: auto;
 }
 
 .gallery-header {

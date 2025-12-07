@@ -496,9 +496,9 @@ export default function Campaigns(){
 
               {/* Contacts Selection Modal */}
               {showContactsModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowContactsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowContactsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6 my-auto">
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
                     <div className="max-h-64 overflow-auto space-y-2">
                       {contacts.length === 0 ? (
@@ -533,9 +533,9 @@ export default function Campaigns(){
 
               {/* Recipients 'Ver todos' modal */}
               {showRecipientsModal && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowRecipientsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowRecipientsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6 my-auto">
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">Todos os Destinatários</h3>
                     <div className="max-h-64 overflow-auto space-y-2">
                       {recipientsText.split(/[\n,;]+/).map(r => r.trim()).filter(Boolean).length === 0 ? (
@@ -554,9 +554,9 @@ export default function Campaigns(){
               )}
               {/* Variants Modal */}
               {showVariantsModal && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-black/40" onClick={() => setShowVariantsModal(false)} />
-                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[80vh]">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
+                  <div className="absolute inset-0 bg-black/50" onClick={() => setShowVariantsModal(false)} />
+                  <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[90vh] my-auto">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold">Variações Geradas</h3>
                       <div className="flex items-center space-x-2">
@@ -642,9 +642,9 @@ export default function Campaigns(){
               
               {/* Template Selector Modal */}
               {showTemplateSelector && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4" onClick={() => setShowTemplateSelector(false)}>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto" onClick={() => setShowTemplateSelector(false)}>
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden my-auto" onClick={(e) => e.stopPropagation()}>
                     
                     {/* Header */}
                     <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
