@@ -84,14 +84,14 @@ const destinationPackageTemplate: EmailTemplate = {
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); border: 1px solid #e0f2fe;">
           <tr>
             <td align="center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 25px;">
-              <img src="${logoImage}" alt="${companyName}" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto; opacity: 0.9;">
+              <img src="${logoImage}" alt="${companyName}" width="200" height="80" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto; opacity: 0.9;">
             </td>
           </tr>
           
           <!-- HERO FULL WIDTH -->
           <tr>
             <td style="padding: 0; position: relative;">
-              <img src="${heroImage}" alt="${destination}" style="width: 100%; height: auto; display: block;">
+              <img src="${heroImage}" alt="${destination}" width="600" height="400" style="width: 100%; height: auto; display: block;">
               <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
                   <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(15,23,42,0.5));">
@@ -138,10 +138,10 @@ const destinationPackageTemplate: EmailTemplate = {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td width="48%" style="padding-right: 10px; vertical-align: top;">
-                    <img src="${teamImage1}" alt="Galeria 1" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
+                    <img src="${teamImage1}" alt="Galeria 1" width="280" height="400" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
                   </td>
                   <td width="48%" style="padding-left: 10px; vertical-align: top;">
-                    <img src="${teamImage2}" alt="Galeria 2" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
+                    <img src="${teamImage2}" alt="Galeria 2" width="280" height="400" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
                   </td>
                 </tr>
                 <tr>
@@ -149,10 +149,10 @@ const destinationPackageTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td width="48%" style="padding-right: 6px;">
-                          <img src="${teamImage3}" alt="Galeria 3" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage3}" alt="Galeria 3" width="280" height="200" style="width: 100%; height: auto; border-radius: 12px; display: block;">
                         </td>
                         <td width="48%" style="padding-left: 6px;">
-                          <img src="${teamImage4}" alt="Galeria 4" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                          <img src="${teamImage4}" alt="Galeria 4" width="280" height="200" style="width: 100%; height: auto; border-radius: 12px; display: block;">
                         </td>
                       </tr>
                     </table>
@@ -237,14 +237,14 @@ const newsletterTemplate: EmailTemplate = {
           <!-- LOGO MINIMALISTA -->
           <tr>
             <td align="center" style="padding: 40px 40px 20px 40px; border-bottom: 1px solid #f1f5f9;">
-              <img src="${logoImage}" alt="${companyName}" style="height: 50px; width: auto; max-width: 150px; display: block; margin: 0 auto;">
+              <img src="${logoImage}" alt="${companyName}" width="150" height="50" style="height: 50px; width: auto; max-width: 150px; display: block; margin: 0 auto;">
             </td>
           </tr>
           
           <!-- HERO WIDE BAIXO -->
           <tr>
             <td style="padding: 0;">
-              <img src="${heroImage}" alt="${mainTitle}" style="width: 100%; height: auto; display: block;">
+              <img src="${heroImage}" alt="${mainTitle}" width="600" height="300" style="width: 100%; height: auto; display: block;">
             </td>
           </tr>
 
@@ -263,11 +263,11 @@ const newsletterTemplate: EmailTemplate = {
                 <tr>
                   <!-- Imagem 1 GRANDE -->
                   <td width="68%" style="vertical-align: top; padding-right: 10px; padding-bottom: 10px;">
-                    <img src="${teamImage1}" alt="Destaque 1" style="width: 100%; height: auto; display: block; border-radius: 2px;">
+                    <img src="${teamImage1}" alt="Destaque 1" width="380" height="280" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                   </td>
                   <!-- Imagem 2 ESTREITA ALTA -->
                   <td width="30%" style="vertical-align: top; padding-left: 0;">
-                    <img src="${teamImage2}" alt="Destaque 2" style="width: 100%; height: auto; display: block; border-radius: 2px;">
+                    <img src="${teamImage2}" alt="Destaque 2" width="180" height="280" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                   </td>
                 </tr>
                 <tr>
@@ -276,10 +276,10 @@ const newsletterTemplate: EmailTemplate = {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td width="49%" style="padding-right: 5px;">
-                          <img src="${teamImage3}" alt="Destaque 3" style="width: 100%; height: auto; display: block; border-radius: 2px;">
+                          <img src="${teamImage3}" alt="Destaque 3" width="280" height="180" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                         </td>
                         <td width="49%" style="padding-left: 5px;">
-                          <img src="${teamImage4}" alt="Destaque 4" style="width: 100%; height: auto; display: block; border-radius: 2px;">
+                          <img src="${teamImage4}" alt="Destaque 4" width="280" height="180" style="width: 100%; height: auto; display: block; border-radius: 2px;">
                         </td>
                       </tr>
                     </table>
@@ -381,7 +381,7 @@ const promotionalTemplate: EmailTemplate = {
                     <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">✨ ${priceInfo}</p>
                   </td>
                   <td width="50%" align="left" style="padding-left: 15px; vertical-align: middle;">
-                    <img src="${logoImage}" alt="${companyName}" style="height: 45px; width: auto; max-width: 150px; display: block;">
+                    <img src="${logoImage}" alt="${companyName}" width="180" height="60" style="height: 45px; width: auto; max-width: 150px; display: block;">
                   </td>
                 </tr>
               </table>
@@ -391,7 +391,7 @@ const promotionalTemplate: EmailTemplate = {
           <!-- HERO COM OVERLAY -->
           <tr>
             <td style="padding: 0; position: relative;">
-              <img src="${heroImage}" alt="${mainTitle}" style="width: 100%; height: auto; display: block;">
+              <img src="${heroImage}" alt="${mainTitle}" width="600" height="300" style="width: 100%; height: auto; display: block;">
               <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
                 <tr>
                   <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85));">
@@ -424,12 +424,12 @@ const promotionalTemplate: EmailTemplate = {
                       <tr>
                         <td style="position: relative;">
                           <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
-                            <img src="${teamImage1}" alt="Destino 1" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${teamImage1}" alt="Destino 1" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
                         <td style="position: relative;">
                           <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ffd700; box-shadow: 0 8px 25px rgba(255,215,0,0.4); display: inline-block; margin: 0 -15px;">
-                            <img src="${teamImage2}" alt="Destino 2" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${teamImage2}" alt="Destino 2" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
                       </tr>
@@ -442,12 +442,12 @@ const promotionalTemplate: EmailTemplate = {
                       <tr>
                         <td style="position: relative;">
                           <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #00d9ff; box-shadow: 0 8px 25px rgba(0,217,255,0.4); display: inline-block; margin: 0 -15px;">
-                            <img src="${teamImage3}" alt="Destino 3" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${teamImage3}" alt="Destino 3" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
                         <td style="position: relative;">
                           <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
-                            <img src="${teamImage4}" alt="Destino 4" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="${teamImage4}" alt="Destino 4" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
                       </tr>
@@ -551,14 +551,14 @@ const returningCustomerTemplate: EmailTemplate = {
           </tr>
           <tr>
             <td align="center" style="padding: 40px 30px;">
-              <img src="${logoImage}" alt="${companyName}" style="height: 70px; width: auto; margin-bottom: 25px;">
+              <img src="${logoImage}" alt="${companyName}" width="160" height="70" style="height: 70px; width: auto; margin-bottom: 25px;">
               <h1 style="margin: 0; color: #2c1810; font-size: 36px;">${mainTitle}</h1>
             </td>
           </tr>
           <tr>
             <td style="padding: 0 30px 30px;">
               <div style="border: 5px solid #d4af37; padding: 8px;">
-                <img src="${heroImage}" alt="${destination}" style="width: 100%; height: auto;">
+                <img src="${heroImage}" alt="${destination}" width="540" height="360" style="width: 100%; height: auto;">
               </div>
             </td>
           </tr>
@@ -573,13 +573,13 @@ const returningCustomerTemplate: EmailTemplate = {
                 <tr>
                   <td width="48%" align="center" style="padding: 10px;">
                     <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                      <img src="${teamImage1}" alt="1" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <img src="${teamImage1}" alt="1" width="240" height="320" style="width: 100%; height: auto; margin-bottom: 10px;">
                       <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Luxo & Conforto</p>
                     </div>
                   </td>
                   <td width="48%" align="center" style="padding: 10px;">
                     <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                      <img src="${teamImage2}" alt="2" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <img src="${teamImage2}" alt="2" width="240" height="320" style="width: 100%; height: auto; margin-bottom: 10px;">
                       <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Gastronomia</p>
                     </div>
                   </td>
@@ -587,13 +587,13 @@ const returningCustomerTemplate: EmailTemplate = {
                 <tr>
                   <td width="48%" align="center" style="padding: 10px;">
                     <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                      <img src="${teamImage3}" alt="3" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <img src="${teamImage3}" alt="3" width="240" height="320" style="width: 100%; height: auto; margin-bottom: 10px;">
                       <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Experiências</p>
                     </div>
                   </td>
                   <td width="48%" align="center" style="padding: 10px;">
                     <div style="background: #fff; padding: 12px 12px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                      <img src="${teamImage4}" alt="4" style="width: 100%; height: auto; margin-bottom: 10px;">
+                      <img src="${teamImage4}" alt="4" width="240" height="320" style="width: 100%; height: auto; margin-bottom: 10px;">
                       <p style="margin: 0; color: #333; font-size: 13px; font-family: 'Courier New', monospace;">Aventuras</p>
                     </div>
                   </td>
