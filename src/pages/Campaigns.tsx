@@ -13,6 +13,7 @@ import { ImageEditablePreview } from '../components/ImageEditablePreview'
 import { collection, query, where, onSnapshot, orderBy, limit, getDocs, addDoc, doc, serverTimestamp } from 'firebase/firestore'
 import { generateCopy, generateVariants } from '../lib/aiHelper'
 import formatRawToHtml, { advancedFormatRawToHtml } from '../lib/formatHelper'
+import { getClientImageGallery } from '../lib/imageGallery'
 
 export default function Campaigns(){
   const [user, loadingAuth] = useAuthState(auth)
@@ -299,6 +300,39 @@ export default function Campaigns(){
     } catch (e) {
       console.error('tenant settings listener error', e)
     }
+  }, [selectedTenant])
+
+  // Carregar imagens da galeria automaticamente quando o tenant for selecionado
+  useEffect(() => {
+    if (!selectedTenant) return
+    
+    const loadGalleryImages = async () => {
+      try {
+        const images = await getClientImageGallery(selectedTenant)
+        if (images.length === 0) return
+        
+        // Carregar automaticamente as imagens mais recentes de cada categoria
+        const heroImg = images.find(img => img.category === 'hero')
+        const logoImg = images.find(img => img.category === 'general' || img.url.includes('logo'))
+        const locationImg = images.find(img => img.category === 'location')
+        const teamImages = images.filter(img => img.category === 'team')
+        
+        // Só define se o estado ainda estiver vazio (não sobrescrever seleção do usuário)
+        if (heroImg && !heroImage) setHeroImage(heroImg.url)
+        if (logoImg && !logoImage) setLogoImage(logoImg.url)
+        if (locationImg && !locationImage) setLocationImage(locationImg.url)
+        if (teamImages.length > 0 && !teamImage1) setTeamImage1(teamImages[0]?.url || '')
+        if (teamImages.length > 1 && !teamImage2) setTeamImage2(teamImages[1]?.url || '')
+        if (teamImages.length > 2 && !teamImage3) setTeamImage3(teamImages[2]?.url || '')
+        if (teamImages.length > 3 && !teamImage4) setTeamImage4(teamImages[3]?.url || '')
+        
+        console.log('✅ Imagens da galeria carregadas automaticamente')
+      } catch (error) {
+        console.error('❌ Erro ao carregar imagens da galeria:', error)
+      }
+    }
+    
+    loadGalleryImages()
   }, [selectedTenant])
 
 
