@@ -135,13 +135,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .gallery-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #1e293b;
 }
@@ -177,7 +177,7 @@
 
 /* Upload Section */
 .upload-section {
-  padding: 20px;
+  padding: 16px;
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
 }
@@ -187,7 +187,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px;
+  padding: 12px;
   background: white;
   border: 2px dashed #cbd5e1;
   border-radius: 8px;
@@ -195,7 +195,8 @@
   transition: all 0.3s ease;
   font-weight: 600;
   color: #4f1337;
-  min-height: 60px;
+  min-height: 50px;
+  font-size: 14px;
 }
 
 .upload-label:hover {
@@ -213,10 +214,11 @@
 .gallery-grid {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  max-height: 400px;
 }
 
 .loading,

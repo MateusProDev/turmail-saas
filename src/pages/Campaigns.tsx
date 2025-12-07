@@ -1224,6 +1224,7 @@ export default function Campaigns(){
                       </button>
                     </div>
                   </div>
+                  </div>
                   
                   {/* Preview Real - Editor Visual */}
                   <div className="bg-white rounded-xl shadow-lg border-2 border-slate-300 overflow-hidden mb-4">
@@ -1269,6 +1270,42 @@ export default function Campaigns(){
                       <div className={`bg-white transition-all duration-300 h-fit ${
                         mobilePreview ? 'w-full max-w-[375px] shadow-2xl mx-auto' : 'w-full max-w-[800px]'
                       }`}>
+                      <style>{`
+                        /* CSS para ajustar emails no preview mobile */
+                        ${mobilePreview ? `
+                          .mobile-preview table {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                          }
+                          .mobile-preview table table {
+                            width: 100% !important;
+                          }
+                          .mobile-preview img {
+                            max-width: 100% !important;
+                            height: auto !important;
+                          }
+                          .mobile-preview td {
+                            display: block !important;
+                            width: 100% !important;
+                          }
+                          .mobile-preview td[width] {
+                            width: 100% !important;
+                          }
+                          .mobile-preview h1 {
+                            font-size: 28px !important;
+                          }
+                          .mobile-preview h2 {
+                            font-size: 22px !important;
+                          }
+                          .mobile-preview h3 {
+                            font-size: 18px !important;
+                          }
+                          .mobile-preview p {
+                            font-size: 14px !important;
+                          }
+                        ` : ''}
+                      `}</style>
+                      <div className={mobilePreview ? 'mobile-preview' : ''}>
                       {showPreview && selectedTenant && (
                         <ImageEditablePreview
                           key={`${activeTemplate}-${heroImage}-${logoImage}-${teamImage1}-${teamImage2}-${teamImage3}-${teamImage4}-${locationImage}`}
@@ -1330,6 +1367,7 @@ export default function Campaigns(){
                           ]}
                         />
                       )}
+                      </div>
                       {!showPreview && (
                         <div 
                           id="visual-editor"
@@ -1354,7 +1392,6 @@ export default function Campaigns(){
                       </div>
                     </div>
                   </div>
-                </div>
 
                 {/* Editor HTML Colapsável */}
                 {showHtmlCode && (
@@ -1609,6 +1646,7 @@ export default function Campaigns(){
                     
                   </div>
 
+                  <div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                     <div>
@@ -1643,6 +1681,7 @@ export default function Campaigns(){
                     </div>
                   )}
                 </div>
+                  </div>
               </div>
 
               {/* Actions */}
