@@ -1,4 +1,6 @@
-import { db } from '../firebaseAdmin.js'
+import admin from '../firebaseAdmin.js'
+
+const db = admin.firestore()
 
 export default async function handler(req, res) {
   const debug = process.env.DEBUG_API === 'true'
@@ -10,15 +12,12 @@ export default async function handler(req, res) {
     const { uid, email, planId } = req.body || {}
     if (!uid) return res.status(400).json({ error: 'uid required' })
 
-    // Attempt to determine client IP. In many deployments the real IP will
-    // be available on X-Forwarded-For. Fall back to connection remoteAddress.
+    // Attempt to determine client IP
     const xff = req.headers['x-forwarded-for'] || req.headers['X-Forwarded-For']
     const ipFromHeader = typeof xff === 'string' ? xff.split(',')[0].trim() : null
     const ip = ipFromHeader || req.connection?.remoteAddress || null
 
-    // Check for an existing subscription for this user that is still
-    // relevant (trial or active). If found, return it to keep this
-    // endpoint idempotent and avoid duplicating trial docs.
+    // Check for existing subscription
     const subsRef = db.collection('subscriptions')
     const q = await subsRef
       .where('uid', '==', uid)
@@ -32,21 +31,63 @@ export default async function handler(req, res) {
       return res.json({ ok: true, id: existing.id, existing: true })
     }
 
-    // 14 days trial ending at 23:59:59 of the 14th day
+    // Create tenant automatically if doesn't exist
+    const tenantId = `tenant_${uid}`
+    const tenantRef = db.collection('tenants').doc(tenantId)
+    const tenantSnap = await tenantRef.get()
+    
+    if (!tenantSnap.exists) {
+      if (debug) console.log('[start-trial] creating tenant', tenantId)
+      await tenantRef.set({ 
+        createdAt: admin.firestore.FieldValue.serverTimestamp(), 
+        ownerUid: uid, 
+        name: `Account ${uid}`,
+        plan: 'trial',
+      }, { merge: true })
+      
+      // Add user as owner member
+      const memberRef = tenantRef.collection('members').doc(uid)
+      let displayName = ''
+      let userEmail = email || ''
+      try {
+        const userRecord = await admin.auth().getUser(uid)
+        displayName = userRecord.displayName || ''
+        userEmail = userRecord.email || userEmail
+      } catch (e) {
+        // ignore
+      }
+      await memberRef.set({ 
+        role: 'owner', 
+        createdAt: admin.firestore.FieldValue.serverTimestamp(), 
+        email: userEmail, 
+        displayName 
+      }, { merge: true })
+      
+      // Initialize settings
+      const secretsRef = tenantRef.collection('settings').doc('secrets')
+      await secretsRef.set({ 
+        fromEmail: null, 
+        fromName: null, 
+        smtpLogin: null 
+      }, { merge: true })
+    }
+
+    // 7 days trial ending at 23:59:59 of the 7th day
     const now = new Date()
-    const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+    const trialEndDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
     trialEndDate.setHours(23, 59, 59, 999)
     const trialEndsAt = trialEndDate
 
-    // Canonical fields from makeInitialUserData
+    // Create subscription with trial limits
     const doc = {
       uid,
       email: email || '',
       displayName: '',
       photoURL: '',
       role: 'user',
-      plan: 'free',
-      planId: planId || 'free',
+      plan: 'trial',
+      planId: 'trial',
+      tenantId: `tenant_${uid}`,
       stripeCustomerId: '',
       billing: {},
       company: { name: '', website: '' },
@@ -57,17 +98,29 @@ export default async function handler(req, res) {
       ownerUid: uid,
       status: 'trial',
       trialEndsAt,
+      trialDays: 7,
+      limits: {
+        emailsPerDay: 50,
+        emailsPerMonth: 350,
+        campaigns: 5,
+        contacts: 100,
+        templates: 3,
+      },
       ipAddress: ip,
       createdAt: new Date(),
     }
 
     const ref = await db.collection('subscriptions').add(doc)
-    if (debug) console.log('[start-trial] created subscription', ref.id)
+    if (debug) console.log('[start-trial] created subscription', ref.id, '- 7 days, 50 emails/day')
 
-    // NOTE: Storing IP addresses has privacy implications. Ensure your
-    // privacy policy discloses this and you comply with local law.
-
-    return res.json({ ok: true, id: ref.id, existing: false })
+    return res.json({ 
+      ok: true, 
+      id: ref.id, 
+      existing: false,
+      tenantId: `tenant_${uid}`,
+      trialDays: 7,
+      limits: doc.limits,
+    })
   } catch (err) {
     console.error('[start-trial] error', err && err.message ? err.message : err)
     return res.status(500).json({ error: 'internal' })

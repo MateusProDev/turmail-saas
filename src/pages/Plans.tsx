@@ -7,10 +7,116 @@ import { auth, db } from '../lib/firebase'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
-const PLANS: { id: string; name: string; priceMonthly?: number; priceIdEnvMonthly?: string; priceIdEnvAnnual?: string; recommended?: boolean }[] = [
-  { id: 'free', name: 'Free', priceMonthly: 0 },
-  { id: 'pro', name: 'Pro', priceMonthly: 97, priceIdEnvMonthly: 'VITE_STRIPE_PRICE_PRO', /* add annual env var if available */ recommended: true },
-  { id: 'agency', name: 'Agency', priceMonthly: 197, priceIdEnvMonthly: 'VITE_STRIPE_PRICE_AGENCY' },
+const PLANS: { 
+  id: string
+  name: string
+  price?: number
+  priceAnnual?: number
+  priceIdEnvMonthly?: string
+  priceIdEnvAnnual?: string
+  recommended?: boolean
+  limits?: {
+    emailsPerDay: number
+    emailsPerMonth: number
+    campaigns: number
+    contacts: number
+  }
+  features: string[]
+}[] = [
+  { 
+    id: 'trial', 
+    name: 'Trial Gratuito', 
+    price: 0,
+    limits: {
+      emailsPerDay: 50,
+      emailsPerMonth: 350,
+      campaigns: 5,
+      contacts: 100,
+    },
+    features: [
+      '7 dias grátis',
+      '50 emails/dia',
+      'Até 100 contatos',
+      'Até 5 campanhas',
+      '3 templates',
+      'Estatísticas básicas',
+    ]
+  },
+  { 
+    id: 'starter', 
+    name: 'Starter', 
+    price: 47,
+    priceAnnual: 470,
+    priceIdEnvMonthly: 'VITE_STRIPE_PRICE_STARTER',
+    priceIdEnvAnnual: 'VITE_STRIPE_PRICE_STARTER_ANNUAL',
+    limits: {
+      emailsPerDay: 500,
+      emailsPerMonth: 15000,
+      campaigns: 50,
+      contacts: 5000,
+    },
+    features: [
+      '500 emails/dia',
+      '15.000 emails/mês',
+      'Até 5.000 contatos',
+      'Até 50 campanhas',
+      '20 templates',
+      'Estatísticas avançadas',
+      'Suporte por email',
+    ]
+  },
+  { 
+    id: 'pro', 
+    name: 'Pro', 
+    price: 97,
+    priceAnnual: 970,
+    priceIdEnvMonthly: 'VITE_STRIPE_PRICE_PRO',
+    priceIdEnvAnnual: 'VITE_STRIPE_PRICE_PRO_ANNUAL',
+    recommended: true,
+    limits: {
+      emailsPerDay: 2000,
+      emailsPerMonth: 60000,
+      campaigns: 200,
+      contacts: 25000,
+    },
+    features: [
+      '2.000 emails/dia',
+      '60.000 emails/mês',
+      'Até 25.000 contatos',
+      'Até 200 campanhas',
+      '100 templates',
+      'Automações',
+      'Estatísticas avançadas',
+      'Suporte prioritário',
+      'Webhooks',
+    ]
+  },
+  { 
+    id: 'agency', 
+    name: 'Agency', 
+    price: 197,
+    priceAnnual: 1970,
+    priceIdEnvMonthly: 'VITE_STRIPE_PRICE_AGENCY',
+    priceIdEnvAnnual: 'VITE_STRIPE_PRICE_AGENCY_ANNUAL',
+    limits: {
+      emailsPerDay: 10000,
+      emailsPerMonth: 300000,
+      campaigns: -1,
+      contacts: 100000,
+    },
+    features: [
+      '10.000 emails/dia',
+      '300.000 emails/mês',
+      'Até 100.000 contatos',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Automações avançadas',
+      'Multi-tenant',
+      'White label',
+      'Suporte prioritário',
+      'API completa',
+    ]
+  },
 ]
 
 export default function Plans() {
@@ -63,32 +169,32 @@ export default function Plans() {
   }, [user])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
-    // detect free plan by id or priceMonthly === 0
-    if (plan.id === 'free' || (plan.priceMonthly !== undefined && plan.priceMonthly === 0)) {
+    // detect trial plan
+    if (plan.id === 'trial' || plan.price === 0) {
       if (!user) {
-        alert('Você precisa entrar para selecionar o plano gratuito')
+        alert('Você precisa fazer login para iniciar o trial gratuito')
         navigate('/login')
         return
       }
       try {
         setLoading(true)
-        // Call server endpoint to start a 14-day trial and record client IP server-side.
+        // Call server endpoint to start a 7-day trial
         const resp = await fetch('/api/start-trial', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
+          body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
         const json = await resp.json()
         if (!resp.ok) {
           console.error('start-trial failed', json)
-          alert('Falha ao iniciar teste gratuito')
+          alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
-          alert('Teste gratuito iniciado — 14 dias!')
+          alert('🎉 Trial gratuito iniciado! Você tem 7 dias com 50 emails/dia.')
           navigate('/dashboard')
         }
       } catch (err) {
         console.error('failed to start trial', err)
-        alert('Falha ao iniciar teste gratuito')
+        alert('Falha ao iniciar trial gratuito')
       } finally {
         setLoading(false)
       }
@@ -124,23 +230,20 @@ export default function Plans() {
 
   const formatPrice = (p: typeof PLANS[number]) => {
     const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-    if ((!p.priceMonthly && p.id === 'free') || p.priceMonthly === 0) {
-      return { type: 'free', label: 'R$0/mês' }
+    if (p.price === 0 || p.id === 'trial') {
+      return { type: 'free', label: 'Grátis' }
     }
 
-    const monthly = p.priceMonthly || 0
+    const monthly = p.price || 0
     const monthlyLabel = `${fmt.format(monthly)}/mês`
     if (billingInterval === 'monthly') return { type: 'monthly', label: monthlyLabel }
 
-    // annual - apply 5% discount on total yearly price
-    const annualRaw = monthly * 12
-    const discounted = Math.round(annualRaw * 0.95)
-    const originalLabel = `${fmt.format(annualRaw)}/ano`
-    const discountedLabel = `${fmt.format(discounted)}/ano (5% off)`
-    const equivMonthly = `${fmt.format(Math.round(discounted / 12))}/mês`
+    // annual - use priceAnnual if available
+    const annualPrice = p.priceAnnual || (monthly * 12 * 0.9) // 10% discount default
+    const equivMonthly = `${fmt.format(Math.round(annualPrice / 12))}/mês`
+    const discountedLabel = `${fmt.format(annualPrice)}/ano`
     return {
       type: 'annual',
-      original: originalLabel,
       discounted: discountedLabel,
       equivMonthly,
     }
@@ -174,10 +277,8 @@ export default function Plans() {
       <div className="plans-grid mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANS.map((p) => {
           const featured = !!p.recommended
-          // keep visual 'current' badge for free when user has no subscription,
-          // but treat an actual free subscription separately when showing trial info
-          const isCurrent = subscription ? (subscription.planId === p.id) : p.id === 'free'
-          const userHasFree = !!(subscription && subscription.planId === 'free')
+          const isCurrent = subscription ? (subscription.planId === p.id) : p.id === 'trial'
+          const userHasTrial = !!(subscription && subscription.planId === 'trial')
           return (
             <div
               key={p.id}
@@ -195,7 +296,9 @@ export default function Plans() {
                               </div>
                             </div>
 
-                <div className="text-gray-500 text-sm mb-1">{p.id === 'free' ? 'Sem compromisso' : billingInterval === 'monthly' ? 'Cobrança mensal' : 'Cobrança anual'}</div>
+                <div className="text-gray-500 text-sm mb-1">
+                  {p.id === 'trial' ? '7 dias grátis' : billingInterval === 'monthly' ? 'Cobrança mensal' : 'Cobrança anual (10% desconto)'}
+                </div>
                 <div className="mb-3">
                   {(() => {
                     const pr = formatPrice(p)
@@ -208,7 +311,6 @@ export default function Plans() {
                     }
                     return (
                       <div className="price-annual">
-                        <div className="text-sm text-gray-500 original">{pr.original}</div>
                         <div className="text-2xl font-bold discounted">{pr.discounted}</div>
                         <div className="text-sm text-gray-500 equiv">Equiv. {pr.equivMonthly}</div>
                       </div>
@@ -216,57 +318,30 @@ export default function Plans() {
                   })()}
                 </div>
 
+                {/* Limits display */}
+                {p.limits && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm">
+                    <div className="font-semibold text-blue-900 mb-2">Limites</div>
+                    <div className="space-y-1 text-blue-800">
+                      <div>📧 {p.limits.emailsPerDay === -1 ? 'Ilimitado' : `${p.limits.emailsPerDay.toLocaleString()} emails/dia`}</div>
+                      <div>📊 {p.limits.campaigns === -1 ? 'Ilimitado' : `${p.limits.campaigns} campanhas`}</div>
+                      <div>👥 {p.limits.contacts === -1 ? 'Ilimitado' : `${p.limits.contacts.toLocaleString()} contatos`}</div>
+                    </div>
+                  </div>
+                )}
+
                 <ul className="mt-2 text-sm text-gray-600 space-y-3 text-left">
-                  {(function renderFeatures() {
-                    if (p.id === 'free') {
-                      return [
-                        'Conectar conta Brevo (inserir API Key) — limitado',
-                        'Envio de campanhas básico (limite mensal)',
-                        'Templates básicos de e-mail para agências de turismo',
-                        'Gestão de contatos (limitação de tamanho)'
-                      ].map((f) => (
-                          <li key={f} className="flex items-center gap-3 text-sm text-gray-600">
-                            <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
-                            <span>{f}</span>
-                          </li>
-                        ))
-                    }
-
-                    if (p.id === 'pro') {
-                      return [
-                        'Conectar Brevo com API Key secreta (full access)',
-                        'Templates premium de e-mail voltados para agências de turismo',
-                        'Cotas de envio conforme sua conta Brevo (nós intermediamos envio e automações)',
-                        'Segmentação de contatos e tags',
-                        'Acesso a modelos personalizáveis e editor de templates',
-                        'Métricas e relatórios fornecidos pela nossa plataforma (baseado nos dados do Brevo)'
-                      ].map((f) => (
-                          <li key={f} className="flex items-center gap-3 text-sm text-gray-600">
-                            <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
-                            <span>{f}</span>
-                          </li>
-                        ))
-                    }
-
-                    // agency
-                    return [
-                      'Suporte para múltiplas contas/teams e gerenciamento de clientes',
-                      'Templates avançados e automações específicas para agências de turismo',
-                      'Cotas de envio conforme as contas Brevo dos seus clientes (intermediação pela nossa plataforma)',
-                      'Relatórios e análises avançadas por campanha (agregadas a partir dos dados do Brevo)',
-                      'Suporte prioritário e onboarding dedicado'
-                    ].map((f) => (
-                      <li key={f} className="flex items-center gap-3 text-sm text-gray-600">
-                        <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))
-                  })()}
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-center gap-3 text-sm text-gray-600">
+                      <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
                 </ul>
 
                 <div className="mt-6 w-full">
-                  {p.id === 'free' ? (
-                    userHasFree ? (
+                  {p.id === 'trial' ? (
+                    userHasTrial ? (
                       (function renderTrialInfo() {
                         const data: any = subscription || {}
                         const toDate = (t: any) => {
@@ -276,52 +351,42 @@ export default function Plans() {
                           return new Date(t)
                         }
                         const trialEnds = toDate(data.trialEndsAt)
-                        const startedAt = toDate(data.createdAt) || null
                         const now = new Date()
                         const diffMs = trialEnds ? trialEnds.getTime() - now.getTime() : null
                         const daysLeft = diffMs !== null ? Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24))) : null
 
                         return (
-                          <div className="text-sm text-gray-700">
-                            {startedAt && (
-                              <div>Teste iniciado em: <span className="font-medium">{new Intl.DateTimeFormat('pt-BR').format(startedAt)}</span></div>
-                            )}
-                            {trialEnds && daysLeft !== null ? (
-                              <div className="mt-1">Dias restantes: <span className="font-medium">{daysLeft} dia(s)</span></div>
+                          <div className="text-sm">
+                            {daysLeft !== null && daysLeft > 0 ? (
+                              <div className="p-3 bg-green-50 rounded-lg">
+                                <div className="font-semibold text-green-900">✅ Trial Ativo</div>
+                                <div className="text-green-700 mt-1">{daysLeft} dia{daysLeft > 1 ? 's' : ''} restante{daysLeft > 1 ? 's' : ''}</div>
+                              </div>
                             ) : (
-                              <div className="mt-1">Período de teste ativo</div>
+                              <div className="p-3 bg-red-50 rounded-lg">
+                                <div className="font-semibold text-red-900">❌ Trial Expirado</div>
+                                <div className="text-red-700 mt-1">Faça upgrade para continuar</div>
+                              </div>
                             )}
-                            <div className="mt-3 text-xs text-gray-500">Ao término do teste, será necessário ativar um plano pago.</div>
                           </div>
                         )
                       })()
                     ) : (
                       !user ? (
                         <div className="text-sm text-gray-600">
-                          <div>Faça login para começar seu teste gratuito de 14 dias.</div>
+                          <div>Faça login para começar seu teste gratuito de 7 dias.</div>
                           <div className="mt-2">
                             <button onClick={() => navigate('/login')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Entrar</button>
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-600">
-                          <div>Seu teste gratuito de 14 dias é ativado automaticamente ao acessar o dashboard.</div>
-                          <div className="mt-2 flex items-center gap-3">
-                                <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Ir para o dashboard</button>
-                                {subscription && subscription.trialEndsAt && (function() {
-                                  const toDate = (t: any) => {
-                                    if (!t) return null
-                                    if (typeof t.toDate === 'function') return t.toDate()
-                                    if (t.seconds) return new Date(t.seconds * 1000)
-                                    return new Date(t)
-                                  }
-                                  const end = toDate(subscription.trialEndsAt)
-                                  if (!end) return <span className="text-xs text-gray-500">Aguardando ativação do teste...</span>
-                                  const active = end.getTime() > Date.now()
-                                  return active ? <CountdownBadge end={subscription.trialEndsAt} /> : <span className="text-xs text-red-600">Teste expirado</span>
-                                })()}
-                              </div>
-                        </div>
+                        <button
+                          className={`plans-cta w-full ${loading ? 'disabled' : ''}`}
+                          onClick={() => handleCheckout(p)}
+                          disabled={loading}
+                        >
+                          {loading ? 'Processando...' : '🎉 Começar Trial Grátis'}
+                        </button>
                       )
                     )
                   ) : (
@@ -346,35 +411,3 @@ export default function Plans() {
   )
 }
 
-function CountdownBadge({ end }: { end: any }) {
-  const toDate = (t: any) => {
-    if (!t) return null
-    if (typeof t.toDate === 'function') return t.toDate()
-    if (t.seconds) return new Date(t.seconds * 1000)
-    return new Date(t)
-  }
-  const endDate = toDate(end)
-  const [remMs, setRemMs] = useState(() => endDate ? Math.max(0, endDate.getTime() - Date.now()) : 0)
-
-  useEffect(() => {
-    if (!endDate) return
-    const tick = () => setRemMs(Math.max(0, endDate.getTime() - Date.now()))
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [endDate])
-
-  if (!endDate) return null
-  if (remMs <= 0) return <span className="text-xs text-red-600">Teste expirado</span>
-
-  const totalSec = Math.floor(remMs / 1000)
-  const days = Math.floor(totalSec / (3600 * 24))
-  const hours = Math.floor((totalSec % (3600 * 24)) / 3600)
-  const minutes = Math.floor((totalSec % 3600) / 60)
-
-  const two = (n: number) => String(n).padStart(2, '0')
-
-  return (
-    <span className="text-xs text-gray-600">{days > 0 ? `${days}d ` : ''}{two(hours)}:{two(minutes)}</span>
-  )
-}

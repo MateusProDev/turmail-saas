@@ -72,6 +72,54 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     throw new Error('Brevo API key not configured. Please set BREVO_API_KEY in Vercel environment variables.')
   }
 
+  // CHECK EMAIL LIMITS BEFORE SENDING
+  if (tenantId) {
+    try {
+      // Load subscription to check limits
+      const subsRef = db.collection('subscriptions')
+      const subsQuery = await subsRef.where('tenantId', '==', tenantId).limit(1).get()
+      
+      if (!subsQuery.empty) {
+        const subscription = subsQuery.docs[0].data()
+        
+        // Import limits checker
+        const { checkDailyEmailLimit, checkTrialStatus } = await import('./lib/plans.js')
+        
+        // Check if trial expired
+        if (subscription.status === 'trial') {
+          const trialStatus = checkTrialStatus(subscription)
+          if (trialStatus.expired) {
+            const err = new Error('Trial expirado. Faça upgrade para continuar enviando emails.')
+            err.code = 'trial_expired'
+            throw err
+          }
+        }
+        
+        // Calculate email count
+        const recipients = normalizeRecipients(payload.to)
+        const emailCount = recipients.length
+        
+        // Check daily limit
+        const limitCheck = await checkDailyEmailLimit(tenantId, subscription, emailCount)
+        if (!limitCheck.allowed) {
+          const err = new Error(limitCheck.message)
+          err.code = 'daily_limit_exceeded'
+          err.limit = limitCheck.limit
+          err.current = limitCheck.current
+          throw err
+        }
+        
+        if (debug) console.log('[sendHelper] limit check passed', limitCheck)
+      }
+    } catch (e) {
+      // Re-throw limit errors
+      if (e.code === 'trial_expired' || e.code === 'daily_limit_exceeded') {
+        throw e
+      }
+      if (debug) console.warn('[sendHelper] failed to check limits', e)
+    }
+  }
+
   // Load tenant-specific sender configuration (fromEmail and fromName)
   let tenantFromEmail = process.env.DEFAULT_FROM_EMAIL || ''
   let tenantFromName = process.env.DEFAULT_FROM_NAME || ''
@@ -240,6 +288,18 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     const idempotencyKey = (payload && payload.headers && payload.headers['Idempotency-Key']) || payload.idempotencyKey || undefined
     if (debug) console.log('[sendHelper] sending via Brevo', { to: recipients.map(r => r.email).slice(0,5), idempotencyKey })
     const resp = await sendEmail({ apiKey, payload, idempotencyKey })
+    
+    // Increment email counter after successful send
+    if (tenantId && resp && resp.status === 201) {
+      try {
+        const { incrementDailyEmailCount } = await import('./lib/plans.js')
+        await incrementDailyEmailCount(tenantId, recipients.length)
+        if (debug) console.log('[sendHelper] incremented email counter', { tenantId, count: recipients.length })
+      } catch (e) {
+        if (debug) console.warn('[sendHelper] failed to increment counter', e)
+      }
+    }
+    
     return { status: resp.status, data: resp.data }
   } catch (err) {
     console.error('[sendHelper] unexpected error', err && (err.response?.data || err.message || err))
