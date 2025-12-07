@@ -75,13 +75,6 @@ export function ImageEditablePreview({
       (_match, beforeSrc, srcUrl, afterSrc) => {
         let imageType: 'hero' | 'logo' | 'team1' | 'team2' | 'team3' | 'team4' | 'location' | null = null
         
-        // Extrai dimensões da tag img (width e height)
-        const allAttrs = beforeSrc + afterSrc
-        const widthMatch = allAttrs.match(/width=["']?(\d+)["']?/i) || allAttrs.match(/width:\s*(\d+)px/i)
-        const heightMatch = allAttrs.match(/height=["']?(\d+)["']?/i) || allAttrs.match(/height:\s*(\d+)px/i)
-        const width = widthMatch ? widthMatch[1] : '600'
-        const height = heightMatch ? heightMatch[1] : 'auto'
-        
         for (const [photoId, type] of Object.entries(templateImageMap)) {
           if (srcUrl.includes(photoId)) {
             imageType = type
@@ -109,49 +102,17 @@ export function ImageEditablePreview({
           return `<img${beforeSrc}src="${srcUrl}"${afterSrc}>`
         }
 
-        // Define label e cor por tipo
-        const typeLabels: Record<string, string> = {
-          hero: '🌄 Banner Principal',
-          logo: '🏢 Logo da Empresa',
-          team1: '📸 Foto do Destino 1',
-          team2: '📸 Foto do Destino 2',
-          team3: '📸 Foto do Destino 3',
-          team4: '📸 Foto do Destino 4',
-          location: '📍 Mapa/Localização'
-        }
-
-        const typeColors: Record<string, string> = {
-          hero: '#0ea5e9',
-          logo: '#8b5cf6',
-          team1: '#10b981',
-          team2: '#f59e0b',
-          team3: '#ec4899',
-          team4: '#6366f1',
-          location: '#14b8a6'
-        }
-
-        const label = typeLabels[imageType] || 'Imagem'
-        const color = typeColors[imageType] || '#64748b'
-
-        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%) !important; border: 2px dashed ${color}40 !important; border-radius: 8px !important; min-height: ${height === 'auto' ? '200px' : height + 'px'} !important; overflow: hidden !important;`
+        // Wrapper sem bordas visíveis, apenas container para a imagem
+        const wrapperStyle = `position: relative !important; display: inline-block !important; width: 100% !important; cursor: pointer !important; overflow: hidden !important;`
         
-        const placeholderStyle = `position: relative !important; width: 100% !important; height: ${height === 'auto' ? '200px' : height + 'px'} !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%) !important; color: ${color} !important; font-weight: 600 !important; font-size: 14px !important; text-align: center !important; padding: 20px !important;`
+        // Imagem visível por padrão, ocupa todo o espaço
+        const imgStyle = `display: block !important; width: 100% !important; height: auto !important; object-fit: cover !important; transition: filter 0.2s !important;`
         
-        const imgStyle = `position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; transition: opacity 0.3s !important; z-index: 1 !important; opacity: 0 !important;`
-        
-        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.6) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
-        
-        const iconEmoji = label.split(' ')[0]
-        const dimensions = `${width}px × ${height === 'auto' ? 'Auto' : height + 'px'}`
+        // Overlay que aparece apenas no hover
+        const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
 
         return `<div class="editable-image-wrapper" data-image-type="${imageType}" contenteditable="false" style="${wrapperStyle}">` +
-          `<div class="image-placeholder" style="${placeholderStyle}">` +
-            `<div style="font-size: 48px !important; margin-bottom: 12px !important; opacity: 0.6 !important;">${iconEmoji}</div>` +
-            `<div style="font-size: 14px !important; font-weight: 600 !important; opacity: 0.8 !important;">${label}</div>` +
-            `<div style="font-size: 11px !important; margin-top: 6px !important; opacity: 0.6 !important; font-weight: 500 !important;">${dimensions}</div>` +
-            `<div style="font-size: 12px !important; margin-top: 12px !important; opacity: 0.7 !important; padding: 6px 12px !important; background: ${color}20 !important; border-radius: 4px !important;">Clique para adicionar</div>` +
-          `</div>` +
-          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" onload="this.style.opacity='1';" onerror="this.style.opacity='0';" />` +
+          `<img${beforeSrc}src="${srcUrl}"${afterSrc} style="${imgStyle}" />` +
           `<div class="edit-overlay" style="${overlayStyle}">` +
             `<span style="background: white !important; color: #1e293b !important; padding: 10px 20px !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 14px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;">📸 Alterar Imagem</span>` +
           `</div>` +
