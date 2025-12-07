@@ -496,7 +496,7 @@ export default function Campaigns(){
 
               {/* Contacts Selection Modal */}
               {showContactsModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-black/40" onClick={() => setShowContactsModal(false)} />
                   <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6">
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
@@ -533,7 +533,7 @@ export default function Campaigns(){
 
               {/* Recipients 'Ver todos' modal */}
               {showRecipientsModal && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center">
+                <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-black/40" onClick={() => setShowRecipientsModal(false)} />
                   <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-md p-6">
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">Todos os Destinatários</h3>
@@ -554,7 +554,7 @@ export default function Campaigns(){
               )}
               {/* Variants Modal */}
               {showVariantsModal && (
-                <div className="fixed inset-0 z-60 flex items-start justify-center pt-20">
+                <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
                   <div className="absolute inset-0 bg-black/40" onClick={() => setShowVariantsModal(false)} />
                   <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-4xl p-6 overflow-auto max-h-[80vh]">
                     <div className="flex items-center justify-between mb-4">
