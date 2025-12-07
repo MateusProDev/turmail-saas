@@ -36,6 +36,9 @@ export default function Login() {
   useEffect(() => {
     console.log('🟣 [USEEFFECT] Componente montado - verificando handleGoogleSignIn')
     console.log('🟣 [USEEFFECT] handleGoogleSignIn existe?', typeof handleGoogleSignIn)
+    console.log('🟣 [USEEFFECT] Loading state:', loading)
+    console.log('🟣 [USEEFFECT] IsSignup:', isSignup)
+    console.log('🟣 [USEEFFECT] ShowResetPassword:', showResetPassword)
     
     const params = new URLSearchParams(window.location.search)
     if (params.get('signup') === '1') {
@@ -52,6 +55,16 @@ export default function Login() {
         console.error('Error parsing pending plan:', e)
       }
     }
+    
+    // Testar se conseguimos acessar o botão
+    setTimeout(() => {
+      const googleButton = document.querySelector('button[style*="border: 3px solid red"]')
+      console.log('🟣 [USEEFFECT] Botão Google encontrado?', !!googleButton)
+      if (googleButton) {
+        console.log('🟣 [USEEFFECT] Botão disabled?', googleButton.hasAttribute('disabled'))
+        console.log('🟣 [USEEFFECT] Botão visível?', window.getComputedStyle(googleButton).display !== 'none')
+      }
+    }, 1000)
   }, [])
 
   // Verificar resultado do redirect do Google OAuth
@@ -582,6 +595,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={(e) => {
+                    alert('🔴 BOTÃO CLICADO! Verifique o console.')
                     e.preventDefault()
                     e.stopPropagation()
                     console.log('🔴 [BOTÃO] Clique detectado no botão Google')
