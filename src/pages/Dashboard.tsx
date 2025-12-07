@@ -521,7 +521,55 @@ export default function Dashboard(){
           {/* Main Content */}
           <main className="lg:col-span-3 space-y-6">
             {/* Alerta: Configurar Brevo */}
-            {!loadingBrevo && !brevoStats?.account && !brevoStats?.emailStats && (
+            {!loadingBrevo && !brevoStats?.account && !brevoStats?.emailStats && brevoStats?.errors && (
+              <div className="bg-red-50 border-l-4 border-red-400 rounded-xl p-5">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Chave Brevo inválida ou expirada
+                    </h3>
+                    <p className="mt-1 text-sm text-red-700">
+                      A chave API da Brevo configurada não é mais válida. Por favor, gere uma nova chave em sua conta Brevo e atualize nas Configurações.
+                    </p>
+                    {brevoStats.errors.account && (
+                      <p className="mt-2 text-xs text-red-600 font-mono bg-red-100 p-2 rounded">
+                        Erro: {brevoStats.errors.account.message || JSON.stringify(brevoStats.errors.account)}
+                      </p>
+                    )}
+                    <div className="mt-3 flex items-center space-x-3">
+                      <a 
+                        href="https://app.brevo.com/settings/keys/api" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        Gerar Nova Chave Brevo
+                      </a>
+                      <Link 
+                        to="/settings" 
+                        className="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Atualizar Configurações
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {!loadingBrevo && !brevoStats?.account && !brevoStats?.emailStats && !brevoStats?.errors && (
               <div className="bg-amber-50 border-l-4 border-amber-400 rounded-xl p-5">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">

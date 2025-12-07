@@ -58,14 +58,14 @@ export async function getBrevoStats(req, res) {
           const keyData = keySnap.data() || {}
           let tenantKey = keyData.brevoApiKey
           
-          if (debug) console.log('[get-brevo-stats] Raw key (first 20 chars):', tenantKey?.substring(0, 20))
+          if (debug) console.log('[get-brevo-stats] Active key (first 20 chars):', tenantKey?.substring(0, 20))
           
           const decrypted = tryDecrypt(tenantKey)
           if (decrypted) {
             tenantKey = decrypted
-            if (debug) console.log('[get-brevo-stats] Key was encrypted, decrypted successfully')
+            if (debug) console.log('[get-brevo-stats] Active key was encrypted, decrypted successfully')
           } else {
-            if (debug) console.log('[get-brevo-stats] Key appears to be plain text or decryption failed')
+            if (debug) console.log('[get-brevo-stats] Active key appears to be plain text or decryption failed')
           }
           
           if (tenantKey) apiKey = tenantKey
@@ -73,8 +73,41 @@ export async function getBrevoStats(req, res) {
         } else {
           if (debug) console.log('[get-brevo-stats] Active key document not found')
         }
-      } else {
-        // Fallback para chave legacy
+      }
+      
+      // Se não encontrou activeKey, buscar a mais recente da lista
+      if (!apiKey) {
+        if (debug) console.log('[get-brevo-stats] No active key, fetching latest from list...')
+        
+        const keysSnapshot = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list')
+          .orderBy('createdAt', 'desc')
+          .limit(1)
+          .get()
+        
+        if (!keysSnapshot.empty) {
+          const latestKeyDoc = keysSnapshot.docs[0]
+          const keyData = latestKeyDoc.data() || {}
+          let tenantKey = keyData.brevoApiKey
+          
+          if (debug) console.log('[get-brevo-stats] Latest key ID:', latestKeyDoc.id, '(first 20 chars):', tenantKey?.substring(0, 20))
+          
+          const decrypted = tryDecrypt(tenantKey)
+          if (decrypted) {
+            tenantKey = decrypted
+            if (debug) console.log('[get-brevo-stats] Latest key was encrypted, decrypted successfully')
+          } else {
+            if (debug) console.log('[get-brevo-stats] Latest key appears to be plain text')
+          }
+          
+          if (tenantKey) apiKey = tenantKey
+          if (debug) console.log('[get-brevo-stats] Using latest key, length:', apiKey?.length)
+        } else {
+          if (debug) console.log('[get-brevo-stats] No keys found in list')
+        }
+      }
+      
+      // Fallback para chave legacy
+      if (!apiKey) {
         const legacyKey = secrets?.brevoApiKey
         if (legacyKey) {
           if (debug) console.log('[get-brevo-stats] Using legacy key (first 20 chars):', legacyKey?.substring(0, 20))
