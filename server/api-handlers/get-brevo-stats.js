@@ -2,12 +2,36 @@ import axios from 'axios'
 import { db } from '../firebaseAdmin.js'
 import crypto from 'crypto'
 
-// Função de descriptografia (copiada de sendHelper.js)
+// Função de descriptografia (suporta tanto CBC quanto GCM)
 function tryDecrypt(encrypted) {
   if (!encrypted || typeof encrypted !== 'string') return null
+  
+  const key = process.env.TENANT_ENCRYPTION_KEY
+  if (!key) return null
+
   try {
-    const key = process.env.ENCRYPTION_KEY
-    if (!key) return null
+    // Tenta formato GCM (JSON com iv, tag, data)
+    const parsed = JSON.parse(encrypted)
+    if (parsed.iv && parsed.data) {
+      const keyBuffer = Buffer.from(key, 'base64')
+      if (keyBuffer.length !== 32) return null
+      
+      const iv = Buffer.from(parsed.iv, 'base64')
+      const encData = Buffer.from(parsed.data, 'base64')
+      const tag = parsed.tag ? Buffer.from(parsed.tag, 'base64') : null
+      
+      const decipher = crypto.createDecipheriv('aes-256-gcm', keyBuffer, iv)
+      if (tag) decipher.setAuthTag(tag)
+      
+      const decrypted = Buffer.concat([decipher.update(encData), decipher.final()])
+      return decrypted.toString('utf8')
+    }
+  } catch (e) {
+    // Não é JSON ou falhou GCM, tenta CBC
+  }
+
+  try {
+    // Formato CBC (ivHex:encHex)
     const [ivHex, encHex] = encrypted.split(':')
     if (!ivHex || !encHex) return null
     const iv = Buffer.from(ivHex, 'hex')
