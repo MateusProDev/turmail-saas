@@ -98,9 +98,11 @@ export async function getBrevoStats(req, res) {
     if (debug) console.log('[get-brevo-stats] Fetching from Brevo API...')
 
     // Buscar informações da conta
+    let accountError = null
     const accountPromise = axios.get('https://api.brevo.com/v3/account', { headers })
       .catch(e => {
-        console.error('[get-brevo-stats] Account fetch error:', e.response?.data || e.message)
+        accountError = e.response?.data || e.message
+        console.error('[get-brevo-stats] Account fetch error:', accountError)
         return null
       })
     
@@ -108,6 +110,7 @@ export async function getBrevoStats(req, res) {
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
     
+    let emailStatsError = null
     const emailStatsPromise = axios.get('https://api.brevo.com/v3/smtp/statistics/aggregatedReport', {
       headers,
       params: {
@@ -115,11 +118,13 @@ export async function getBrevoStats(req, res) {
         endDate: now.toISOString().split('T')[0]
       }
     }).catch(e => {
-      console.error('[get-brevo-stats] Email stats fetch error:', e.response?.data || e.message)
+      emailStatsError = e.response?.data || e.message
+      console.error('[get-brevo-stats] Email stats fetch error:', emailStatsError)
       return null
     })
 
     // Buscar campanhas recentes
+    let campaignsError = null
     const campaignsPromise = axios.get('https://api.brevo.com/v3/emailCampaigns', {
       headers,
       params: {
@@ -127,7 +132,8 @@ export async function getBrevoStats(req, res) {
         offset: 0
       }
     }).catch(e => {
-      console.error('[get-brevo-stats] Campaigns fetch error:', e.response?.data || e.message)
+      campaignsError = e.response?.data || e.message
+      console.error('[get-brevo-stats] Campaigns fetch error:', campaignsError)
       return null
     })
 
@@ -141,7 +147,8 @@ export async function getBrevoStats(req, res) {
       console.log('[get-brevo-stats] Results:', {
         account: !!accountRes?.data,
         emailStats: !!emailStatsRes?.data,
-        campaigns: !!campaignsRes?.data
+        campaigns: !!campaignsRes?.data,
+        errors: { accountError, emailStatsError, campaignsError }
       })
     }
 
@@ -149,7 +156,12 @@ export async function getBrevoStats(req, res) {
       account: accountRes?.data || null,
       emailStats: emailStatsRes?.data || null,
       campaigns: campaignsRes?.data || null,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      errors: {
+        account: accountError,
+        emailStats: emailStatsError,
+        campaigns: campaignsError
+      }
     }
 
     return res.status(200).json({

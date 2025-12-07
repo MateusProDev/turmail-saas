@@ -174,8 +174,17 @@ export default function Dashboard(){
             hasAccount: !!data.stats.account,
             hasEmailStats: !!data.stats.emailStats,
             hasCampaigns: !!data.stats.campaigns,
-            emailStats: data.stats.emailStats
+            emailStats: data.stats.emailStats,
+            errors: data.stats.errors
           })
+          
+          // Log errors if any
+          if (data.stats.errors) {
+            if (data.stats.errors.account) console.error('[Dashboard] Account error:', data.stats.errors.account)
+            if (data.stats.errors.emailStats) console.error('[Dashboard] EmailStats error:', data.stats.errors.emailStats)
+            if (data.stats.errors.campaigns) console.error('[Dashboard] Campaigns error:', data.stats.errors.campaigns)
+          }
+          
           setBrevoStats(data.stats)
         } else {
           console.warn('[Dashboard] Failed to fetch stats:', data.error)
