@@ -36,29 +36,33 @@ export default function Dashboard(){
   useEffect(() => {
     if (!user) return
     
-    try {
-      // Primeiro, tentar buscar pelo ownerUid
-      const tenantsRef = collection(db, 'tenants')
-      const qByOwner = query(tenantsRef, where('ownerUid', '==', user.uid), limit(1))
-      
-      const unsub = onSnapshot(qByOwner, (snap) => {
-        if (!snap.empty) {
-          const tenantDoc = snap.docs[0]
-          console.log('[Dashboard] Found tenant by ownerUid:', tenantDoc.id)
-          setTenantId(tenantDoc.id)
+    const fetchTenant = async () => {
+      try {
+        const token = await user.getIdToken()
+        const resp = await fetch('/api/my-tenants', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        const data = await resp.json()
+        console.log('[Dashboard] My tenants response:', data)
+        
+        if (data.tenants && data.tenants.length > 0) {
+          const firstTenant = data.tenants[0]
+          console.log('[Dashboard] Found tenant:', firstTenant.tenantId)
+          setTenantId(firstTenant.tenantId)
         } else {
           console.log('[Dashboard] No tenant found for user')
           setTenantId(null)
         }
-      }, (err) => {
-        console.error('[Dashboard] Error in tenant listener:', err)
+      } catch (e) {
+        console.error('[Dashboard] Error fetching tenant:', e)
         setTenantId(null)
-      })
-      
-      return () => unsub()
-    } catch (e) {
-      console.error('[Dashboard] Error setting up tenant listener:', e)
+      }
     }
+    
+    fetchTenant()
   }, [user])
 
   // subscription listener (ownerUid preferred, fallback to email)
