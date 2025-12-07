@@ -52,9 +52,13 @@ export default function Login() {
   // Verificar resultado do redirect do Google OAuth
   useEffect(() => {
     const checkRedirectResult = async () => {
+      console.log('🔄 [Redirect Check] Verificando resultado do redirect...')
       try {
         const result = await getRedirectResult(auth)
+        console.log('🔄 [Redirect Check] Resultado:', result)
+        
         if (result && result.user) {
+          console.log('✅ [Redirect Check] Usuário autenticado:', result.user.email)
           setLoading(true)
           const user = result.user
 
@@ -96,20 +100,24 @@ export default function Login() {
           // Verificar se há plano pendente
           const hasPendingPlan = await processPendingPlan(user)
           if (hasPendingPlan) {
-            // processPendingPlan já faz o redirecionamento
-            return
-          }
-
           navigate('/dashboard')
+        } else {
+          console.log('ℹ️ [Redirect Check] Nenhum resultado de redirect (normal se não houver login recente)')
         }
       } catch (err: any) {
-        console.error('Redirect result error:', err)
+        console.error('❌ [Redirect Check] ERRO:', err)
+        console.error('❌ [Redirect Check] Código:', err.code)
+        console.error('❌ [Redirect Check] Mensagem:', err.message)
         if (err.code && err.code !== 'auth/popup-closed-by-user') {
           setError('Erro ao fazer login com Google')
         }
       } finally {
         setLoading(false)
       }
+    }
+
+    checkRedirectResult()
+  }, [navigate])
     }
 
     checkRedirectResult()
@@ -191,6 +199,10 @@ export default function Login() {
 
   // Login com Google
   const handleGoogleSignIn = async () => {
+    console.log('🔵 [Google Login] Iniciando login com Google...')
+    console.log('🔵 [Google Login] Hostname:', window.location.hostname)
+    console.log('🔵 [Google Login] Auth Domain:', (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN)
+    
     setLoading(true)
     setError('')
     try {
@@ -198,11 +210,14 @@ export default function Login() {
       provider.setCustomParameters({
         prompt: 'select_account'
       })
+      console.log('🔵 [Google Login] Provider configurado')
 
       // Em produção, usar redirect; em desenvolvimento, usar popup
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      console.log('🔵 [Google Login] É localhost?', isLocalhost)
       
       if (isLocalhost) {
+        console.log('🔵 [Google Login] Usando signInWithPopup...')
         // Popup funciona bem em localhost
         const result = await signInWithPopup(auth, provider)
         const user = result.user
@@ -252,11 +267,19 @@ export default function Login() {
         navigate('/dashboard')
       } else {
         // Em produção, usar redirect (mais confiável)
+        console.log('🟢 [Google Login PRODUÇÃO] Usando signInWithRedirect...')
+        console.log('🟢 [Google Login PRODUÇÃO] Auth Object:', auth)
+        console.log('🟢 [Google Login PRODUÇÃO] Provider:', provider)
+        
         await signInWithRedirect(auth, provider)
+        console.log('🟢 [Google Login PRODUÇÃO] signInWithRedirect executado - redirecionando...')
         // O resultado será tratado no useEffect através do getRedirectResult
       }
     } catch (err: any) {
-      console.error('Google sign-in error:', err)
+      console.error('❌ [Google Login] ERRO:', err)
+      console.error('❌ [Google Login] Código do erro:', err.code)
+      console.error('❌ [Google Login] Mensagem:', err.message)
+      console.error('❌ [Google Login] Stack:', err.stack)
       if (err.code === 'auth/popup-closed-by-user') {
         setError('Login cancelado')
       } else if (err.code === 'auth/popup-blocked') {
