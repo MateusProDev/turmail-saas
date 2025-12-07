@@ -92,10 +92,10 @@ const destinationPackageTemplate: EmailTemplate = {
           <tr>
             <td style="padding: 0; position: relative;">
               <img src="${heroImage}" alt="${destination}" width="600" height="400" style="width: 100%; height: auto; display: block;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
+              <table width="100%" cellpadding="0" cellspacing="0" class="hero-text-overlay" style="position: absolute; top: 0; left: 0; height: 100%; pointer-events: none;">
                 <tr>
-                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(15,23,42,0.5));">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 700; text-shadow: 1px 2px 4px rgba(0,0,0,0.4);">${mainTitle}</h1>
+                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(15,23,42,0.5)); pointer-events: none;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 700; text-shadow: 1px 2px 4px rgba(0,0,0,0.4); pointer-events: auto;">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>
@@ -392,10 +392,10 @@ const promotionalTemplate: EmailTemplate = {
           <tr>
             <td style="padding: 0; position: relative;">
               <img src="${heroImage}" alt="${mainTitle}" width="600" height="300" style="width: 100%; height: auto; display: block;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="position: absolute; top: 0; left: 0; height: 100%;">
+              <table width="100%" cellpadding="0" cellspacing="0" class="hero-text-overlay" style="position: absolute; top: 0; left: 0; height: 100%; pointer-events: none;">
                 <tr>
-                  <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85));">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 44px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 2px 2px 8px rgba(0,0,0,0.4);">${mainTitle}</h1>
+                  <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); pointer-events: none;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 44px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 2px 2px 8px rgba(0,0,0,0.4); pointer-events: auto;">${mainTitle}</h1>
                   </td>
                 </tr>
               </table>

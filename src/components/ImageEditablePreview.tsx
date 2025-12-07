@@ -291,18 +291,18 @@ export function ImageEditablePreview({
             style={{
               backgroundColor: 'white',
               borderRadius: '12px',
-              padding: '30px',
-              maxWidth: '900px',
+              padding: '24px',
+              maxWidth: '650px',
               width: '100%',
-              maxHeight: '90vh',
+              maxHeight: '80vh',
               overflow: 'auto',
               position: 'relative',
               margin: 'auto'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
                 Selecionar {currentConfig.label}
               </h3>
               <button
