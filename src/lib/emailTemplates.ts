@@ -395,22 +395,56 @@ const promotionalTemplate: EmailTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${mainTitle}</title>
+  <style>
+    /* Reset e estilos mobile-first */
+    * { box-sizing: border-box; }
+    
+    @media only screen and (max-width: 600px) {
+      .mobile-full-width { width: 100% !important; max-width: 100% !important; }
+      .mobile-padding { padding: 20px !important; }
+      .mobile-padding-small { padding: 15px !important; }
+      .mobile-text-center { text-align: center !important; }
+      
+      /* Header mobile */
+      .header-split { height: auto !important; }
+      .header-split td { display: block !important; width: 100% !important; text-align: center !important; padding: 10px !important; }
+      
+      /* Título mobile */
+      .mobile-title { font-size: 32px !important; line-height: 1.2 !important; }
+      
+      /* Círculos menores em mobile */
+      .circle-image { width: 100px !important; height: 100px !important; margin: 5px !important; }
+      
+      /* Countdown mobile */
+      .countdown-box { max-width: 100% !important; padding: 15px !important; }
+      
+      /* Benefícios mobile */
+      .benefit-row { padding: 10px 15px !important; margin-bottom: 8px !important; }
+      .benefit-text { font-size: 13px !important; }
+      
+      /* CTA mobile */
+      .cta-button { padding: 18px 30px !important; font-size: 16px !important; }
+      
+      /* Descrição mobile */
+      .description-text { font-size: 16px !important; }
+    }
+  </style>
 </head>
 <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); font-family: 'Segoe UI', Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 25px 10px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+        <table width="100%" cellpadding="0" cellspacing="0" class="mobile-full-width" style="max-width: 600px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
           
           <!-- HEADER DIAGONAL SPLIT -->
           <tr>
-            <td style="padding: 0; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); height: 80px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="height: 80px;">
+            <td style="padding: 0; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);">
+              <table width="100%" cellpadding="0" cellspacing="0" class="header-split" style="height: 80px;">
                 <tr>
-                  <td width="50%" align="right" style="padding-right: 15px; vertical-align: middle;">
+                  <td width="50%" align="right" class="mobile-text-center" style="padding-right: 15px; vertical-align: middle;">
                     <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">✨ ${priceInfo}</p>
                   </td>
-                  <td width="50%" align="left" style="padding-left: 15px; vertical-align: middle;">
+                  <td width="50%" align="left" class="mobile-text-center" style="padding-left: 15px; vertical-align: middle;">
                     <img src="${logoImage}" alt="${companyName}" width="180" height="60" style="height: 45px; width: auto; max-width: 150px; display: block;">
                   </td>
                 </tr>
@@ -427,15 +461,15 @@ const promotionalTemplate: EmailTemplate = {
 
           <!-- TÍTULO -->
           <tr>
-            <td style="padding: 30px 30px 10px 30px;">
-              <h1 style="margin: 0; color: #0f172a; font-size: 44px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px;">${mainTitle}</h1>
+            <td class="mobile-padding" style="padding: 30px 30px 10px 30px;">
+              <h1 data-editable="main-title" class="mobile-title" style="margin: 0; color: #0f172a; font-size: 44px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px;">${mainTitle}</h1>
             </td>
           </tr>
 
           <!-- DESCRIÇÃO E COUNTDOWN -->
           <tr>
-            <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 35px 30px; text-align: center;">
-              <p style="margin: 0 0 25px 0; color: #475569; font-size: 18px; line-height: 1.6; font-family: Arial, sans-serif; font-weight: normal;">${description}</p>
+            <td class="mobile-padding-small countdown-box" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 35px 30px; text-align: center;">
+              <p data-editable="description" class="description-text" style="margin: 0 0 25px 0; color: #475569; font-size: 18px; line-height: 1.6; font-family: Arial, sans-serif; font-weight: normal;">${description}</p>
               <div style="background: #e0f2fe; border: 2px solid #0ea5e9; border-radius: 10px; padding: 20px; margin: 0 auto; max-width: 400px;">
                 <p style="margin: 0 0 10px 0; color: #0369a1; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; font-family: Arial, sans-serif; font-weight: 600;">⏰ OFERTA EXPIRA EM</p>
                 <p style="margin: 0; color: #0f172a; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">${dateRange}</p>
@@ -445,20 +479,20 @@ const promotionalTemplate: EmailTemplate = {
 
           <!-- CÍRCULOS SOBREPOSTOS COM IMAGENS -->
           <tr>
-            <td style="padding: 40px 30px; background: #ffffff;">
-              <h2 style="margin: 0 0 30px 0; color: #0f172a; font-size: 28px; font-weight: 600; text-align: center;">🌍 Destinos Incríveis</h2>
+            <td class="mobile-padding" style="padding: 40px 30px; background: #ffffff;">
+              <h2 class="mobile-title" style="margin: 0 0 30px 0; color: #0f172a; font-size: 28px; font-weight: 600; text-align: center;">🌍 Destinos Incríveis</h2>
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding-bottom: 20px;">
                     <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
                       <tr>
                         <td style="position: relative;">
-                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
+                          <div data-editable="team-image-1" class="circle-image" style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ff3264; box-shadow: 0 8px 25px rgba(255,50,100,0.4); display: inline-block; margin: 0 -15px;">
                             <img src="${teamImage1}" alt="Destino 1" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
                         <td style="position: relative;">
-                          <div style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ffd700; box-shadow: 0 8px 25px rgba(255,215,0,0.4); display: inline-block; margin: 0 -15px;">
+                          <div data-editable="team-image-2" class="circle-image" style="width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 5px solid #ffd700; box-shadow: 0 8px 25px rgba(255,215,0,0.4); display: inline-block; margin: 0 -15px;">
                             <img src="${teamImage2}" alt="Destino 2" width="250" height="250" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                           </div>
                         </td>
@@ -490,12 +524,12 @@ const promotionalTemplate: EmailTemplate = {
 
           <!-- BENEFÍCIOS BOLD -->
           <tr>
-            <td style="padding: 0 30px 35px 30px; background: #ffffff;">
+            <td class="mobile-padding-small" style="padding: 0 30px 35px 30px; background: #ffffff;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 ${keyBenefits.map((benefit, index) => `
                   <tr>
-                    <td style="padding: 12px 20px; background: ${index % 2 === 0 ? 'linear-gradient(90deg, #ff3264, #ff6b9d)' : 'linear-gradient(90deg, #ffd700, #ffed4e)'}; margin-bottom: 10px; border-radius: 50px;">
-                      <p style="margin: 0; color: ${index % 2 === 0 ? '#ffffff' : '#1a1a2e'}; font-size: 15px; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px;">✓ ${benefit}</p>
+                    <td class="benefit-row" style="padding: 12px 20px; background: ${index % 2 === 0 ? 'linear-gradient(90deg, #ff3264, #ff6b9d)' : 'linear-gradient(90deg, #ffd700, #ffed4e)'}; margin-bottom: 10px; border-radius: 50px;">
+                      <p data-editable="benefit-${index + 1}" class="benefit-text" style="margin: 0; color: ${index % 2 === 0 ? '#ffffff' : '#1a1a2e'}; font-size: 15px; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px;">✓ ${benefit}</p>
                     </td>
                   </tr>
                   ${index < keyBenefits.length - 1 ? '<tr><td style="height: 10px;"></td></tr>' : ''}
@@ -506,8 +540,8 @@ const promotionalTemplate: EmailTemplate = {
 
           <!-- CTA MEGA BOLD -->
           <tr>
-            <td align="center" style="padding: 0 30px 45px 30px; background: #ffffff;">
-              <a href="${ctaLink}" style="display: block; background: linear-gradient(135deg, #ff3264 0%, #ffd700 100%); color: #1a1a2e; padding: 22px 50px; border-radius: 60px; text-decoration: none; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 15px 40px rgba(255,50,100,0.5), 0 0 0 4px rgba(255,215,0,0.3); text-align: center;">${ctaText} 🚀</a>
+            <td align="center" class="mobile-padding-small" style="padding: 0 30px 45px 30px; background: #ffffff;">
+              <a href="${ctaLink}" class="cta-button" style="display: block; background: linear-gradient(135deg, #ff3264 0%, #ffd700 100%); color: #1a1a2e; padding: 22px 50px; border-radius: 60px; text-decoration: none; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 15px 40px rgba(255,50,100,0.5), 0 0 0 4px rgba(255,215,0,0.3); text-align: center;">${ctaText} 🚀</a>
               <p style="margin: 20px 0 0 0; color: #ff3264; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">⚡ VAGAS LIMITADAS!</p>
             </td>
           </tr>
