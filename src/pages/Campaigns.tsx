@@ -46,6 +46,7 @@ export default function Campaigns(){
   const [keyBenefits, setKeyBenefits] = useState<string[]>([])
   
   const [showPreview, setShowPreview] = useState(true)
+  const [mobilePreview, setMobilePreview] = useState(false)
   
   const [sendImmediate, setSendImmediate] = useState(true)
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null)
@@ -641,7 +642,7 @@ export default function Campaigns(){
               
               {/* Template Selector Modal */}
               {showTemplateSelector && (
-                <div className="fixed inset-0 z-60 flex items-center justify-center p-4" onClick={() => setShowTemplateSelector(false)}>
+                <div className="fixed inset-0 z-60 flex items-start justify-center p-4 pt-20 overflow-y-auto" onClick={() => setShowTemplateSelector(false)}>
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                   <div className="relative bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     
@@ -1443,7 +1444,28 @@ export default function Campaigns(){
                         </div>
                         <div className="text-sm text-slate-300 font-mono">Preview - Email Marketing</div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-3">
+                        {/* Toggle Desktop/Mobile */}
+                        <div className="flex items-center bg-slate-700 rounded-lg p-1">
+                          <button
+                            type="button"
+                            onClick={() => setMobilePreview(false)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              !mobilePreview ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            🖥️ Desktop
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMobilePreview(true)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                              mobilePreview ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            📱 Mobile
+                          </button>
+                        </div>
                         <span className="text-xs text-green-400 flex items-center">
                           <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                           Clique para editar
@@ -1451,7 +1473,10 @@ export default function Campaigns(){
                       </div>
                     </div>
                     {/* Preview Real - Editor Visual com Overlays Clicáveis */}
-                    <div className="w-full bg-white overflow-auto" style={{maxHeight: '700px'}}>
+                    <div className="w-full bg-slate-100 overflow-auto flex justify-center" style={{height: 'calc(100vh - 300px)', minHeight: '500px', maxHeight: '800px'}}>
+                      <div className={`bg-white transition-all duration-300 ${
+                        mobilePreview ? 'w-[375px] shadow-2xl' : 'w-full'
+                      }`} style={{height: 'fit-content'}}>
                       {showPreview && selectedTenant && (
                         <ImageEditablePreview
                           key={`${activeTemplate}-${htmlContent.length}`}
@@ -1534,6 +1559,7 @@ export default function Campaigns(){
                           }}
                         />
                       )}
+                      </div>
                     </div>
                   </div>
                 </div>
