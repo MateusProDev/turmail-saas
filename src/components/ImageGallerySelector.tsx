@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { getClientImageGallery, uploadClientImage, removeClientImage } from '../lib/imageGallery'
 import type { ClientImage } from '../lib/imageGallery'
 import './ImageGallerySelector.css'
@@ -120,8 +121,8 @@ export const ImageGallerySelector: React.FC<ImageGallerySelectorProps> = ({
         )}
       </div>
 
-      {/* Modal de galeria */}
-      {showGallery && (
+      {/* Modal de galeria - Renderizado via Portal para cobrir toda a página */}
+      {showGallery && createPortal(
         <div className="gallery-modal">
           <div className="gallery-content">
             <div className="gallery-header">
@@ -195,7 +196,8 @@ export const ImageGallerySelector: React.FC<ImageGallerySelectorProps> = ({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
