@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { ImageGallerySelector } from './ImageGallerySelector'
 import DOMPurify from 'dompurify'
 
@@ -230,7 +231,8 @@ export function ImageEditablePreview({
         }}
       />
 
-      {selectedImage && currentConfig && (
+      {/* Modal de seleção de imagem - Renderizado via Portal para cobrir toda a página */}
+      {selectedImage && currentConfig && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -298,9 +300,9 @@ export function ImageEditablePreview({
               allowUpload={true}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
 }
-
