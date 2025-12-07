@@ -19,6 +19,15 @@ service cloud.firestore {
       );
     }
 
+    // Tenant document itself: members can read, owner/admin can update
+    match /tenants/{tenantId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+      allow update: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
+      allow create, delete: if false; // Only server can create/delete tenants
+    }
+
     // Tenant settings (sensitive). Only owner/admin of tenant may read or write.
     match /tenants/{tenantId}/settings/{docId} {
       allow read, write: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
