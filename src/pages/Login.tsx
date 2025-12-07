@@ -576,7 +576,12 @@ export default function Login() {
               <div>
                 <button
                   type="button"
-                  onClick={handleGoogleSignIn}
+                  onClick={(e) => {
+                    console.log('🔴 [BOTÃO] Clique detectado no botão Google')
+                    console.log('🔴 [BOTÃO] Loading state:', loading)
+                    console.log('🔴 [BOTÃO] Event:', e)
+                    handleGoogleSignIn()
+                  }}
                   disabled={loading}
                   className="w-full flex items-center justify-center py-3 px-4 border-2 border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
                 >
