@@ -12,6 +12,8 @@ import { Link, useNavigate } from 'react-router-dom'
 export default function Dashboard(){
   const [user, loading, error] = useAuthState(auth)
   const [subscription, setSubscription] = useState<any>(null)
+  const [brevoStats, setBrevoStats] = useState<any>(null)
+  const [loadingBrevo, setLoadingBrevo] = useState(false)
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -114,8 +116,37 @@ export default function Dashboard(){
     }
   }, [user])
 
+  // Buscar estatísticas da Brevo
+  useEffect(() => {
+    if (!user || !subscription) return
+    
+    const fetchBrevoStats = async () => {
+      try {
+        setLoadingBrevo(true)
+        const token = await user.getIdToken()
+        const resp = await fetch(`/api/get-brevo-stats?tenantId=${subscription.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        const data = await resp.json()
+        if (data.success && data.stats) {
+          setBrevoStats(data.stats)
+        }
+      } catch (err) {
+        console.error('[Dashboard] Error fetching Brevo stats:', err)
+      } finally {
+        setLoadingBrevo(false)
+      }
+    }
+
+    fetchBrevoStats()
+    // Recarregar stats a cada 5 minutos
+    const interval = setInterval(fetchBrevoStats, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [user, subscription])
+
   // derived metrics (hooks must be called unconditionally)
-  const campaignsSent = useMemo(() => campaigns.length, [campaigns])
   // Removed unused getOpenRateNumeric function
 
   // const openRate = useMemo(() => {
@@ -134,6 +165,17 @@ export default function Dashboard(){
     }
 
     const deliverRate = useMemo(() => {
+      // Primeiro tentar estatísticas da Brevo
+      if (brevoStats?.emailStats) {
+        const stats = brevoStats.emailStats
+        const delivered = stats.delivered || 0
+        const requests = stats.requests || 0
+        if (requests > 0) {
+          return Math.round((delivered / requests) * 10000) / 100
+        }
+      }
+      
+      // Fallback para estatísticas locais
       const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => {
         const sent = Number(getSentCount(c) || 0)
         const delivered = Number(getDeliveredCount(c) || 0)
@@ -143,7 +185,24 @@ export default function Dashboard(){
       // If there were sent emails but no delivered metric recorded, show 100% per user preference
       if (totals.delivered === 0) return 100
       return Math.round((totals.delivered / totals.sent) * 10000) / 100
-    }, [campaigns])
+    }, [campaigns, brevoStats])
+
+  // Estatísticas adicionais da Brevo
+  const brevoMetrics = useMemo(() => {
+    if (!brevoStats?.emailStats) return null
+    
+    const stats = brevoStats.emailStats
+    return {
+      sent: stats.requests || 0,
+      delivered: stats.delivered || 0,
+      opens: stats.uniqueOpens || stats.opens || 0,
+      clicks: stats.uniqueClicks || stats.clicks || 0,
+      openRate: stats.requests > 0 ? Math.round((stats.uniqueOpens / stats.requests) * 10000) / 100 : 0,
+      clickRate: stats.requests > 0 ? Math.round((stats.uniqueClicks / stats.requests) * 10000) / 100 : 0,
+      bounces: stats.hardBounces + stats.softBounces || 0,
+      unsubscribes: stats.unsubscriptions || 0
+    }
+  }, [brevoStats])
 
   if(loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -392,55 +451,169 @@ export default function Dashboard(){
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-3 space-y-8">
-            {/* Metrics Grid */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex flex-col items-center justify-center mb-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+          <main className="lg:col-span-3 space-y-6">
+            {/* Brevo Account Info Banner */}
+            {brevoStats?.account && (
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-sm p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                      </svg>
+                      <span className="font-semibold">Conta Brevo Conectada</span>
+                    </div>
+                    <p className="text-emerald-50 text-sm">
+                      {brevoStats.account.email || brevoStats.account.companyName || 'Sua conta'}
+                    </p>
+                    {brevoStats.account.plan && (
+                      <p className="text-emerald-100 text-xs mt-1">
+                        Plano: {brevoStats.account.plan[0]?.type || 'Standard'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{brevoStats.account.plan?.[0]?.credits || '—'}</div>
+                    <div className="text-emerald-100 text-sm">Créditos disponíveis</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Metrics Grid - Estilo Brevo */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Estatísticas dos Últimos 30 Dias</h2>
+                {loadingBrevo && (
+                  <div className="flex items-center space-x-2 text-sm text-slate-500">
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Atualizando...</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* E-mails Enviados */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                       </svg>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
-                      {contactsCount ?? '—'}
-                    </div>
                   </div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">Total de Contatos</h3>
-                <p className="text-xs text-slate-500">Contatos importados na sua base</p>
-              </div>
+                  <div className="text-3xl font-bold text-slate-900 mb-1">
+                    {brevoMetrics?.sent?.toLocaleString('pt-BR') || '0'}
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium">E-mails Enviados</div>
+                  <div className="text-xs text-slate-400 mt-1">Total de envios realizados</div>
+                </div>
 
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex flex-col items-center justify-center mb-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                {/* Taxa de Entrega */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M22 12v2a2 2 0 0 1-2 2h-3l-4 3v-8l4-3h3a2 2 0 0 1 2 2v2zM2 12h4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
-                      {campaignsSent}
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 mb-1">
+                    {deliverRate != null ? `${deliverRate}%` : '—'}
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium">Taxa de Entrega</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {brevoMetrics?.delivered?.toLocaleString('pt-BR') || '0'} entregues
+                  </div>
+                </div>
+
+                {/* Taxa de Abertura */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                      </svg>
                     </div>
                   </div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">Campanhas Recentes</h3>
-                <p className="text-xs text-slate-500">Últimas campanhas criadas</p>
+                  <div className="text-3xl font-bold text-slate-900 mb-1">
+                    {brevoMetrics?.openRate != null ? `${brevoMetrics.openRate}%` : '—'}
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium">Taxa de Abertura</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {brevoMetrics?.opens?.toLocaleString('pt-BR') || '0'} aberturas únicas
+                  </div>
+                </div>
+
+                {/* Taxa de Cliques */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-slate-900 mb-1">
+                    {brevoMetrics?.clickRate != null ? `${brevoMetrics.clickRate}%` : '—'}
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium">Taxa de Cliques</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {brevoMetrics?.clicks?.toLocaleString('pt-BR') || '0'} cliques únicos
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 hover:shadow-md transition-all duration-300">
-                <div className="flex flex-col items-center justify-center mb-4">
-                    <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </div>
-                    <div className="text-2xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mt-3">
-                      {deliverRate != null ? `${deliverRate}%` : '—'}
+              {/* Métricas Adicionais */}
+              {brevoMetrics && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  {/* Contatos */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-slate-900">{contactsCount?.toLocaleString('pt-BR') || '0'}</div>
+                        <div className="text-xs text-slate-500">Total de Contatos</div>
+                      </div>
                     </div>
                   </div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-1">Entrega com Sucesso</h3>
-                <p className="text-xs text-slate-500">Percentual de envios entregues com sucesso</p>
-              </div>
+
+                  {/* Bounces */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-slate-900">{brevoMetrics.bounces?.toLocaleString('pt-BR')}</div>
+                        <div className="text-xs text-slate-500">E-mails Rejeitados</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Descadastros */}
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-slate-900">{brevoMetrics.unsubscribes?.toLocaleString('pt-BR')}</div>
+                        <div className="text-xs text-slate-500">Descadastros</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Recent Campaigns */}
