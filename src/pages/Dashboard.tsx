@@ -124,17 +124,32 @@ export default function Dashboard(){
       try {
         setLoadingBrevo(true)
         const token = await user.getIdToken()
+        console.log('[Dashboard] Fetching Brevo stats for tenant:', subscription.id)
+        
         const resp = await fetch(`/api/get-brevo-stats?tenantId=${subscription.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
+        
         const data = await resp.json()
+        console.log('[Dashboard] Brevo stats response:', data)
+        
         if (data.success && data.stats) {
+          console.log('[Dashboard] Stats received:', {
+            hasAccount: !!data.stats.account,
+            hasEmailStats: !!data.stats.emailStats,
+            hasCampaigns: !!data.stats.campaigns,
+            emailStats: data.stats.emailStats
+          })
           setBrevoStats(data.stats)
+        } else {
+          console.warn('[Dashboard] Failed to fetch stats:', data.error)
+          setBrevoStats(null)
         }
       } catch (err) {
         console.error('[Dashboard] Error fetching Brevo stats:', err)
+        setBrevoStats(null)
       } finally {
         setLoadingBrevo(false)
       }
@@ -189,19 +204,29 @@ export default function Dashboard(){
 
   // Estatísticas adicionais da Brevo
   const brevoMetrics = useMemo(() => {
-    if (!brevoStats?.emailStats) return null
+    console.log('[Dashboard] Computing brevoMetrics, brevoStats:', brevoStats)
+    
+    if (!brevoStats?.emailStats) {
+      console.log('[Dashboard] No emailStats available')
+      return null
+    }
     
     const stats = brevoStats.emailStats
-    return {
+    console.log('[Dashboard] Email stats data:', stats)
+    
+    const metrics = {
       sent: stats.requests || 0,
       delivered: stats.delivered || 0,
       opens: stats.uniqueOpens || stats.opens || 0,
       clicks: stats.uniqueClicks || stats.clicks || 0,
-      openRate: stats.requests > 0 ? Math.round((stats.uniqueOpens / stats.requests) * 10000) / 100 : 0,
-      clickRate: stats.requests > 0 ? Math.round((stats.uniqueClicks / stats.requests) * 10000) / 100 : 0,
-      bounces: stats.hardBounces + stats.softBounces || 0,
+      openRate: stats.requests > 0 ? Math.round(((stats.uniqueOpens || 0) / stats.requests) * 10000) / 100 : 0,
+      clickRate: stats.requests > 0 ? Math.round(((stats.uniqueClicks || 0) / stats.requests) * 10000) / 100 : 0,
+      bounces: (stats.hardBounces || 0) + (stats.softBounces || 0),
       unsubscribes: stats.unsubscriptions || 0
     }
+    
+    console.log('[Dashboard] Computed metrics:', metrics)
+    return metrics
   }, [brevoStats])
 
   if(loading) return (
