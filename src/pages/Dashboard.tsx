@@ -74,6 +74,21 @@ export default function Dashboard(){
     fetchTenant()
   }, [user])
 
+  // Listener em tempo real para dados do tenant (incluindo logo)
+  useEffect(() => {
+    if (!tenantId) return
+    
+    const tenantRef = doc(db, 'tenants', tenantId)
+    const unsubscribe = onSnapshot(tenantRef, (snap) => {
+      if (snap.exists()) {
+        setTenant({ id: snap.id, ...snap.data() })
+        console.log('[Dashboard] Tenant data updated:', snap.data())
+      }
+    })
+    
+    return () => unsubscribe()
+  }, [tenantId])
+
   // subscription listener (ownerUid preferred, fallback to email)
   useEffect(() => {
     if (!user) return
@@ -363,9 +378,17 @@ export default function Dashboard(){
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
-              </div>
+              {tenant?.logoUrl ? (
+                <img 
+                  src={tenant.logoUrl} 
+                  alt="Logo" 
+                  className="w-8 h-8 rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">M</span>
+                </div>
+              )}
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
                   Dashboard
