@@ -66,111 +66,22 @@ export async function getBrevoStats(req, res) {
 
     if (debug) console.log('[get-brevo-stats] Fetching stats for tenant:', tenantId)
 
-    // Buscar API key do tenant (mesma lógica do sendHelper)
-    let apiKey = null
-    
-    try {
-      const secretsSnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
-      const secrets = secretsSnap.exists ? secretsSnap.data() : {}
-      const activeKeyId = secrets?.activeKeyId
-      
-      if (debug) console.log('[get-brevo-stats] Secrets found:', { hasSecrets: secretsSnap.exists, activeKeyId })
-      
-      if (activeKeyId) {
-        const keySnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list').doc(activeKeyId).get()
-        if (keySnap.exists) {
-          const keyData = keySnap.data() || {}
-          let tenantKey = keyData.brevoApiKey
-          
-          if (debug) console.log('[get-brevo-stats] Active key (first 20 chars):', tenantKey?.substring(0, 20))
-          
-          const decrypted = tryDecrypt(tenantKey)
-          if (decrypted) {
-            tenantKey = decrypted
-            if (debug) console.log('[get-brevo-stats] Active key was encrypted, decrypted successfully')
-          } else {
-            if (debug) console.log('[get-brevo-stats] Active key appears to be plain text or decryption failed')
-          }
-          
-          if (tenantKey) apiKey = tenantKey
-          if (debug) console.log('[get-brevo-stats] Found active key, length:', apiKey?.length)
-        } else {
-          if (debug) console.log('[get-brevo-stats] Active key document not found')
-        }
-      }
-      
-      // Se não encontrou activeKey, buscar a mais recente da lista
-      if (!apiKey) {
-        if (debug) console.log('[get-brevo-stats] No active key, fetching latest from list...')
-        
-        const keysSnapshot = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list')
-          .orderBy('createdAt', 'desc')
-          .limit(1)
-          .get()
-        
-        if (!keysSnapshot.empty) {
-          const latestKeyDoc = keysSnapshot.docs[0]
-          const keyData = latestKeyDoc.data() || {}
-          let tenantKey = keyData.brevoApiKey
-          
-          if (debug) console.log('[get-brevo-stats] Latest key ID:', latestKeyDoc.id, '(first 20 chars):', tenantKey?.substring(0, 20))
-          
-          const decrypted = tryDecrypt(tenantKey)
-          if (decrypted) {
-            tenantKey = decrypted
-            if (debug) console.log('[get-brevo-stats] Latest key was encrypted, decrypted successfully')
-          } else {
-            if (debug) console.log('[get-brevo-stats] Latest key appears to be plain text')
-          }
-          
-          if (tenantKey) apiKey = tenantKey
-          if (debug) console.log('[get-brevo-stats] Using latest key, length:', apiKey?.length)
-        } else {
-          if (debug) console.log('[get-brevo-stats] No keys found in list')
-        }
-      }
-      
-      // Fallback para chave legacy
-      if (!apiKey) {
-        const legacyKey = secrets?.brevoApiKey
-        if (legacyKey) {
-          if (debug) console.log('[get-brevo-stats] Using legacy key (first 20 chars):', legacyKey?.substring(0, 20))
-          
-          const decrypted = tryDecrypt(legacyKey)
-          if (decrypted) {
-            apiKey = decrypted
-            if (debug) console.log('[get-brevo-stats] Legacy key was encrypted, decrypted successfully')
-          } else {
-            apiKey = legacyKey
-            if (debug) console.log('[get-brevo-stats] Legacy key appears to be plain text')
-          }
-          if (debug) console.log('[get-brevo-stats] Using legacy key, length:', apiKey?.length)
-        } else {
-          if (debug) console.log('[get-brevo-stats] No legacy key found')
-        }
-      }
-    } catch (e) {
-      console.error('[get-brevo-stats] Error loading tenant key:', e)
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to load API key: ' + e.message,
-        stats: null
-      })
-    }
+    // Use global Brevo API key from environment
+    const apiKey = process.env.BREVO_API_KEY
     
     if (!apiKey) {
-      console.warn('[get-brevo-stats] No Brevo API key configured for tenant:', tenantId)
+      console.warn('[get-brevo-stats] Global Brevo API key not configured in environment')
       return res.status(200).json({
         success: false,
-        error: 'No Brevo API key configured',
+        error: 'Global Brevo API key not configured',
         stats: null,
-        hint: 'Configure sua chave Brevo em Configurações > Configuração Brevo'
+        hint: 'Configure BREVO_API_KEY nas variáveis de ambiente da Vercel'
       })
     }
 
     // Log masked key for debugging
     const maskedKey = apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}` : 'none'
-    console.log('[get-brevo-stats] Using API key (masked):', maskedKey)
+    console.log('[get-brevo-stats] Using global API key (masked):', maskedKey)
 
     const headers = {
       'api-key': apiKey,

@@ -64,97 +64,50 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
   const debug = process.env.DEBUG_SEND === 'true'
   if (debug) console.log('[sendHelper] start', { tenantId, campaignId: payload && payload.campaignId, hasTemplate: !!payload.templateId })
 
-  let apiKey = process.env.BREVO_API_KEY
-  // If tenantId is not provided, attempt to derive tenantId from payload.ownerUid
-  if (!tenantId && payload && payload.ownerUid) {
-    try {
-      const ownerUid = payload.ownerUid
-      // First try: tenant document with ownerUid field
-      const ownerQ = await db.collection('tenants').where('ownerUid', '==', ownerUid).limit(1).get()
-      if (!ownerQ.empty) {
-        tenantId = ownerQ.docs[0].id
-        if (debug) console.log('[sendHelper] derived tenantId from tenants.ownerUid', tenantId)
-      } else {
-        // Fallback: search members collectionGroup where doc id == ownerUid
-        try {
-          const memberQ = await db.collectionGroup('members').where(admin.firestore.FieldPath.documentId(), '==', ownerUid).limit(1).get()
-          if (!memberQ.empty) {
-            const memberDoc = memberQ.docs[0]
-            const tenantDocRef = memberDoc.ref.parent.parent
-            if (tenantDocRef && tenantDocRef.id) {
-              tenantId = tenantDocRef.id
-              if (debug) console.log('[sendHelper] derived tenantId from members collectionGroup', tenantId)
-            }
-          }
-        } catch (e) {
-          if (debug) console.warn('[sendHelper] collectionGroup member lookup failed', e)
-        }
-      }
-    } catch (e) {
-      if (debug) console.warn('[sendHelper] failed to derive tenantId from ownerUid', e)
-    }
+  // Use global Brevo API key from Vercel environment variables
+  const apiKey = process.env.BREVO_API_KEY
+  
+  if (!apiKey) {
+    console.error('[sendHelper] Global Brevo API key missing in environment variables')
+    throw new Error('Brevo API key not configured. Please set BREVO_API_KEY in Vercel environment variables.')
   }
+
+  // Load tenant-specific sender configuration (fromEmail and fromName)
+  let tenantFromEmail = process.env.DEFAULT_FROM_EMAIL || ''
+  let tenantFromName = process.env.DEFAULT_FROM_NAME || ''
+  let smtpLogin = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
+
   if (tenantId) {
-    // First try: look for active key id in secrets, then fetch the key doc
     try {
       const secretsSnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
-      const secrets = secretsSnap.exists ? secretsSnap.data() : {}
-      const activeKeyId = secrets && secrets.activeKeyId
-      if (activeKeyId) {
-        const keySnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('keys').collection('list').doc(activeKeyId).get()
-        if (keySnap.exists) {
-          const keyData = keySnap.data() || {}
-          let tenantKey = keyData.brevoApiKey
-          const maybe = tryDecrypt(tenantKey)
-          if (maybe) tenantKey = maybe
-          if (tenantKey) apiKey = tenantKey
-          // Also capture smtpLogin from the key document if not in secrets
-          if (!secrets.smtpLogin && keyData.smtpLogin) {
-            secrets.smtpLogin = keyData.smtpLogin
-          }
-          // Capture fromEmail and fromName from key doc if not in secrets
-          if (!secrets.fromEmail && keyData.fromEmail) {
-            secrets.fromEmail = keyData.fromEmail
-          }
-          if (!secrets.fromName && keyData.fromName) {
-            secrets.fromName = keyData.fromName
-          }
-        }
-      } else {
-        // fallback to legacy single key stored on secrets.brevoApiKey
-        const legacyKey = secretsSnap.exists ? secretsSnap.data()?.brevoApiKey : null
-        if (legacyKey) {
-          const maybe2 = tryDecrypt(legacyKey)
-          if (maybe2) apiKey = maybe2
-          else apiKey = legacyKey
-        }
-      }
-      // Store tenant from/name in a variable for later use
-      if (secrets.fromEmail || secrets.fromName) {
-        payload._tenantFromEmail = secrets.fromEmail
-        payload._tenantFromName = secrets.fromName
+      if (secretsSnap.exists) {
+        const secrets = secretsSnap.data() || {}
+        // Use tenant-specific sender configuration if available
+        if (secrets.fromEmail) tenantFromEmail = secrets.fromEmail
+        if (secrets.fromName) tenantFromName = secrets.fromName
+        if (secrets.smtpLogin) smtpLogin = secrets.smtpLogin
       }
     } catch (e) {
-      if (debug) console.warn('[sendHelper] failed to load tenant key', e)
+      if (debug) console.warn('[sendHelper] failed to load tenant settings', e)
     }
   }
 
-  if (!apiKey) {
-    console.error('[sendHelper] Brevo API key missing for tenant', tenantId)
-    throw new Error('Brevo API key missing')
-  }
+  // Store tenant sender info for later use
+  payload._tenantFromEmail = tenantFromEmail
+  payload._tenantFromName = tenantFromName
 
-  // Validate / normalize sender. Use ONLY tenant fromEmail/fromName (no global fallback in SaaS)
+  // Validate / normalize sender
   function isValidEmail(e) {
     return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
   }
 
-  const tenantFromEmail = payload._tenantFromEmail || ''
-  const tenantFromName = payload._tenantFromName || ''
+  const defaultFromEmail = payload._tenantFromEmail || ''
+  const defaultFromName = payload._tenantFromName || ''
 
   // ensure payload.sender exists and has a valid email; otherwise fallback
   payload = payload || {}
   payload.sender = payload.sender || {}
+  
   // Wrap HTML content into canonical template (adds preheader, responsive styles)
   try {
     payload.htmlContent = renderTemplate(payload.htmlContent || payload.html || '', payload.subject || '', payload.preheader || '')
@@ -162,15 +115,15 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
     if (debug) console.warn('[sendHelper] template render failed, using raw html', e && (e.message || e))
     payload.htmlContent = payload.htmlContent || payload.html || ''
   }
+  
   if (!isValidEmail(payload.sender.email)) {
-    // Use tenant fromEmail (REQUIRED in SaaS - each account has its own Brevo sender)
-    if (isValidEmail(tenantFromEmail)) {
-      if (debug) console.log('[sendHelper] using tenant fromEmail:', tenantFromEmail)
-      payload.sender.email = tenantFromEmail
-      payload.sender.name = tenantFromName || payload.sender.name || ''
+    if (isValidEmail(defaultFromEmail)) {
+      if (debug) console.log('[sendHelper] using default fromEmail:', defaultFromEmail)
+      payload.sender.email = defaultFromEmail
+      payload.sender.name = defaultFromName || payload.sender.name || ''
     } else {
-      console.error('[sendHelper] No valid sender email configured for tenant', { tenantId, tenantFromEmail })
-      const err = new Error('Sender email not configured. Please configure your Brevo API key and SMTP Login in Settings.')
+      console.error('[sendHelper] No valid sender email configured', { tenantId, defaultFromEmail })
+      const err = new Error('Sender email not configured. Please set DEFAULT_FROM_EMAIL in Vercel environment variables or configure in tenant settings.')
       err.code = 'missing_sender_email'
       throw err
     }
@@ -197,42 +150,13 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
       if (debug) console.warn('[sendHelper] failed to infer sender name from tenant/user', e)
     }
   }
-
   if (typeof apiKey === 'string' && (apiKey.startsWith('xsmtp') || apiKey.startsWith('xsmtpsib'))) {
     if (debug) console.log('[sendHelper] using SMTP fallback (xsmtp key)', { tenantId })
-    let smtpUser = process.env.BREVO_SMTP_LOGIN || process.env.BREVO_SMTP_USER || null
-    try {
-      if (tenantId) {
-        const secretsSnap = await db.collection('tenants').doc(tenantId).collection('settings').doc('secrets').get()
-        if (secretsSnap.exists) {
-          const s = secretsSnap.data() || {}
-          if (!smtpUser && s.smtpLogin) {
-            smtpUser = s.smtpLogin
-            if (debug) console.log('[sendHelper] found smtpLogin in secrets')
-          }
-        }
-        if (!smtpUser) {
-          const tenantDoc = await db.collection('tenants').doc(tenantId).get()
-          const ownerUid = tenantDoc.exists ? tenantDoc.data()?.ownerUid : null
-          if (ownerUid) {
-            const memberDoc = await db.collection('tenants').doc(tenantId).collection('members').doc(ownerUid).get()
-            if (memberDoc.exists) {
-              const m = memberDoc.data() || {}
-              if (m.smtpLogin) {
-                smtpUser = m.smtpLogin
-                if (debug) console.log('[sendHelper] found smtpLogin in member doc')
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      if (debug) console.warn('[sendHelper] error loading smtpLogin', e)
-    }
 
-    if (!smtpUser) {
-      console.error('[sendHelper] SMTP login not configured for tenant', tenantId)
-      throw new Error('SMTP login not configured for this tenant. Please add SMTP Login in Settings.')
+    if (!smtpLogin) {
+      console.error('[sendHelper] SMTP login not configured', tenantId)
+      throw new Error('SMTP login not configured. Please set BREVO_SMTP_LOGIN in environment variables or configure in tenant settings.')
+    } throw new Error('SMTP login not configured for this tenant. Please add SMTP Login in Settings.')
     }
 
     const transporter = nodemailer.createTransport({
@@ -263,12 +187,12 @@ export async function sendUsingBrevoOrSmtp({ tenantId, payload }) {
         } catch (e) {
           console.error('[sendHelper][smtp] send error for', r.email, e && (e.response || e.message || e))
           results.push({ to: r.email, status: 500, error: e && (e.response?.data || e.message || String(e)) })
-        }
-      }
-      return { status: 207, data: { results } }
-    }
-
-    try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
+      port: Number(process.env.BREVO_SMTP_PORT || 587),
+      secure: false,
+      auth: { user: smtpLogin, pass: apiKey },
+    })y {
       const mailOptions = {
         from: payload.sender && payload.sender.email ? `${payload.sender.name || ''} <${payload.sender.email}>` : `no-reply@${process.env.DEFAULT_HOST || 'localhost'}`,
         to: recipients.map(r => r.email).join(','),

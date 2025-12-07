@@ -27,7 +27,7 @@ function tryDecrypt(val) {
 
 /**
  * GET /api/tenant/get-brevo-senders
- * Busca lista de remetentes configurados na conta Brevo do tenant
+ * Busca lista de remetentes configurados na conta Brevo global
  * Retorna: { senders: [{ id, name, email, active }] }
  */
 export default async function handler(req, res) {
@@ -53,38 +53,11 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Not a member of this tenant' })
     }
 
-    // Load active Brevo API key
-    const secretsRef = db.doc(`tenants/${tenantId}/settings/secrets`)
-    const secretsSnap = await secretsRef.get()
-    
-    if (!secretsSnap.exists) {
-      return res.status(404).json({ error: 'No API key configured for this tenant' })
-    }
-
-    const secrets = secretsSnap.data()
-    const activeKeyId = secrets.activeKeyId
-
-    if (!activeKeyId) {
-      return res.status(404).json({ error: 'No active API key set' })
-    }
-
-    // Load the active key
-    const keyRef = db.doc(`tenants/${tenantId}/settings/keys/list/${activeKeyId}`)
-    const keySnap = await keyRef.get()
-
-    if (!keySnap.exists) {
-      return res.status(404).json({ error: 'Active key not found' })
-    }
-
-    const keyData = keySnap.data()
-    let brevoApiKey = keyData.brevoApiKey
-
-    // Try to decrypt if encrypted
-    const decrypted = tryDecrypt(brevoApiKey)
-    if (decrypted) brevoApiKey = decrypted
+    // Use global Brevo API key from environment
+    const brevoApiKey = process.env.BREVO_API_KEY
 
     if (!brevoApiKey) {
-      return res.status(400).json({ error: 'No valid Brevo API key found' })
+      return res.status(400).json({ error: 'Global Brevo API key not configured in environment variables' })
     }
 
     // Call Brevo API to get senders

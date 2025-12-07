@@ -5,10 +5,13 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
 function sleep(ms){ return new Promise(r=>setTimeout(r, ms)) }
 
 export async function sendEmail({ apiKey, payload, retries = 2, timeout = 15000, idempotencyKey } = {}){
-  if (!apiKey) throw new Error('BREVO_API_KEY missing')
+  // Use global API key if not provided
+  const brevoApiKey = apiKey || process.env.BREVO_API_KEY
+  if (!brevoApiKey) throw new Error('BREVO_API_KEY missing - configure in Vercel environment variables')
+  
   const debug = process.env.DEBUG_SEND === 'true'
   const headers = {
-    'api-key': apiKey,
+    'api-key': brevoApiKey,
     'Content-Type': 'application/json',
   }
   const idem = idempotencyKey || (payload && payload.headers && payload.headers['Idempotency-Key']) || `brevo-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
