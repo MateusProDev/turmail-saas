@@ -754,7 +754,7 @@ export default function Campaigns(){
                           category="hero"
                           selectedImageUrl={heroImage}
                           onImageSelect={setHeroImage}
-                          label="🌄 Imagem Principal (Hero)"
+                          label="🌄 Banner Principal (Hero)"
                           allowUpload={true}
                         />
                         <ImageGallerySelector
@@ -772,7 +772,7 @@ export default function Campaigns(){
                           category="team"
                           selectedImageUrl={teamImage1}
                           onImageSelect={setTeamImage1}
-                          label="🏨 Hospedagem (Imagem 1)"
+                          label="📸 Foto do Destino 1"
                           allowUpload={true}
                         />
                         <ImageGallerySelector
@@ -780,7 +780,7 @@ export default function Campaigns(){
                           category="team"
                           selectedImageUrl={teamImage2}
                           onImageSelect={setTeamImage2}
-                          label="🍽️ Refeições (Imagem 2)"
+                          label="📸 Foto do Destino 2"
                           allowUpload={true}
                         />
                       </div>
@@ -790,7 +790,7 @@ export default function Campaigns(){
                           category="team"
                           selectedImageUrl={teamImage3}
                           onImageSelect={setTeamImage3}
-                          label="👨‍🏫 Guias (Imagem 3)"
+                          label="📸 Foto do Destino 3"
                           allowUpload={true}
                         />
                         <ImageGallerySelector
@@ -798,7 +798,7 @@ export default function Campaigns(){
                           category="team"
                           selectedImageUrl={teamImage4}
                           onImageSelect={setTeamImage4}
-                          label="🚌 Transporte (Imagem 4)"
+                          label="📸 Foto do Destino 4"
                           allowUpload={true}
                         />
                       </div>
@@ -1237,7 +1237,7 @@ export default function Campaigns(){
                       }`}>
                       {showPreview && selectedTenant && (
                         <ImageEditablePreview
-                          key={`${activeTemplate}-${htmlContent.length}`}
+                          key={`${activeTemplate}-${heroImage}-${logoImage}-${teamImage1}-${teamImage2}-${teamImage3}-${teamImage4}-${locationImage}`}
                           clientId={selectedTenant}
                           previewHtml={htmlContent}
                           onHtmlChange={(newHtml) => {

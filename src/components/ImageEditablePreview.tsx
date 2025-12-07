@@ -111,13 +111,13 @@ export function ImageEditablePreview({
 
         // Define label e cor por tipo
         const typeLabels: Record<string, string> = {
-          hero: '🌄 Imagem Principal',
-          logo: '🏢 Logo',
-          team1: '🏨 Hospedagem',
-          team2: '🍽️ Refeições',
-          team3: '👨‍🏫 Guias',
-          team4: '🚌 Transporte',
-          location: '📍 Localização'
+          hero: '🌄 Banner Principal',
+          logo: '🏢 Logo da Empresa',
+          team1: '📸 Foto do Destino 1',
+          team2: '📸 Foto do Destino 2',
+          team3: '📸 Foto do Destino 3',
+          team4: '📸 Foto do Destino 4',
+          location: '📍 Mapa/Localização'
         }
 
         const typeColors: Record<string, string> = {
@@ -137,7 +137,7 @@ export function ImageEditablePreview({
         
         const placeholderStyle = `position: relative !important; width: 100% !important; height: ${height === 'auto' ? '200px' : height + 'px'} !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; background: linear-gradient(135deg, ${color}20 0%, ${color}10 100%) !important; color: ${color} !important; font-weight: 600 !important; font-size: 14px !important; text-align: center !important; padding: 20px !important;`
         
-        const imgStyle = `position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; transition: opacity 0.3s !important; z-index: 1 !important;`
+        const imgStyle = `position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; transition: opacity 0.3s !important; z-index: 1 !important; opacity: 0 !important;`
         
         const overlayStyle = `position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.6) !important; display: flex !important; align-items: center !important; justify-content: center !important; opacity: 0 !important; transition: opacity 0.2s !important; pointer-events: none !important; z-index: 2 !important;`
         
