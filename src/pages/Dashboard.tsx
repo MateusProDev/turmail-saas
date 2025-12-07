@@ -3,7 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth'
 // Use Tailwind for all styles in this file
 import { auth, db } from '../lib/firebase'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -15,6 +15,7 @@ export default function Dashboard(){
   const [brevoStats, setBrevoStats] = useState<any>(null)
   const [loadingBrevo, setLoadingBrevo] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
+  const [tenant, setTenant] = useState<any>(null)
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -52,9 +53,17 @@ export default function Dashboard(){
           const firstTenant = data.tenants[0]
           console.log('[Dashboard] Found tenant:', firstTenant.tenantId)
           setTenantId(firstTenant.tenantId)
+          
+          // Buscar dados completos do tenant incluindo logoUrl
+          const tenantRef = doc(db, 'tenants', firstTenant.tenantId)
+          const tenantSnap = await getDoc(tenantRef)
+          if (tenantSnap.exists()) {
+            setTenant({ id: tenantSnap.id, ...tenantSnap.data() })
+          }
         } else {
           console.log('[Dashboard] No tenant found for user')
           setTenantId(null)
+          setTenant(null)
         }
       } catch (e) {
         console.error('[Dashboard] Error fetching tenant:', e)
@@ -372,9 +381,17 @@ export default function Dashboard(){
                 className="flex items-center space-x-3 bg-white/60 hover:bg-white/80 border border-slate-200/60 rounded-xl px-3 py-2 transition-all duration-200 hover:shadow-sm"
               >
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                    {user && user.displayName ? user.displayName.split(' ').map(s=>s[0]).slice(0,2).join('') : (user && user.email ? user.email[0].toUpperCase() : 'U')}
-                  </div>
+                  {tenant?.logoUrl ? (
+                    <img 
+                      src={tenant.logoUrl} 
+                      alt="Logo" 
+                      className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                      {user && user.displayName ? user.displayName.split(' ').map(s=>s[0]).slice(0,2).join('') : (user && user.email ? user.email[0].toUpperCase() : 'U')}
+                    </div>
+                  )}
                   <div className="text-left hidden sm:block">
                     <div className="text-sm font-medium text-slate-900">{user.email}</div>
                     <div className="text-xs text-slate-500">Conta {trialInfo && `• ${trialInfo.expired ? 'Trial Expirado' : `Trial ${trialInfo.days}d`}`}</div>
@@ -432,9 +449,17 @@ export default function Dashboard(){
             <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6">
               {/* User Card */}
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-3 shadow-lg">
-                  {user && user.displayName ? user.displayName.split(' ').map(s=>s[0]).slice(0,2).join('') : (user && user.email ? user.email[0].toUpperCase() : 'U')}
-                </div>
+                {tenant?.logoUrl ? (
+                  <img 
+                    src={tenant.logoUrl} 
+                    alt="Logo da Empresa" 
+                    className="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-white"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-3 shadow-lg">
+                    {user && user.displayName ? user.displayName.split(' ').map(s=>s[0]).slice(0,2).join('') : (user && user.email ? user.email[0].toUpperCase() : 'U')}
+                  </div>
+                )}
                 <h3 className="font-semibold text-slate-900 truncate">{user.email}</h3>
                 <p className="text-sm text-slate-500 mt-1">Membro</p>
                 {trialInfo && (

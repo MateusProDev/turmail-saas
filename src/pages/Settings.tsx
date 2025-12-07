@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 // Removed unused firestore imports
 import { auth } from '../lib/firebase'
+import TenantLogoUploader from '../components/TenantLogoUploader'
 
 export default function Settings(){
   const [testing, setTesting] = useState(false)
@@ -311,7 +312,30 @@ export default function Settings(){
           </div>
         </header>
 
-        <div className="space-y-6"> 
+        <div className="space-y-6">
+          {/* Logo Upload Section */}
+          {selectedTenant && (
+            <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">Logo da Empresa</h2>
+                  <p className="text-slate-600 text-sm">
+                    Faça upload da logo que será exibida no dashboard e perfil
+                  </p>
+                </div>
+              </div>
+              <TenantLogoUploader 
+                tenantId={selectedTenant}
+                onLogoUpdated={(url) => console.log('[Settings] Logo updated:', url)}
+              />
+            </section>
+          )}
+          
           {/* Tenant Brevo Key Section */}
           <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
