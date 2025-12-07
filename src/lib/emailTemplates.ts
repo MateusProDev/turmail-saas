@@ -95,33 +95,63 @@ const destinationPackageTemplate: EmailTemplate = {
             </td>
           </tr>
 
-          <!-- TÍTULO -->
+          <!-- TÍTULO E SUBTÍTULO -->
           <tr>
-            <td style="padding: 30px 30px 10px 30px;">
-              <h1 style="margin: 0; color: #0f172a; font-size: 36px; font-weight: 700; line-height: 1.2;">${mainTitle}</h1>
+            <td style="padding: 35px 40px 25px 40px; text-align: center; background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(14,165,233,0.03) 100%);">
+              <h1 style="margin: 0 0 12px 0; color: #0f172a; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px;">${mainTitle}</h1>
+              <p style="margin: 0; color: #64748b; font-size: 18px; line-height: 1.6; font-weight: 400; max-width: 500px; margin: 0 auto;">${description}</p>
             </td>
           </tr>
 
-          <!-- DESCRIÇÃO + PREÇO SIDEBAR -->
+          <!-- CARD DE PREÇO E BENEFÍCIOS -->
           <tr>
-            <td style="padding: 20px 30px 35px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+            <td style="padding: 0 30px 40px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; overflow: hidden; border: 2px solid #e0f2fe;">
                 <tr>
-                  <td width="65%" style="vertical-align: top; padding-right: 20px;">
-                    <p style="margin: 0 0 20px 0; color: #2d3748; font-size: 17px; line-height: 1.7;">${description}</p>
-                    <h3 style="margin: 0 0 15px 0; color: #0ea5e9; font-size: 20px; font-weight: 600;">✨ Incluso no pacote:</h3>
-                    <ul style="margin: 0; padding-left: 20px; color: #4a5568; font-size: 15px; line-height: 1.8;">
-                      ${keyBenefits.map(benefit => `<li style="margin-bottom: 8px;">${benefit}</li>`).join('')}
-                    </ul>
-                  </td>
-                  <td width="35%" style="vertical-align: top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border-radius: 15px; padding: 25px 20px; text-align: center; box-shadow: 0 4px 15px rgba(14,165,233,0.2);">
+                  <td style="padding: 35px 35px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td>
-                          <p style="margin: 0 0 8px 0; color: rgba(255,255,255,0.95); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">A partir de</p>
-                          <p style="margin: 0 0 10px 0; color: #ffffff; font-size: 28px; font-weight: 700;">${priceInfo.replace('A partir de ', '')}</p>
-                          <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.9); font-size: 12px;">${dateRange}</p>
-                          <a href="${ctaLink}" style="display: block; background: #ffffff; color: #0284c7; padding: 14px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">${ctaText}</a>
+                        <!-- Coluna Esquerda: Benefícios -->
+                        <td width="60%" style="vertical-align: top; padding-right: 25px;">
+                          <h3 style="margin: 0 0 20px 0; color: #0ea5e9; font-size: 22px; font-weight: 700; display: flex; align-items: center;">
+                            <span style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: white; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 18px;">✨</span>
+                            O Que Está Incluído
+                          </h3>
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            ${keyBenefits.map((benefit, index) => `
+                              <tr>
+                                <td style="padding: 10px 0; ${index < keyBenefits.length - 1 ? 'border-bottom: 1px solid #e2e8f0;' : ''}">
+                                  <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td width="32" style="vertical-align: top; padding-right: 12px;">
+                                        <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold;">✓</div>
+                                      </td>
+                                      <td style="vertical-align: middle;">
+                                        <p style="margin: 0; color: #334155; font-size: 16px; line-height: 1.5; font-weight: 500;">${benefit}</p>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </table>
+                        </td>
+                        
+                        <!-- Coluna Direita: Preço e CTA -->
+                        <td width="40%" style="vertical-align: top;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 16px; padding: 30px 25px; text-align: center; box-shadow: 0 10px 30px rgba(14,165,233,0.3);">
+                            <tr>
+                              <td>
+                                <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px; display: inline-block; margin-bottom: 15px;">
+                                  <p style="margin: 0; color: rgba(255,255,255,0.95); font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">OFERTA ESPECIAL</p>
+                                </div>
+                                <p style="margin: 0 0 5px 0; color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500;">A partir de</p>
+                                <p style="margin: 0 0 5px 0; color: #ffffff; font-size: 38px; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${priceInfo.replace('A partir de ', '')}</p>
+                                <p style="margin: 0 0 25px 0; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500;">${dateRange}</p>
+                                <a href="${ctaLink}" style="display: block; background: #ffffff; color: #0284c7; padding: 16px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s;">${ctaText}</a>
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
