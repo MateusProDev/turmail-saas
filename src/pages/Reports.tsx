@@ -11,6 +11,7 @@ interface Campaign {
   title?: string
   name?: string
   status: string
+  to?: Array<{ email: string }>
   result?: {
     status?: string
     messageId?: string
@@ -21,6 +22,8 @@ interface Campaign {
     opens?: number
     clicks?: number
     bounces?: number
+    uniqueOpeners?: string[]
+    uniqueClickers?: string[]
   }
   sent?: number
   delivered?: number
