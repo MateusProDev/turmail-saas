@@ -28,6 +28,27 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
+  // Verificar se usuário veio da página de planos para criar conta
+  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('signup') === '1') {
+      setIsSignup(true)
+    }
+    
+    // Verificar se há plano pendente e mostrar banner
+    const pendingPlanStr = localStorage.getItem('pendingPlan')
+    if (pendingPlanStr) {
+      try {
+        const pendingPlan = JSON.parse(pendingPlanStr)
+        setSelectedPlan(pendingPlan)
+      } catch (e) {
+        console.error('Error parsing pending plan:', e)
+      }
+    }
+  }, [])
+
   // Verificar resultado do redirect do Google OAuth
   useEffect(() => {
     const checkRedirectResult = async () => {
@@ -72,6 +93,13 @@ export default function Login() {
             console.error('failed to create user doc', setErr)
           }
 
+          // Verificar se há plano pendente
+          const hasPendingPlan = await processPendingPlan(user)
+          if (hasPendingPlan) {
+            // processPendingPlan já faz o redirecionamento
+            return
+          }
+
           navigate('/dashboard')
         }
       } catch (err: any) {
@@ -86,6 +114,70 @@ export default function Login() {
 
     checkRedirectResult()
   }, [navigate])
+
+  // Processar checkout de plano pendente
+  const processPendingPlan = async (user: any) => {
+    const pendingPlanStr = localStorage.getItem('pendingPlan')
+    if (!pendingPlanStr) return false
+
+    try {
+      const pendingPlan = JSON.parse(pendingPlanStr)
+      const { planId, priceIdEnvMonthly, priceIdEnvAnnual, billingInterval } = pendingPlan
+
+      // Limpar do localStorage
+      localStorage.removeItem('pendingPlan')
+
+      // Se for trial, iniciar trial
+      if (planId === 'trial') {
+        const resp = await fetch('/api/start-trial', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
+        })
+        if (resp.ok) {
+          navigate('/dashboard')
+          return true
+        }
+      }
+
+      // Obter Price ID do plano
+      const envKey = billingInterval === 'annual' ? priceIdEnvAnnual : priceIdEnvMonthly
+      const priceId = envKey ? (import.meta as any).env[envKey] : null
+
+      if (!priceId) {
+        console.error('Price ID not found for pending plan')
+        navigate('/dashboard')
+        return true
+      }
+
+      // Criar sessão de checkout
+      const token = await user.getIdToken()
+      const checkoutResp = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 
+          'content-type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          priceId, 
+          planId,
+          email: user.email 
+        }),
+      })
+
+      const checkoutData = await checkoutResp.json()
+      if (checkoutData?.url) {
+        // Redirecionar para Stripe Checkout
+        window.location.href = checkoutData.url
+        return true
+      }
+    } catch (err) {
+      console.error('Error processing pending plan:', err)
+      localStorage.removeItem('pendingPlan')
+    }
+
+    return false
+  }
 
   // Validação de senha forte
   const validatePassword = (pwd: string): string | null => {
@@ -148,6 +240,13 @@ export default function Login() {
           }
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
+        }
+
+        // Verificar se há plano pendente
+        const hasPendingPlan = await processPendingPlan(user)
+        if (hasPendingPlan) {
+          // processPendingPlan já faz o redirecionamento
+          return
         }
 
         navigate('/dashboard')
@@ -270,8 +369,22 @@ export default function Login() {
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
         }
+
+        // Verificar se há plano pendente para processar checkout
+        const hasPendingPlan = await processPendingPlan(userCred.user)
+        if (hasPendingPlan) {
+          // processPendingPlan já faz o redirecionamento
+          return
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password)
+        
+        // Verificar se há plano pendente após login
+        const hasPendingPlan = await processPendingPlan(auth.currentUser)
+        if (hasPendingPlan) {
+          // processPendingPlan já faz o redirecionamento
+          return
+        }
       }
       
       navigate('/dashboard')
@@ -305,6 +418,29 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Banner do Plano Selecionado */}
+        {selectedPlan && isSignup && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-sm animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-green-900 text-sm">Plano Selecionado: {selectedPlan.planName || selectedPlan.planId}</h3>
+                <p className="text-green-700 text-xs mt-1">
+                  {selectedPlan.planId === 'trial' 
+                    ? 'Após criar sua conta, você terá 7 dias grátis!' 
+                    : `Após criar sua conta, você será direcionado para o pagamento.`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Logo e Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">

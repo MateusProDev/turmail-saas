@@ -1,8 +1,25 @@
-export async function createCheckoutSession(priceId: string) {
+export async function createCheckoutSession(priceId: string, planId?: string | null, email?: string | null) {
+  // Obter token de autenticação do Firebase
+  const { auth } = await import('./firebase')
+  const user = auth.currentUser
+  
+  if (!user) {
+    throw new Error('User must be authenticated to create checkout session')
+  }
+
+  const token = await user.getIdToken()
+
+  const body: any = { priceId }
+  if (planId) body.planId = planId
+  if (email) body.email = email
+
   const res = await fetch('/api/stripe-checkout', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ priceId }),
+    headers: { 
+      'content-type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
   })
   if (!res.ok) {
     let text = ''

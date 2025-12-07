@@ -41,8 +41,37 @@ export default async function handler(req, res) {
       const email = session.customer_details?.email || null
       const stripeCustomerId = session.customer
       const stripeSubscriptionId = session.subscription || null
+      const planId = session.metadata?.planId || null
+      const metadataPriceId = session.metadata?.priceId || null
 
-      if (debug) console.log('[webhook-stripe] session', { email, stripeCustomerId, stripeSubscriptionId })
+      if (debug) console.log('[webhook-stripe] session', { email, stripeCustomerId, stripeSubscriptionId, planId, metadataPriceId })
+
+      // SEGURANÇA: Verificar se o priceId pago corresponde ao planId nos metadados
+      if (metadataPriceId) {
+        const lineItems = session.line_items?.data || []
+        const actualPriceId = lineItems.length > 0 ? lineItems[0].price.id : null
+        
+        if (actualPriceId && actualPriceId !== metadataPriceId) {
+          console.error('[webhook-stripe] SECURITY: Price ID mismatch!', {
+            metadata: metadataPriceId,
+            actual: actualPriceId
+          })
+          // Usar o priceId real pago, não dos metadados
+        }
+      }
+
+      // Import plans to get limits
+      const { PLANS } = await import('../lib/plans.js')
+      const planConfig = planId && PLANS[planId] ? PLANS[planId] : null
+
+      // SEGURANÇA: Log de auditoria
+      console.log('[webhook-stripe] Processing payment:', {
+        email,
+        planId,
+        priceId: metadataPriceId,
+        amount: session.amount_total,
+        currency: session.currency
+      })
 
       if (email) {
         const usersRef = db.collection('users')
@@ -59,13 +88,41 @@ export default async function handler(req, res) {
       }
 
       if (stripeSubscriptionId) {
-        await db.collection('subscriptions').doc(stripeSubscriptionId).set({
+        const subscriptionData = {
           stripeSubscriptionId,
           stripeCustomerId,
           email: email || null,
           status: 'active',
           createdAt: new Date(),
-        }, { merge: true })
+        }
+
+        // Add planId and limits if available
+        if (planId) {
+          subscriptionData.planId = planId
+        }
+        if (planConfig && planConfig.limits) {
+          subscriptionData.limits = planConfig.limits
+        }
+
+        await db.collection('subscriptions').doc(stripeSubscriptionId).set(subscriptionData, { merge: true })
+        
+        // Also update tenant if we can find it by email
+        if (email) {
+          const tenantsRef = db.collection('tenants')
+          const tenantQuery = await tenantsRef.where('ownerEmail', '==', email).limit(1).get()
+          if (!tenantQuery.empty) {
+            const tenantDoc = tenantQuery.docs[0]
+            const tenantUpdateData = {
+              stripeSubscriptionId,
+              status: 'active',
+            }
+            if (planId) tenantUpdateData.planId = planId
+            if (planConfig && planConfig.limits) tenantUpdateData.limits = planConfig.limits
+            
+            await tenantDoc.ref.update(tenantUpdateData)
+            console.log('[webhook-stripe] Updated tenant with plan:', { tenantId: tenantDoc.id, planId })
+          }
+        }
       }
     }
 

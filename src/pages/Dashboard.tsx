@@ -21,6 +21,23 @@ export default function Dashboard(){
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
+  // Check for checkout success in URL
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+  
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const checkoutSuccess = params.get('checkout')
+    
+    if (checkoutSuccess === 'success') {
+      // Show success toast
+      setShowSuccessToast(true)
+      setTimeout(() => setShowSuccessToast(false), 5000)
+      
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard')
+    }
+  }, [])
+
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {
       const el = menuRef.current
@@ -373,6 +390,35 @@ export default function Dashboard(){
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 z-50 animate-slideInRight">
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 max-w-md">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-green-900 text-sm">🎉 Pagamento Confirmado!</h3>
+                <p className="text-green-700 text-xs mt-1">Seu plano foi ativado com sucesso. Aproveite todos os recursos!</p>
+              </div>
+              <button 
+                onClick={() => setShowSuccessToast(false)}
+                className="flex-shrink-0 text-green-600 hover:text-green-800"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

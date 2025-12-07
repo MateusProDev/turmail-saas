@@ -169,13 +169,25 @@ export default function Plans() {
   }, [user])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
+    // Se usuário não estiver logado, salvar plano e redirecionar para signup
+    if (!user) {
+      // Salvar dados do plano escolhido no localStorage com nome do plano
+      localStorage.setItem('pendingPlan', JSON.stringify({
+        planId: plan.id,
+        planName: plan.name,
+        price: plan.price,
+        priceIdEnvMonthly: (plan as any).priceIdEnvMonthly,
+        priceIdEnvAnnual: (plan as any).priceIdEnvAnnual,
+        billingInterval,
+      }))
+      
+      // Redirecionar para login com flag de signup
+      navigate('/login?signup=1')
+      return
+    }
+
     // detect trial plan
     if (plan.id === 'trial' || plan.price === 0) {
-      if (!user) {
-        alert('Você precisa fazer login para iniciar o trial gratuito')
-        navigate('/login')
-        return
-      }
       try {
         setLoading(true)
         // Call server endpoint to start a 7-day trial
@@ -214,7 +226,7 @@ export default function Plans() {
 
     try {
       setLoading(true)
-      const json = await createCheckoutSession(priceId)
+      const json = await createCheckoutSession(priceId, plan.id, user?.email || null)
       if (json?.url) {
         window.location.href = json.url
       } else {
@@ -378,7 +390,7 @@ export default function Plans() {
 
                 <div className="mt-auto w-full">
                   <button
-                    className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
+                    className={`w-full py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center ${
                       featured 
                         ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg' 
                         : 'bg-gray-900 text-white hover:bg-gray-800'
@@ -386,8 +398,22 @@ export default function Plans() {
                     onClick={() => handleCheckout(p)}
                     disabled={loading || isCurrent}
                   >
-                    {loading ? 'Processando...' : isCurrent ? '✓ Plano Atual' : 'Ativar Plano'}
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Processando...
+                      </>
+                    ) : isCurrent ? (
+                      '✓ Plano Atual'
+                    ) : (
+                      `Ativar ${p.name}`
+                    )}
                   </button>
+                  {!user && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      Você será direcionado para criar uma conta
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
