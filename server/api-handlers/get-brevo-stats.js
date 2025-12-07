@@ -57,19 +57,39 @@ export async function getBrevoStats(req, res) {
         if (keySnap.exists) {
           const keyData = keySnap.data() || {}
           let tenantKey = keyData.brevoApiKey
+          
+          if (debug) console.log('[get-brevo-stats] Raw key (first 20 chars):', tenantKey?.substring(0, 20))
+          
           const decrypted = tryDecrypt(tenantKey)
-          if (decrypted) tenantKey = decrypted
+          if (decrypted) {
+            tenantKey = decrypted
+            if (debug) console.log('[get-brevo-stats] Key was encrypted, decrypted successfully')
+          } else {
+            if (debug) console.log('[get-brevo-stats] Key appears to be plain text or decryption failed')
+          }
+          
           if (tenantKey) apiKey = tenantKey
-          if (debug) console.log('[get-brevo-stats] Found active key:', { hasKey: !!apiKey })
+          if (debug) console.log('[get-brevo-stats] Found active key, length:', apiKey?.length)
+        } else {
+          if (debug) console.log('[get-brevo-stats] Active key document not found')
         }
       } else {
         // Fallback para chave legacy
         const legacyKey = secrets?.brevoApiKey
         if (legacyKey) {
+          if (debug) console.log('[get-brevo-stats] Using legacy key (first 20 chars):', legacyKey?.substring(0, 20))
+          
           const decrypted = tryDecrypt(legacyKey)
-          if (decrypted) apiKey = decrypted
-          else apiKey = legacyKey
-          if (debug) console.log('[get-brevo-stats] Using legacy key:', { hasKey: !!apiKey })
+          if (decrypted) {
+            apiKey = decrypted
+            if (debug) console.log('[get-brevo-stats] Legacy key was encrypted, decrypted successfully')
+          } else {
+            apiKey = legacyKey
+            if (debug) console.log('[get-brevo-stats] Legacy key appears to be plain text')
+          }
+          if (debug) console.log('[get-brevo-stats] Using legacy key, length:', apiKey?.length)
+        } else {
+          if (debug) console.log('[get-brevo-stats] No legacy key found')
         }
       }
     } catch (e) {
@@ -86,9 +106,14 @@ export async function getBrevoStats(req, res) {
       return res.status(200).json({
         success: false,
         error: 'No Brevo API key configured',
-        stats: null
+        stats: null,
+        hint: 'Configure sua chave Brevo em Configurações > Configuração Brevo'
       })
     }
+
+    // Log masked key for debugging
+    const maskedKey = apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}` : 'none'
+    console.log('[get-brevo-stats] Using API key (masked):', maskedKey)
 
     const headers = {
       'api-key': apiKey,
