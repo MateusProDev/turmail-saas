@@ -16,6 +16,8 @@ import { doc, setDoc } from 'firebase/firestore'
 import makeInitialUserData from '../lib/initUser'
 
 export default function Login() {
+  console.log('🟣 [COMPONENTE] Login.tsx montado/renderizado')
+  
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -32,6 +34,9 @@ export default function Login() {
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   
   useEffect(() => {
+    console.log('🟣 [USEEFFECT] Componente montado - verificando handleGoogleSignIn')
+    console.log('🟣 [USEEFFECT] handleGoogleSignIn existe?', typeof handleGoogleSignIn)
+    
     const params = new URLSearchParams(window.location.search)
     if (params.get('signup') === '1') {
       setIsSignup(true)
