@@ -90,21 +90,21 @@ const destinationPackageTemplate: EmailTemplate = {
           
           <!-- HERO FULL WIDTH -->
           <tr>
-            <td style="padding: 0; position: relative;">
-              <img src="${heroImage}" alt="${destination}" width="600" height="400" style="width: 100%; height: auto; display: block;">
-              <table width="100%" cellpadding="0" cellspacing="0" class="hero-text-overlay" style="position: absolute; top: 0; left: 0; height: 100%; pointer-events: none;">
-                <tr style="pointer-events: none;">
-                  <td valign="bottom" style="padding: 30px; background: linear-gradient(transparent, rgba(15,23,42,0.5)); pointer-events: none;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 36px; font-weight: 700; text-shadow: 1px 2px 4px rgba(0,0,0,0.4); pointer-events: auto;">${mainTitle}</h1>
-                  </td>
-                </tr>
-              </table>
+            <td style="padding: 0;">
+              <img src="${heroImage}" alt="${destination}" width="600" height="400" style="width: 100%; height: auto; display: block; border-radius: 0;">
+            </td>
+          </tr>
+
+          <!-- TÍTULO -->
+          <tr>
+            <td style="padding: 30px 30px 10px 30px;">
+              <h1 style="margin: 0; color: #0f172a; font-size: 36px; font-weight: 700; line-height: 1.2;">${mainTitle}</h1>
             </td>
           </tr>
 
           <!-- DESCRIÇÃO + PREÇO SIDEBAR -->
           <tr>
-            <td style="padding: 35px 30px;">
+            <td style="padding: 20px 30px 35px 30px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td width="65%" style="vertical-align: top; padding-right: 20px;">
@@ -388,17 +388,17 @@ const promotionalTemplate: EmailTemplate = {
             </td>
           </tr>
 
-          <!-- HERO COM OVERLAY -->
+          <!-- HERO IMAGE -->
           <tr>
-            <td style="padding: 0; position: relative;">
-              <img src="${heroImage}" alt="${mainTitle}" width="600" height="300" style="width: 100%; height: auto; display: block;">
-              <table width="100%" cellpadding="0" cellspacing="0" class="hero-text-overlay" style="position: absolute; top: 0; left: 0; height: 100%; pointer-events: none;">
-                <tr style="pointer-events: none;">
-                  <td valign="middle" style="padding: 30px; background: linear-gradient(transparent, rgba(0,0,0,0.85)); pointer-events: none;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 44px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 2px 2px 8px rgba(0,0,0,0.4); pointer-events: auto;">${mainTitle}</h1>
-                  </td>
-                </tr>
-              </table>
+            <td style="padding: 0;">
+              <img src="${heroImage}" alt="${mainTitle}" width="600" height="300" style="width: 100%; height: auto; display: block; border-radius: 0;">
+            </td>
+          </tr>
+
+          <!-- TÍTULO -->
+          <tr>
+            <td style="padding: 30px 30px 10px 30px;">
+              <h1 style="margin: 0; color: #0f172a; font-size: 44px; font-weight: 700; line-height: 1.1; letter-spacing: -0.5px;">${mainTitle}</h1>
             </td>
           </tr>
 
