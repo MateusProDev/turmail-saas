@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FaCheck, FaStar, FaTag } from 'react-icons/fa'
+import { FaCheck } from 'react-icons/fa'
 import './Plans.css'
 import { createCheckoutSession } from '../lib/stripe'
 import { useAuthState } from 'react-firebase-hooks/auth'
@@ -256,7 +256,31 @@ export default function Plans() {
         <p className="text-sm text-gray-600 mt-1">Escolha um plano que atenda seu projeto — atualize quando quiser.</p>
       </header>
 
-      <div className="flex items-center justify-between gap-4 mb-4">
+      {/* Trial Banner - Discreto */}
+      {!subscription?.planId || subscription?.planId === 'trial' ? (
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 mb-1">🎉 Teste Grátis - 7 Dias</h3>
+              <p className="text-sm text-blue-700">
+                Comece agora com 50 emails/dia • Sem cartão de crédito
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const trialPlan = PLANS.find(p => p.id === 'trial')
+                if (trialPlan) handleCheckout(trialPlan)
+              }}
+              disabled={loading || (subscription?.planId === 'trial')}
+              className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors ${loading || subscription?.planId === 'trial' ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {subscription?.planId === 'trial' ? '✓ Trial Ativo' : 'Começar Grátis'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-4 mb-6">
         <div className="text-sm text-gray-600">Cobrança:</div>
         <div className="flex items-center gap-2">
           <button
@@ -269,136 +293,101 @@ export default function Plans() {
             className={`px-3 py-1 rounded ${billingInterval === 'annual' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}
             onClick={() => setBillingInterval('annual')}
           >
-            Anual
+            Anual (10% off)
           </button>
         </div>
       </div>
 
       <div className="plans-grid mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-        {PLANS.map((p) => {
+        {PLANS.filter(p => p.id !== 'trial').map((p) => {
           const featured = !!p.recommended
-          const isCurrent = subscription ? (subscription.planId === p.id) : p.id === 'trial'
-          const userHasTrial = !!(subscription && subscription.planId === 'trial')
+          const isCurrent = subscription ? (subscription.planId === p.id) : false
+          
           return (
             <div
               key={p.id}
-              className={`plans-card bg-white rounded p-4 ${featured ? 'featured' : 'shadow-sm'}`}
+              className={`plans-card bg-white rounded-lg p-6 ${featured ? 'ring-2 ring-blue-600 shadow-xl scale-105 relative' : 'shadow-lg border border-gray-200'}`}
             >
-              <div className="flex flex-col items-start">
-                            <div className="flex flex-col items-center mb-2 w-full">
-                              <div className="p-2 bg-blue-50 rounded-full inline-flex items-center justify-center mb-2">
-                                <FaTag className="text-blue-600 w-5 h-5" />
-                              </div>
-                              <h2 className="text-lg font-semibold">{p.name}</h2>
-                              <div className="flex items-center gap-2 mt-2">
-                                {featured && <span className="plans-badge"><FaStar className="inline mr-2 text-yellow-400" />Recomendado</span>}
-                                {isCurrent && <span className="plans-badge current">Atual</span>}
-                              </div>
-                            </div>
-
-                <div className="text-gray-500 text-sm mb-1">
-                  {p.id === 'trial' ? '7 dias grátis' : billingInterval === 'monthly' ? 'Cobrança mensal' : 'Cobrança anual (10% desconto)'}
+              {featured && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                    ⭐ Recomendado
+                  </span>
                 </div>
-                <div className="mb-3">
-                  {(() => {
-                    const pr = formatPrice(p)
-                    if (!pr) return null
-                    if (pr.type === 'free') {
-                      return <div className="text-2xl font-bold">{pr.label}</div>
-                    }
-                    if (pr.type === 'monthly') {
-                      return <div className="text-2xl font-bold">{pr.label}</div>
-                    }
-                    return (
-                      <div className="price-annual">
-                        <div className="text-2xl font-bold discounted">{pr.discounted}</div>
-                        <div className="text-sm text-gray-500 equiv">Equiv. {pr.equivMonthly}</div>
-                      </div>
-                    )
-                  })()}
+              )}
+              
+              <div className="flex flex-col items-start">
+                <div className="flex flex-col items-center mb-4 w-full">
+                  <h2 className="text-2xl font-bold text-gray-900">{p.name}</h2>
+                  {isCurrent && (
+                    <span className="mt-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                      ✓ Plano Atual
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-center w-full mb-4">
+                  <div className="text-4xl font-bold text-gray-900 mb-1">
+                    {(() => {
+                      const pr = formatPrice(p)
+                      if (pr.type === 'monthly') return pr.label
+                      if (pr.type === 'annual') return pr.equivMonthly
+                      return pr.label
+                    })()}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {billingInterval === 'annual' ? (
+                      <>Cobrado anualmente • 10% desconto</>
+                    ) : (
+                      <>Cobrado mensalmente</>
+                    )}
+                  </div>
                 </div>
 
                 {/* Limits display */}
                 {p.limits && (
-                  <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm">
-                    <div className="font-semibold text-blue-900 mb-2">Limites</div>
-                    <div className="space-y-1 text-blue-800">
-                      <div>📧 {p.limits.emailsPerDay === -1 ? 'Ilimitado' : `${p.limits.emailsPerDay.toLocaleString()} emails/dia`}</div>
-                      <div>📊 {p.limits.campaigns === -1 ? 'Ilimitado' : `${p.limits.campaigns} campanhas`}</div>
-                      <div>👥 {p.limits.contacts === -1 ? 'Ilimitado' : `${p.limits.contacts.toLocaleString()} contatos`}</div>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg w-full">
+                    <div className="font-semibold text-gray-900 mb-3 text-center">Limites</div>
+                    <div className="space-y-2 text-gray-700">
+                      <div className="flex items-center justify-between">
+                        <span>📧 Emails/dia</span>
+                        <span className="font-semibold">{p.limits.emailsPerDay === -1 ? 'Ilimitado' : p.limits.emailsPerDay.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>📊 Campanhas</span>
+                        <span className="font-semibold">{p.limits.campaigns === -1 ? 'Ilimitado' : p.limits.campaigns.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>👥 Contatos</span>
+                        <span className="font-semibold">{p.limits.contacts === -1 ? 'Ilimitado' : p.limits.contacts.toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <ul className="mt-2 text-sm text-gray-600 space-y-3 text-left">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-gray-600">
-                      <FaCheck className="text-blue-500 w-4 h-4 flex-shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="border-t border-gray-200 pt-4 mb-6 w-full">
+                  <ul className="space-y-3 text-sm text-gray-700">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3">
+                        <FaCheck className="text-blue-600 w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-                <div className="mt-6 w-full">
-                  {p.id === 'trial' ? (
-                    userHasTrial ? (
-                      (function renderTrialInfo() {
-                        const data: any = subscription || {}
-                        const toDate = (t: any) => {
-                          if (!t) return null
-                          if (typeof t.toDate === 'function') return t.toDate()
-                          if (t.seconds) return new Date(t.seconds * 1000)
-                          return new Date(t)
-                        }
-                        const trialEnds = toDate(data.trialEndsAt)
-                        const now = new Date()
-                        const diffMs = trialEnds ? trialEnds.getTime() - now.getTime() : null
-                        const daysLeft = diffMs !== null ? Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24))) : null
-
-                        return (
-                          <div className="text-sm">
-                            {daysLeft !== null && daysLeft > 0 ? (
-                              <div className="p-3 bg-green-50 rounded-lg">
-                                <div className="font-semibold text-green-900">✅ Trial Ativo</div>
-                                <div className="text-green-700 mt-1">{daysLeft} dia{daysLeft > 1 ? 's' : ''} restante{daysLeft > 1 ? 's' : ''}</div>
-                              </div>
-                            ) : (
-                              <div className="p-3 bg-red-50 rounded-lg">
-                                <div className="font-semibold text-red-900">❌ Trial Expirado</div>
-                                <div className="text-red-700 mt-1">Faça upgrade para continuar</div>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })()
-                    ) : (
-                      !user ? (
-                        <div className="text-sm text-gray-600">
-                          <div>Faça login para começar seu teste gratuito de 7 dias.</div>
-                          <div className="mt-2">
-                            <button onClick={() => navigate('/login')} className="px-4 py-2 bg-blue-600 text-white rounded-md">Entrar</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          className={`plans-cta w-full ${loading ? 'disabled' : ''}`}
-                          onClick={() => handleCheckout(p)}
-                          disabled={loading}
-                        >
-                          {loading ? 'Processando...' : '🎉 Começar Trial Grátis'}
-                        </button>
-                      )
-                    )
-                  ) : (
-                    <button
-                      className={`plans-cta ${loading ? 'disabled' : ''}`}
-                      onClick={() => handleCheckout(p)}
-                      aria-disabled={loading}
-                      disabled={loading}
-                    >
-                      {'Ativar plano'}
-                    </button>
-                  )}
+                <div className="mt-auto w-full">
+                  <button
+                    className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
+                      featured 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg' 
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                    } ${loading || isCurrent ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handleCheckout(p)}
+                    disabled={loading || isCurrent}
+                  >
+                    {loading ? 'Processando...' : isCurrent ? '✓ Plano Atual' : 'Ativar Plano'}
+                  </button>
                 </div>
               </div>
             </div>
