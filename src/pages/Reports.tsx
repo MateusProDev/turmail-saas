@@ -156,18 +156,20 @@ export default function Reports() {
     const unsubscribeRate = stats.delivered > 0 ? (stats.unsubscriptions / stats.delivered) * 100 : 0
 
     return {
-      deliveryRate,
-      openRate,
-      clickRate,
-      clickToOpenRate,
-      bounceRate,
-      unsubscribeRate,
-      totalSent: stats.requests,
-      totalDelivered: stats.delivered,
-      totalOpens: stats.uniqueOpens,
-      totalClicks: stats.uniqueClicks,
-      totalBounces: stats.hardBounces + stats.softBounces,
-      totalUnsubscribes: stats.unsubscriptions
+      deliveryRate: deliveryRate || 0,
+      openRate: openRate || 0,
+      clickRate: clickRate || 0,
+      clickToOpenRate: clickToOpenRate || 0,
+      bounceRate: bounceRate || 0,
+      unsubscribeRate: unsubscribeRate || 0,
+      totalSent: stats.requests || 0,
+      totalDelivered: stats.delivered || 0,
+      totalOpens: stats.uniqueOpens || 0,
+      totalClicks: stats.uniqueClicks || 0,
+      totalBounces: (stats.hardBounces || 0) + (stats.softBounces || 0),
+      totalUnsubscribes: stats.unsubscriptions || 0
+    }
+  }, [brevoStats])
     }
   }, [brevoStats])
 
