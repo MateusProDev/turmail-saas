@@ -386,7 +386,7 @@ export default function Dashboard(){
       const end = toDate(subscription.trialEndsAt)
       if (!end) return null
       const diff = end.getTime() - Date.now()
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
       return { days, expired: diff <= 0 }
     } catch (e) { return null }
   })()

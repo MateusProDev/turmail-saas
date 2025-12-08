@@ -7,9 +7,9 @@ import TenantLogoUploader from '../components/TenantLogoUploader'
 export default function Settings(){
   const [testing, setTesting] = useState(false)
   const [result, setResult] = useState<string | null>(null)
-  const [testSending, setTestSending] = useState(false)
-  const [testSuccess, setTestSuccess] = useState<boolean | null>(null)
-  const [testMessage, setTestMessage] = useState<string | null>(null)
+  // const [testSending, setTestSending] = useState(false)
+  // const [testSuccess, setTestSuccess] = useState<boolean | null>(null)
+  // const [testMessage, setTestMessage] = useState<string | null>(null)
 
   const testBrevo = async () => {
     setTesting(true); setResult(null)
@@ -23,6 +23,7 @@ export default function Settings(){
     } finally { setTesting(false) }
   }
 
+  /* Commented out - Brevo config UI removed
   const sendTestEmailFromUI = async () => {
     setTestSending(true)
     setTestSuccess(null)
@@ -50,21 +51,22 @@ export default function Settings(){
       setTestSending(false)
     }
   }
+  */
 
   /*
   const [brevoKey, setBrevoKey] = useState('')
   const [saving, setSaving] = useState(false)
   const [showBrevoKey, setShowBrevoKey] = useState(false)
   */
-  const [tenantKey, setTenantKey] = useState('')
-  const [smtpLogin, setSmtpLogin] = useState('')
-  const [savingTenant, setSavingTenant] = useState(false)
-  const [showTenantKey, setShowTenantKey] = useState(false)
+  // const [tenantKey, setTenantKey] = useState('')
+  // const [smtpLogin, setSmtpLogin] = useState('')
+  // const [savingTenant, setSavingTenant] = useState(false)
+  // const [showTenantKey, setShowTenantKey] = useState(false)
   const [selectedTenant, setSelectedTenant] = useState<string | null>(null)
-  const [tenantOptions, setTenantOptions] = useState<Array<{ id: string, role: string }>>([])
-  const [loadingTenants, setLoadingTenants] = useState(false)
-  const [showTenantSelect, setShowTenantSelect] = useState(false)
-  const [modalTenantId, setModalTenantId] = useState('')
+  const [_tenantOptions, setTenantOptions] = useState<Array<{ id: string, role: string }>>([])
+  const [_loadingTenants, setLoadingTenants] = useState(false)
+  // const [showTenantSelect, setShowTenantSelect] = useState(false)
+  // const [modalTenantId, setModalTenantId] = useState('')
   const [autoCreateAttempted, setAutoCreateAttempted] = useState(false)
 
   /*
@@ -125,7 +127,7 @@ export default function Settings(){
     } finally { setSaving(false) }
   }
   */
-
+  /* Commented out - Brevo config UI removed
   // perform save for a specific tenantId (used by modal confirm or direct save)
   const performSaveTenantKey = async (tenantId: string | undefined) => {
     setSavingTenant(true); setResult(null)
@@ -188,7 +190,9 @@ export default function Settings(){
       }
     } finally { setSavingTenant(false) }
   }
+  */
 
+  /* Commented out - Brevo config UI removed
   // wrapper called by button: if no selectedTenant, open modal to force selection
   const saveTenantKey = async () => {
     if (!selectedTenant) {
@@ -198,8 +202,10 @@ export default function Settings(){
     }
     await performSaveTenantKey(selectedTenant)
   }
+  */
 
   // Auto-select tenant based on logged-in user's memberships (owner preferred)
+  // Note: selectedTenant is used by TenantLogoUploader component
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (user: any) => {
       if (!user) {
@@ -312,8 +318,8 @@ export default function Settings(){
             </section>
           )}
           
-          {/* Tenant Brevo Key Section */}
-          <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6">
+          {/* Tenant Brevo Key Section - REMOVIDO (não será mais utilizado) */}
+          {/* <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -324,7 +330,7 @@ export default function Settings(){
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">Configuração Brevo</h2>
                   <p className="text-slate-600 text-sm">
-                    Cole sua chave API da Brevo. O remetente será detectado automaticamente.
+                    Configure sua chave API e login SMTP da Brevo para enviar campanhas.
                   </p>
                 </div>
               </div>
@@ -342,7 +348,6 @@ export default function Settings(){
             <div className="space-y-4">
               <div className="bg-slate-50/80 rounded-xl p-4">
                 <div className="space-y-4">
-                  {/* Tenant Key Input */}
                   <div className="flex space-x-3">
                     <div className="flex-1 relative">
                       <input 
@@ -362,7 +367,6 @@ export default function Settings(){
                     </div>
                   </div>
 
-                  {/* Login SMTP (OBRIGATÓRIO para envio de emails) */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Login SMTP 
@@ -381,33 +385,23 @@ export default function Settings(){
                     </p>
                   </div>
 
-                  {/* Info box sobre detecção automática */}
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                     <div className="flex items-start space-x-3">
                       <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div className="text-sm text-blue-900">
-                        <div className="font-semibold mb-1">✨ Detecção Automática</div>
+                        <div className="font-semibold mb-1">⚠️ Login SMTP Obrigatório</div>
                         <div className="text-blue-800">
-                          Ao salvar, o sistema irá detectar automaticamente:
-                          <ul className="list-disc list-inside mt-1 ml-2 space-y-0.5">
-                            <li>Nome do remetente configurado na Brevo</li>
-                            <li>E-mail do remetente verificado</li>
-                          </ul>
-                          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                            <strong className="text-amber-900">⚠️ Importante:</strong>
-                            <div className="text-amber-800 mt-1">
-                              O <strong>Login SMTP</strong> é obrigatório para envio de emails. 
-                              Sem ele, as campanhas serão criadas mas os emails não serão enviados.
-                            </div>
+                          O <strong>Login SMTP</strong> é essencial para o envio de emails. Sem ele, as campanhas serão criadas mas os emails não serão enviados.
+                          <div className="mt-2 text-blue-700">
+                            O sistema detecta automaticamente o remetente configurado na sua conta Brevo.
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Tenant Selection */}
                   {loadingTenants ? (
                     <div className="flex items-center space-x-2 text-slate-600">
                       <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
@@ -430,7 +424,6 @@ export default function Settings(){
                     </div>
                   ) : null}
 
-                  {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0">
                     <div className="flex space-x-3">
                       <button 
@@ -474,7 +467,6 @@ export default function Settings(){
                       </button>
                     </div>
 
-                    {/* Test Results */}
                     <div className="flex-1">
                       {testSuccess === true && (
                         <div className="bg-green-100 text-green-700 px-4 py-3 rounded-xl">
@@ -489,7 +481,6 @@ export default function Settings(){
                     </div>
                   </div>
 
-                    {/* Tenant selection modal (shown when user clicks Save without a selected tenant) */}
                     {showTenantSelect && (
                       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                         <div className="w-full max-w-lg bg-white rounded-xl p-6 shadow-xl">
@@ -525,7 +516,7 @@ export default function Settings(){
                 </div>
               </div>
             </div>
-          </section>
+          </section> */}
 
           {/* Test Brevo Connection Card (moved below tenant) */}
           {/* <section className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-slate-200/60 p-6">
