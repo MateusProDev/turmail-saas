@@ -263,30 +263,30 @@ export default function Dashboard(){
       return c?.metrics?.sent ?? c?.sent ?? c?.sentCount ?? (c?.to || []).length ?? 0
     }
 
-    const deliverRate = useMemo(() => {
-      // Primeiro tentar estatísticas da Brevo
-      if (brevoStats?.emailStats) {
-        const stats = brevoStats.emailStats
-        const delivered = stats.delivered || 0
-        const requests = stats.requests || 0
-        if (requests > 0) {
-          return Math.round((delivered / requests) * 10000) / 100
-        }
+  const deliverRate = useMemo(() => {
+    // Usar estatísticas isoladas por tenant da Brevo
+    if (brevoStats?.emailStats) {
+      const stats = brevoStats.emailStats
+      const delivered = stats.totalDelivered || 0
+      const sent = stats.totalSent || 0
+      if (sent > 0) {
+        return parseFloat(stats.deliveryRate) || Math.round((delivered / sent) * 10000) / 100
       }
-      
-      // Fallback para estatísticas locais
-      const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => {
-        const sent = Number(getSentCount(c) || 0)
-        const delivered = Number(getDeliveredCount(c) || 0)
-        return { sent: acc.sent + sent, delivered: acc.delivered + delivered }
-      }, { sent: 0, delivered: 0 })
-      if (!totals.sent) return null
-      // If there were sent emails but no delivered metric recorded, show 100% per user preference
-      if (totals.delivered === 0) return 100
-      return Math.round((totals.delivered / totals.sent) * 10000) / 100
-    }, [campaigns, brevoStats])
+    }
+    
+    // Fallback para estatísticas locais das campanhas
+    const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => {
+      const sent = Number(getSentCount(c) || 0)
+      const delivered = Number(getDeliveredCount(c) || 0)
+      return { sent: acc.sent + sent, delivered: acc.delivered + delivered }
+    }, { sent: 0, delivered: 0 })
+    if (!totals.sent) return null
+    // If there were sent emails but no delivered metric recorded, show 100% per user preference
+    if (totals.delivered === 0) return 100
+    return Math.round((totals.delivered / totals.sent) * 10000) / 100
+  }, [campaigns, brevoStats])
 
-  // Estatísticas adicionais da Brevo
+  // Estatísticas isoladas por tenant
   const brevoMetrics = useMemo(() => {
     console.log('[Dashboard] Computing brevoMetrics, brevoStats:', brevoStats)
     
@@ -299,14 +299,14 @@ export default function Dashboard(){
     console.log('[Dashboard] Email stats data:', stats)
     
     const metrics = {
-      sent: stats.requests || 0,
-      delivered: stats.delivered || 0,
-      opens: stats.uniqueOpens || stats.opens || 0,
-      clicks: stats.uniqueClicks || stats.clicks || 0,
-      openRate: stats.requests > 0 ? Math.round(((stats.uniqueOpens || 0) / stats.requests) * 10000) / 100 : 0,
-      clickRate: stats.requests > 0 ? Math.round(((stats.uniqueClicks || 0) / stats.requests) * 10000) / 100 : 0,
-      bounces: (stats.hardBounces || 0) + (stats.softBounces || 0),
-      unsubscribes: stats.unsubscriptions || 0
+      sent: stats.totalSent || 0,
+      delivered: stats.totalDelivered || 0,
+      opens: stats.totalOpens || 0,
+      clicks: stats.totalClicks || 0,
+      openRate: parseFloat(stats.openRate) || 0,
+      clickRate: parseFloat(stats.clickRate) || 0,
+      bounces: stats.totalBounces || 0,
+      unsubscribes: stats.totalUnsubscribes || 0
     }
     
     console.log('[Dashboard] Computed metrics:', metrics)

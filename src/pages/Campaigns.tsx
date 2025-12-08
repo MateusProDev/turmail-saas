@@ -214,7 +214,7 @@ export default function Campaigns(){
     return `${Math.round((delivered / sent) * 10000) / 100}%`
   }
 
-  // Simple campaigns listener: campaigns where ownerUid == user.uid
+  // Campaigns listener: filter by tenantId for complete isolation
   useEffect(() => {
     // load tenant memberships for the current user so we can default to the tenant's Brevo key
     async function loadTenants() {
@@ -236,11 +236,12 @@ export default function Campaigns(){
     }
     if (user) loadTenants()
 
-    if (!user) return
+    if (!user || !selectedTenant) return
     setLoading(true)
     try {
       const cRef = collection(db, 'campaigns')
-      const q = query(cRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(50))
+      // ISOLAMENTO: Filtrar por tenantId para isolar dados entre usuários
+      const q = query(cRef, where('tenantId', '==', selectedTenant), orderBy('createdAt', 'desc'), limit(50))
       const unsub = onSnapshot(q, (snap) => {
         setCampaigns(snap.docs.map(d => ({ id: d.id, ...d.data() })))
         setLoading(false)
@@ -253,7 +254,7 @@ export default function Campaigns(){
       console.error('campaigns listener error', e)
       setLoading(false)
     }
-  }, [user])
+  }, [user, selectedTenant])
 
   // load contacts for selection modal
   useEffect(() => {

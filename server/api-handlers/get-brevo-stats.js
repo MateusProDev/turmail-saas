@@ -47,7 +47,8 @@ function tryDecrypt(encrypted) {
 }
 
 /**
- * Busca estatísticas da conta Brevo
+ * Busca estatísticas isoladas por tenant
+ * Calcula métricas apenas das campanhas do tenant específico
  * Endpoint: GET /api/get-brevo-stats
  */
 export async function getBrevoStats(req, res) {
@@ -66,16 +67,88 @@ export async function getBrevoStats(req, res) {
 
     if (debug) console.log('[get-brevo-stats] Fetching stats for tenant:', tenantId)
 
-    // Use global Brevo API key from environment
+    // ISOLAMENTO POR TENANT: Buscar apenas campanhas deste tenant no Firestore
+    const campaignsSnapshot = await db.collection('campaigns')
+      .where('tenantId', '==', tenantId)
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get()
+
+    const tenantCampaigns = []
+    const stats = {
+      totalSent: 0,
+      totalDelivered: 0,
+      totalOpens: 0,
+      totalClicks: 0,
+      totalBounces: 0,
+      totalUnsubscribes: 0,
+      deliveryRate: 0,
+      openRate: 0,
+      clickRate: 0
+    }
+
+    campaignsSnapshot.forEach(doc => {
+      const campaign = doc.data()
+      tenantCampaigns.push({
+        id: doc.id,
+        subject: campaign.subject,
+        status: campaign.status,
+        createdAt: campaign.createdAt,
+        recipients: Array.isArray(campaign.to) ? campaign.to.length : 0
+      })
+
+      // Calcular métricas a partir dos dados da campanha
+      if (campaign.status === 'sent') {
+        const recipientCount = Array.isArray(campaign.to) ? campaign.to.length : 0
+        stats.totalSent += recipientCount
+        
+        // Se temos dados de resultado da Brevo, usar
+        if (campaign.result) {
+          stats.totalDelivered += campaign.result.delivered || recipientCount
+          stats.totalOpens += campaign.result.opens || 0
+          stats.totalClicks += campaign.result.clicks || 0
+          stats.totalBounces += campaign.result.bounces || 0
+          stats.totalUnsubscribes += campaign.result.unsubscribes || 0
+        } else {
+          // Se não temos dados detalhados, assumir entregue se status = sent
+          stats.totalDelivered += recipientCount
+        }
+      }
+    })
+
+    // Calcular taxas
+    if (stats.totalSent > 0) {
+      stats.deliveryRate = ((stats.totalDelivered / stats.totalSent) * 100).toFixed(2)
+    }
+    if (stats.totalDelivered > 0) {
+      stats.openRate = ((stats.totalOpens / stats.totalDelivered) * 100).toFixed(2)
+    }
+    if (stats.totalOpens > 0) {
+      stats.clickRate = ((stats.totalClicks / stats.totalOpens) * 100).toFixed(2)
+    }
+
+    if (debug) {
+      console.log('[get-brevo-stats] Tenant stats calculated:', {
+        tenantId,
+        campaignCount: tenantCampaigns.length,
+        totalSent: stats.totalSent,
+        totalDelivered: stats.totalDelivered
+      })
+    }
+
+    // Use global Brevo API key from environment (apenas para informações da conta)
     const apiKey = process.env.BREVO_API_KEY
     
     if (!apiKey) {
       console.warn('[get-brevo-stats] Global Brevo API key not configured in environment')
       return res.status(200).json({
-        success: false,
-        error: 'Global Brevo API key not configured',
-        stats: null,
-        hint: 'Configure BREVO_API_KEY nas variáveis de ambiente da Vercel'
+        success: true,
+        stats: {
+          emailStats: stats,
+          campaigns: tenantCampaigns,
+          account: null,
+          timestamp: new Date().toISOString()
+        }
       })
     }
 
@@ -88,93 +161,28 @@ export async function getBrevoStats(req, res) {
       'Content-Type': 'application/json'
     }
 
-    if (debug) console.log('[get-brevo-stats] Fetching from Brevo API...')
+    if (debug) console.log('[get-brevo-stats] Fetching account info from Brevo API...')
 
-    // Buscar informações da conta
+    // Buscar apenas informações da conta (não estatísticas globais)
     let accountError = null
-    const accountPromise = axios.get('https://api.brevo.com/v3/account', { headers })
+    const accountRes = await axios.get('https://api.brevo.com/v3/account', { headers })
       .catch(e => {
         accountError = e.response?.data || e.message
         console.error('[get-brevo-stats] Account fetch error:', accountError)
         return null
       })
-    
-    // Buscar estatísticas de email (últimos 30 dias)
-    const now = new Date()
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    
-    let emailStatsError = null
-    const emailStatsPromise = axios.get('https://api.brevo.com/v3/smtp/statistics/aggregatedReport', {
-      headers,
-      params: {
-        startDate: thirtyDaysAgo.toISOString().split('T')[0],
-        endDate: now.toISOString().split('T')[0]
-      }
-    }).catch(e => {
-      emailStatsError = e.response?.data || e.message
-      console.error('[get-brevo-stats] Email stats fetch error:', emailStatsError)
-      return null
-    })
-
-    // Buscar campanhas recentes
-    let campaignsError = null
-    const campaignsPromise = axios.get('https://api.brevo.com/v3/emailCampaigns', {
-      headers,
-      params: {
-        limit: 50,
-        offset: 0,
-        sort: 'desc'
-      }
-    }).catch(e => {
-      campaignsError = e.response?.data || e.message
-      console.error('[get-brevo-stats] Campaigns fetch error:', campaignsError)
-      return null
-    })
-
-    const [accountRes, emailStatsRes, campaignsRes] = await Promise.all([
-      accountPromise,
-      emailStatsPromise,
-      campaignsPromise
-    ])
-
-    const campaignsData = campaignsRes?.data?.campaigns || []
-    console.log('[get-brevo-stats] Campaigns data:', {
-      hasCampaignsRes: !!campaignsRes,
-      hasData: !!campaignsRes?.data,
-      campaignsArray: Array.isArray(campaignsData),
-      count: campaignsData.length,
-      firstCampaign: campaignsData[0] ? {
-        id: campaignsData[0].id,
-        name: campaignsData[0].name,
-        subject: campaignsData[0].subject
-      } : null
-    })
-
-    if (debug) {
-      console.log('[get-brevo-stats] Results:', {
-        account: !!accountRes?.data,
-        emailStats: !!emailStatsRes?.data,
-        campaigns: !!campaignsRes?.data,
-        campaignsCount: campaignsData.length,
-        errors: { accountError, emailStatsError, campaignsError }
-      })
-    }
-
-    const stats = {
-      account: accountRes?.data || null,
-      emailStats: emailStatsRes?.data || null,
-      campaigns: campaignsData,
-      timestamp: new Date().toISOString(),
-      errors: {
-        account: accountError,
-        emailStats: emailStatsError,
-        campaigns: campaignsError
-      }
-    }
 
     return res.status(200).json({
       success: true,
-      stats
+      stats: {
+        account: accountRes?.data || null,
+        emailStats: stats,
+        campaigns: tenantCampaigns,
+        timestamp: new Date().toISOString(),
+        errors: {
+          account: accountError
+        }
+      }
     })
 
   } catch (error) {
