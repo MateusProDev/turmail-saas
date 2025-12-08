@@ -303,6 +303,8 @@ export default function Dashboard(){
       delivered: stats.totalDelivered || 0,
       opens: stats.totalOpens || 0,
       clicks: stats.totalClicks || 0,
+      uniqueOpeners: stats.uniqueOpeners || 0,
+      uniqueClickers: stats.uniqueClickers || 0,
       openRate: parseFloat(stats.openRate) || 0,
       clickRate: parseFloat(stats.clickRate) || 0,
       bounces: stats.totalBounces || 0,

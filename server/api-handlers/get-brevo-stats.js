@@ -82,6 +82,8 @@ export async function getBrevoStats(req, res) {
       totalClicks: 0,
       totalBounces: 0,
       totalUnsubscribes: 0,
+      uniqueOpeners: new Set(),
+      uniqueClickers: new Set(),
       deliveryRate: 0,
       openRate: 0,
       clickRate: 0
@@ -97,42 +99,56 @@ export async function getBrevoStats(req, res) {
         recipients: Array.isArray(campaign.to) ? campaign.to.length : 0
       })
 
-      // Calcular métricas a partir dos dados da campanha
+      // Calcular métricas a partir dos eventos do webhook
       if (campaign.status === 'sent') {
         const recipientCount = Array.isArray(campaign.to) ? campaign.to.length : 0
         stats.totalSent += recipientCount
         
-        // Se temos dados de resultado da Brevo, usar
-        if (campaign.result) {
-          stats.totalDelivered += campaign.result.delivered || recipientCount
-          stats.totalOpens += campaign.result.opens || 0
-          stats.totalClicks += campaign.result.clicks || 0
-          stats.totalBounces += campaign.result.bounces || 0
-          stats.totalUnsubscribes += campaign.result.unsubscribes || 0
-        } else {
-          // Se não temos dados detalhados, assumir entregue se status = sent
-          stats.totalDelivered += recipientCount
+        // Usar métricas do webhook (coletadas em tempo real)
+        const metrics = campaign.metrics || {}
+        
+        stats.totalDelivered += metrics.delivered || 0
+        stats.totalOpens += metrics.opens || 0
+        stats.totalClicks += metrics.clicks || 0
+        stats.totalBounces += (metrics.bounces || 0)
+        stats.totalUnsubscribes += metrics.unsubscribes || 0
+        
+        // Aberturas e cliques únicos
+        if (metrics.uniqueOpeners && Array.isArray(metrics.uniqueOpeners)) {
+          metrics.uniqueOpeners.forEach(email => stats.uniqueOpeners.add(email))
+        }
+        if (metrics.uniqueClickers && Array.isArray(metrics.uniqueClickers)) {
+          metrics.uniqueClickers.forEach(email => stats.uniqueClickers.add(email))
         }
       }
     })
 
-    // Calcular taxas
+    // Converter Sets para números
+    const uniqueOpenersCount = stats.uniqueOpeners.size
+    const uniqueClickersCount = stats.uniqueClickers.size
+    delete stats.uniqueOpeners
+    delete stats.uniqueClickers
+
+    // Calcular taxas baseadas em aberturas/cliques únicos
     if (stats.totalSent > 0) {
       stats.deliveryRate = ((stats.totalDelivered / stats.totalSent) * 100).toFixed(2)
     }
     if (stats.totalDelivered > 0) {
-      stats.openRate = ((stats.totalOpens / stats.totalDelivered) * 100).toFixed(2)
+      stats.openRate = ((uniqueOpenersCount / stats.totalDelivered) * 100).toFixed(2)
+      stats.clickRate = ((uniqueClickersCount / stats.totalDelivered) * 100).toFixed(2)
     }
-    if (stats.totalOpens > 0) {
-      stats.clickRate = ((stats.totalClicks / stats.totalOpens) * 100).toFixed(2)
-    }
+    
+    stats.uniqueOpeners = uniqueOpenersCount
+    stats.uniqueClickers = uniqueClickersCount
 
     if (debug) {
       console.log('[get-brevo-stats] Tenant stats calculated:', {
         tenantId,
         campaignCount: tenantCampaigns.length,
         totalSent: stats.totalSent,
-        totalDelivered: stats.totalDelivered
+        totalDelivered: stats.totalDelivered,
+        uniqueOpeners: stats.uniqueOpeners,
+        uniqueClickers: stats.uniqueClickers
       })
     }
 
