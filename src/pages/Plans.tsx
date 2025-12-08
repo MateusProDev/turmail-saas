@@ -29,15 +29,15 @@ const PLANS: {
     price: 0,
     limits: {
       emailsPerDay: 50,
-      emailsPerMonth: 700,
+      emailsPerMonth: 1500,
       campaigns: -1,
       contacts: 1000,
     },
     features: [
       '14 dias grátis',
-      '50 emails por dia',
-      '700 emails total',
-      'Até 1.000 contatos',
+      '50 emails/dia',
+      '1.500 emails/mês',
+      '1.000 contatos',
       'Campanhas ilimitadas',
       'Templates ilimitados',
       'Sem cartão de crédito',
@@ -414,6 +414,10 @@ export default function Plans() {
                       <div className="flex items-center justify-between">
                         <span>📧 Emails/dia</span>
                         <span className="font-semibold">{p.limits.emailsPerDay === -1 ? 'Ilimitado' : p.limits.emailsPerDay.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="ml-5">Emails/mês</span>
+                        <span className="font-medium">{p.limits.emailsPerMonth === -1 ? 'Ilimitado' : p.limits.emailsPerMonth.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span>📊 Campanhas</span>

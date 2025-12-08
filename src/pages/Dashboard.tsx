@@ -724,14 +724,17 @@ export default function Dashboard(){
                     <div className="text-xs text-emerald-100 mb-1">Limites do Plano</div>
                     <div className="space-y-1 text-sm">
                       {subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 ? (
-                        <div className="text-white font-semibold">{subscription.limits.emailsPerDay.toLocaleString()} emails/dia</div>
+                        <>
+                          <div className="text-white font-semibold">{subscription.limits.emailsPerDay.toLocaleString()} emails/dia</div>
+                          <div className="text-emerald-100 text-xs">({(subscription.limits.emailsPerDay * 30).toLocaleString()} emails/mês)</div>
+                        </>
                       ) : (
                         <div className="text-white font-semibold">✨ Emails ilimitados</div>
                       )}
                       {subscription.limits?.contacts && subscription.limits.contacts !== -1 ? (
-                        <div className="text-emerald-100 text-xs">{subscription.limits.contacts.toLocaleString()} contatos</div>
+                        <div className="text-emerald-100 text-xs mt-1">{subscription.limits.contacts.toLocaleString()} contatos</div>
                       ) : (
-                        <div className="text-emerald-100 text-xs">Contatos ilimitados</div>
+                        <div className="text-emerald-100 text-xs mt-1">Contatos ilimitados</div>
                       )}
                     </div>
                   </div>

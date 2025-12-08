@@ -101,7 +101,7 @@ export default async function handler(req, res) {
       trialDays: 14,
       limits: {
         emailsPerDay: 50,
-        emailsPerMonth: 700, // 50/dia * 14 dias
+        emailsPerMonth: 1500, // 50/dia * 30 dias
         campaigns: -1, // ILIMITADO
         contacts: 1000, // 1.000 contatos
         templates: -1, // ILIMITADO

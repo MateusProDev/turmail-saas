@@ -11,16 +11,16 @@ export const PLANS = {
     duration: 14, // dias
     limits: {
       emailsPerDay: 50,
-      emailsPerMonth: 700, // 50/dia * 14 dias
+      emailsPerMonth: 1500, // 50/dia * 30 dias
       campaigns: -1, // ILIMITADO
       contacts: 1000, // GENEROSO: 1.000 contatos no trial
       templates: -1, // ILIMITADO
     },
     features: [
       '14 dias grátis',
-      '50 emails por dia',
-      '700 emails total',
-      'Até 1.000 contatos',
+      '50 emails/dia',
+      '1.500 emails/mês',
+      '1.000 contatos',
       'Campanhas ilimitadas',
       'Templates ilimitados',
       'Todos os recursos incluídos',
