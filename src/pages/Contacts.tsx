@@ -5,6 +5,21 @@ import { db, auth } from '../lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
 
 // Tipos de metadados específicos para turismo
+interface CampaignInteraction {
+  campaignId: string
+  campaignName?: string
+  sentAt: Date
+  delivered?: boolean
+  deliveredAt?: Date
+  opened?: boolean
+  openedAt?: Date
+  clicked?: boolean
+  clickedAt?: Date
+  clickedLinks?: string[]
+  bounced?: boolean
+  unsubscribed?: boolean
+}
+
 interface ContactMetadata {
   // Dados Demográficos
   age?: number
@@ -31,6 +46,16 @@ interface ContactMetadata {
   leadScore?: number // 0-100
   temperature?: 'cold' | 'warm' | 'hot' | 'cliente'
   stage?: 'lead' | 'qualificado' | 'negociação' | 'cliente' | 'perdido'
+  
+  // Histórico de Campanhas
+  campaignHistory?: CampaignInteraction[]
+  totalCampaignsReceived?: number
+  
+  // Análise Comportamental Avançada
+  preferredTopics?: string[] // Tópicos das campanhas que mais engaja
+  bestDayToOpen?: string // Dia da semana que mais abre emails
+  bestTimeToOpen?: string // Horário que mais abre emails
+  avgTimeToOpen?: number // Tempo médio em minutos para abrir email
   
   // Interesses Específicos
   interests?: string[]
@@ -819,6 +844,24 @@ export default function Contacts() {
                       )}
                       {contact.metadata.budgetRange && (
                         <div className="text-slate-600">💵 {contact.metadata.budgetRange}</div>
+                      )}
+                      {contact.metadata.bestDayToOpen && (
+                        <div className="text-slate-600">📅 Melhor dia: {contact.metadata.bestDayToOpen}</div>
+                      )}
+                      {contact.metadata.bestTimeToOpen && (
+                        <div className="text-slate-600">⏰ Melhor horário: {contact.metadata.bestTimeToOpen}</div>
+                      )}
+                      {contact.metadata.avgTimeToOpen && (
+                        <div className="text-slate-600">
+                          ⚡ Abre em média: {contact.metadata.avgTimeToOpen < 60 
+                            ? `${contact.metadata.avgTimeToOpen}min` 
+                            : `${Math.round(contact.metadata.avgTimeToOpen / 60)}h`}
+                        </div>
+                      )}
+                      {contact.metadata.totalCampaignsReceived && (
+                        <div className="text-slate-600">
+                          📧 Campanhas recebidas: {contact.metadata.totalCampaignsReceived}
+                        </div>
                       )}
                     </div>
                   )}

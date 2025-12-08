@@ -32,6 +32,7 @@ const db = getFirestore()
 /**
  * Atualiza o engajamento do contato com base em interações de email
  * Aumenta o score automaticamente quando abre/clica em emails
+ * Registra histórico completo de cada campanha enviada
  */
 async function updateContactEngagement(email, eventType, campaignId) {
   try {
@@ -51,17 +52,123 @@ async function updateContactEngagement(email, eventType, campaignId) {
     const contactRef = contactDoc.ref
     const contactData = contactDoc.data()
     const metadata = contactData.metadata || {}
+    
+    // Buscar dados da campanha para histórico
+    const campaignDoc = await db.collection('campaigns').doc(campaignId).get()
+    const campaignData = campaignDoc.exists ? campaignDoc.data() : null
+    const campaignName = campaignData?.subject || campaignData?.name || 'Sem título'
+
+    // Pegar histórico atual de campanhas
+    const campaignHistory = metadata.campaignHistory || []
+    
+    // Verificar se já existe registro dessa campanha
+    let existingCampaignIndex = campaignHistory.findIndex(c => c.campaignId === campaignId)
+    
+    const now = new Date()
+    
+    if (existingCampaignIndex === -1) {
+      // Primeira interação com essa campanha - criar registro
+      campaignHistory.push({
+        campaignId,
+        campaignName,
+        sentAt: campaignData?.sentAt || now,
+        delivered: eventType === 'delivered',
+        deliveredAt: eventType === 'delivered' ? now : undefined,
+        opened: eventType === 'opened',
+        openedAt: eventType === 'opened' ? now : undefined,
+        clicked: eventType === 'clicked',
+        clickedAt: eventType === 'clicked' ? now : undefined,
+        clickedLinks: eventType === 'clicked' ? [campaignData?.link] : []
+      })
+    } else {
+      // Atualizar registro existente
+      const existingCampaign = campaignHistory[existingCampaignIndex]
+      
+      if (eventType === 'delivered') {
+        existingCampaign.delivered = true
+        existingCampaign.deliveredAt = now
+      } else if (eventType === 'opened') {
+        existingCampaign.opened = true
+        existingCampaign.openedAt = now
+      } else if (eventType === 'clicked') {
+        existingCampaign.clicked = true
+        existingCampaign.clickedAt = now
+        // Adicionar link se não existir
+        if (campaignData?.link) {
+          existingCampaign.clickedLinks = existingCampaign.clickedLinks || []
+          if (!existingCampaign.clickedLinks.includes(campaignData.link)) {
+            existingCampaign.clickedLinks.push(campaignData.link)
+          }
+        }
+      }
+      
+      campaignHistory[existingCampaignIndex] = existingCampaign
+    }
 
     // Atualizar contadores de interação
     const updates = {
-      'metadata.lastInteraction': new Date(),
-      'metadata.totalInteractions': FieldValue.increment(1)
+      'metadata.lastInteraction': now,
+      'metadata.totalInteractions': FieldValue.increment(1),
+      'metadata.campaignHistory': campaignHistory,
+      'metadata.totalCampaignsReceived': campaignHistory.length
     }
 
     if (eventType === 'opened') {
       updates['metadata.emailsOpened'] = FieldValue.increment(1)
     } else if (eventType === 'clicked') {
       updates['metadata.emailsClicked'] = FieldValue.increment(1)
+    }
+
+    // Calcular métricas comportamentais avançadas
+    const openedCampaigns = campaignHistory.filter(c => c.opened)
+    
+    if (openedCampaigns.length > 0) {
+      // Calcular melhor dia da semana para abrir
+      const daysCount = {}
+      const hoursCount = {}
+      let totalMinutesToOpen = 0
+      let countWithTimeToOpen = 0
+      
+      openedCampaigns.forEach(campaign => {
+        if (campaign.openedAt) {
+          const openDate = campaign.openedAt.toDate ? campaign.openedAt.toDate() : new Date(campaign.openedAt)
+          const dayName = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'][openDate.getDay()]
+          daysCount[dayName] = (daysCount[dayName] || 0) + 1
+          
+          // Calcular faixa de horário
+          const hour = openDate.getHours()
+          let timeRange
+          if (hour < 6) timeRange = '00:00-06:00'
+          else if (hour < 12) timeRange = '06:00-12:00'
+          else if (hour < 18) timeRange = '12:00-18:00'
+          else timeRange = '18:00-00:00'
+          
+          hoursCount[timeRange] = (hoursCount[timeRange] || 0) + 1
+          
+          // Calcular tempo médio para abrir
+          if (campaign.sentAt && campaign.openedAt) {
+            const sentDate = campaign.sentAt.toDate ? campaign.sentAt.toDate() : new Date(campaign.sentAt)
+            const minutesToOpen = (openDate - sentDate) / (1000 * 60)
+            if (minutesToOpen >= 0 && minutesToOpen < 10080) { // Ignora se > 1 semana
+              totalMinutesToOpen += minutesToOpen
+              countWithTimeToOpen++
+            }
+          }
+        }
+      })
+      
+      // Melhor dia para abrir
+      const bestDay = Object.keys(daysCount).reduce((a, b) => daysCount[a] > daysCount[b] ? a : b, '')
+      if (bestDay) updates['metadata.bestDayToOpen'] = bestDay
+      
+      // Melhor horário para abrir
+      const bestTime = Object.keys(hoursCount).reduce((a, b) => hoursCount[a] > hoursCount[b] ? a : b, '')
+      if (bestTime) updates['metadata.bestTimeToOpen'] = bestTime
+      
+      // Tempo médio para abrir
+      if (countWithTimeToOpen > 0) {
+        updates['metadata.avgTimeToOpen'] = Math.round(totalMinutesToOpen / countWithTimeToOpen)
+      }
     }
 
     // Recalcular temperatura automaticamente
@@ -128,10 +235,16 @@ async function updateContactEngagement(email, eventType, campaignId) {
     console.log('[Webhook] Contact engagement updated:', {
       email,
       eventType,
+      campaignId,
+      campaignName,
       newTemperature,
       leadScore: updates['metadata.leadScore'],
       opens: newOpens,
-      clicks: newClicks
+      clicks: newClicks,
+      totalCampaigns: campaignHistory.length,
+      bestDay: updates['metadata.bestDayToOpen'],
+      bestTime: updates['metadata.bestTimeToOpen'],
+      avgMinutesToOpen: updates['metadata.avgTimeToOpen']
     })
 
   } catch (error) {
