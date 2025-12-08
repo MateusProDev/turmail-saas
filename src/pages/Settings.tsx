@@ -66,8 +66,6 @@ export default function Settings(){
   const [showTenantSelect, setShowTenantSelect] = useState(false)
   const [modalTenantId, setModalTenantId] = useState('')
   const [autoCreateAttempted, setAutoCreateAttempted] = useState(false)
-  const [tenantKeys, setTenantKeys] = useState<Array<any>>([])
-  const [loadingKeys, setLoadingKeys] = useState(false)
 
   /*
   const saveToVercel = async () => {
