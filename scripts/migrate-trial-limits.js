@@ -97,7 +97,7 @@ async function migrateTrialLimits() {
           const tenantRef = db.collection('tenants').doc(data.tenantId)
           const tenantSnap = await tenantRef.get()
           
-          if (tenantSnap.exists()) {
+          if (tenantSnap.exists) {
             await tenantRef.update({
               limits: newLimits,
               planId: 'trial',
