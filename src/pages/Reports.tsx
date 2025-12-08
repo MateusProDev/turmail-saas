@@ -173,21 +173,8 @@ export default function Reports() {
 
   // Top performing campaigns
   const topCampaigns = useMemo(() => {
-    console.log('[Reports] Computing topCampaigns from:', campaigns.length, 'campaigns')
     if (!Array.isArray(campaigns) || campaigns.length === 0) {
-      console.log('[Reports] No campaigns to display')
       return []
-    }
-    
-    // Log first campaign structure for debugging
-    if (campaigns[0]) {
-      console.log('[Reports] First campaign structure:', {
-        id: campaigns[0].id,
-        subject: campaigns[0].subject,
-        to: campaigns[0].to?.length,
-        metrics: campaigns[0].metrics,
-        sent: campaigns[0].sent
-      })
     }
     
     const processed = campaigns
@@ -214,21 +201,103 @@ export default function Reports() {
           delivered,
           openRate,
           clickRate,
-          engagement
+          engagement,
+          uniqueOpeners,
+          uniqueClickers,
+          createdAt: c.createdAt
         }
       })
-      // Show ALL campaigns, even without metrics
       .sort((a, b) => b.engagement - a.engagement)
       .slice(0, 10)
     
-    console.log('[Reports] Processed topCampaigns:', processed.length)
-    console.log('[Reports] First campaign:', processed[0])
     return processed
   }, [campaigns])
 
-  // Generate AI insights
+  // Analyze campaign sending patterns (real data)
+  const sendingPatterns = useMemo(() => {
+    if (!Array.isArray(campaigns) || campaigns.length === 0) {
+      return { byDay: {}, byHour: {}, bestDay: null, bestHour: null }
+    }
+
+    const byDay: Record<number, { sends: number; opens: number; clicks: number }> = {}
+    const byHour: Record<number, { sends: number; opens: number; clicks: number }> = {}
+
+    campaigns.forEach(c => {
+      if (!c.createdAt) return
+      
+      const date = c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt)
+      const day = date.getDay() // 0=Sunday, 1=Monday, etc.
+      const hour = date.getHours()
+      
+      const opens = c.metrics?.uniqueOpeners?.length ?? 0
+      const clicks = c.metrics?.uniqueClickers?.length ?? 0
+
+      if (!byDay[day]) byDay[day] = { sends: 0, opens: 0, clicks: 0 }
+      byDay[day].sends++
+      byDay[day].opens += opens
+      byDay[day].clicks += clicks
+
+      if (!byHour[hour]) byHour[hour] = { sends: 0, opens: 0, clicks: 0 }
+      byHour[hour].sends++
+      byHour[hour].opens += opens
+      byHour[hour].clicks += clicks
+    })
+
+    // Find best performing day and hour
+    let bestDay = null
+    let bestDayScore = 0
+    Object.entries(byDay).forEach(([day, stats]) => {
+      const score = stats.sends > 0 ? (stats.opens + stats.clicks * 2) / stats.sends : 0
+      if (score > bestDayScore) {
+        bestDayScore = score
+        bestDay = parseInt(day)
+      }
+    })
+
+    let bestHour = null
+    let bestHourScore = 0
+    Object.entries(byHour).forEach(([hour, stats]) => {
+      const score = stats.sends > 0 ? (stats.opens + stats.clicks * 2) / stats.sends : 0
+      if (score > bestHourScore) {
+        bestHourScore = score
+        bestHour = parseInt(hour)
+      }
+    })
+
+    return { byDay, byHour, bestDay, bestHour }
+  }, [campaigns])
+
+  // Calculate real engagement segments
+  const engagementSegments = useMemo(() => {
+    if (!analytics || analytics.totalDelivered === 0) {
+      return { high: 0, medium: 0, low: 0, highCount: 0, mediumCount: 0, lowCount: 0 }
+    }
+
+    // High engagement: clicked (clicked means they also opened)
+    const highPercentage = analytics.totalDelivered > 0 ? (analytics.totalClicks / analytics.totalDelivered) * 100 : 0
+    const highCount = analytics.totalClicks
+
+    // Medium engagement: opened but didn't click
+    const mediumCount = Math.max(0, analytics.totalOpens - analytics.totalClicks)
+    const mediumPercentage = analytics.totalDelivered > 0 ? (mediumCount / analytics.totalDelivered) * 100 : 0
+
+    // Low engagement: didn't open
+    const lowCount = Math.max(0, analytics.totalDelivered - analytics.totalOpens)
+    const lowPercentage = analytics.totalDelivered > 0 ? (lowCount / analytics.totalDelivered) * 100 : 0
+
+    return {
+      high: highPercentage,
+      medium: mediumPercentage,
+      low: lowPercentage,
+      highCount,
+      mediumCount,
+      lowCount
+    }
+  }, [analytics])
+
+  // Generate AI insights based on real data
   const generateAIInsights = async () => {
-    if (!analytics || !topCampaigns.length) return
+    if (!analytics) return
     
     setGeneratingInsights(true)
     
@@ -237,37 +306,67 @@ export default function Reports() {
     
     const insights: string[] = []
     
-    // Performance insights
+    // Performance insights based on actual metrics
     if (analytics.openRate < 15) {
-      insights.push('📧 **Taxa de abertura baixa**: Sua taxa de abertura está abaixo da média (15%). Teste assuntos mais curtos, personalizados e com senso de urgência.')
+      insights.push(`📧 **Taxa de abertura baixa**: Sua taxa atual é ${analytics.openRate.toFixed(1)}%, abaixo da média de 18%. Teste assuntos mais curtos, personalizados e com senso de urgência.`)
     } else if (analytics.openRate > 25) {
-      insights.push('🎯 **Excelente taxa de abertura**: Suas campanhas estão performando acima da média! Continue usando assuntos diretos e personalizados.')
+      insights.push(`🎯 **Excelente taxa de abertura**: ${analytics.openRate.toFixed(1)}% está acima da média! Continue usando assuntos diretos e personalizados.`)
+    } else {
+      insights.push(`📊 **Taxa de abertura na média**: ${analytics.openRate.toFixed(1)}% está dentro do esperado. Para melhorar, teste personalização e horários diferentes.`)
     }
     
     if (analytics.clickRate < 2) {
-      insights.push('🖱️ **Baixo engajamento**: Apenas ' + analytics.clickRate.toFixed(1) + '% clicam. Adicione CTAs mais visíveis, use botões coloridos e posicione links estrategicamente.')
+      insights.push(`🖱️ **Baixo engajamento**: Apenas ${analytics.clickRate.toFixed(1)}% clicam. Adicione CTAs mais visíveis, use botões coloridos e posicione links estrategicamente.`)
     } else if (analytics.clickRate > 5) {
-      insights.push('💎 **Alto engajamento**: Taxa de cliques excelente! Seu conteúdo está ressoando com a audiência.')
+      insights.push(`💎 **Alto engajamento**: Taxa de ${analytics.clickRate.toFixed(1)}% de cliques é excelente! Seu conteúdo está ressoando com a audiência.`)
+    } else {
+      insights.push(`👆 **Engajamento moderado**: ${analytics.clickRate.toFixed(1)}% de CTR é bom, mas pode melhorar com CTAs mais claros e posicionamento estratégico.`)
     }
     
     if (analytics.bounceRate > 5) {
-      insights.push('⚠️ **Taxa de rejeição alta**: ' + analytics.bounceRate.toFixed(1) + '% de bounces. Limpe sua lista removendo emails inválidos e implemente double opt-in.')
+      insights.push(`⚠️ **Taxa de rejeição alta**: ${analytics.bounceRate.toFixed(1)}% de bounces (${analytics.totalBounces} emails). Limpe sua lista removendo emails inválidos.`)
+    } else if (analytics.bounceRate < 2) {
+      insights.push(`✅ **Lista limpa**: Taxa de bounce de ${analytics.bounceRate.toFixed(1)}% é excelente! Sua lista está saudável.`)
+    }
+    
+    // Segmentation insights
+    if (engagementSegments.lowCount > engagementSegments.highCount) {
+      insights.push(`🎯 **Oportunidade de reativação**: Você tem ${engagementSegments.lowCount.toLocaleString()} contatos inativos. Crie uma campanha de win-back com oferta especial.`)
+    }
+    
+    if (engagementSegments.highCount > 0) {
+      insights.push(`⭐ **Segmento VIP**: ${engagementSegments.highCount.toLocaleString()} contatos engajados (${engagementSegments.high.toFixed(1)}%). Crie campanhas exclusivas para este grupo.`)
     }
     
     // Best practices from top campaigns
     if (topCampaigns.length > 0) {
       const bestCampaign = topCampaigns[0]
-      insights.push(`✨ **Campanha destaque**: "${bestCampaign.name}" teve ${bestCampaign.openRate.toFixed(1)}% de abertura. Analise o assunto e horário de envio para replicar o sucesso.`)
+      if (bestCampaign.openRate > 0) {
+        insights.push(`✨ **Campanha destaque**: "${bestCampaign.name}" teve ${bestCampaign.openRate.toFixed(1)}% de abertura e ${bestCampaign.clickRate.toFixed(1)}% de cliques. Analise o que funcionou!`)
+      }
     }
     
-    // Timing insights
-    insights.push('⏰ **Melhor horário**: Estudos mostram que terças e quintas às 10h ou 14h têm maior taxa de abertura. Teste agendar nestes períodos.')
+    // Timing insights based on real data
+    if (sendingPatterns.bestDay !== null && sendingPatterns.bestHour !== null) {
+      const dayNames = ['Domingos', 'Segundas', 'Terças', 'Quartas', 'Quintas', 'Sextas', 'Sábados']
+      insights.push(`⏰ **Seu melhor horário**: ${dayNames[sendingPatterns.bestDay]} às ${sendingPatterns.bestHour}h tem gerado os melhores resultados. Priorize este horário!`)
+    } else if (campaigns.length > 0) {
+      insights.push('⏰ **Teste horários**: Você já enviou campanhas, mas precisa de mais dados para identificar o melhor horário. Continue enviando regularmente!')
+    } else {
+      insights.push('⏰ **Melhor horário**: Terças e quintas às 10h ou 14h têm maior taxa de abertura segundo estudos. Comece por aí!')
+    }
     
-    // Personalization
-    insights.push('🎨 **Personalização**: Use o nome do destinatário no assunto e no corpo do email. Isso pode aumentar a taxa de abertura em até 26%.')
+    // Delivery rate
+    if (analytics.deliveryRate < 95) {
+      insights.push(`📬 **Melhore a entregabilidade**: ${analytics.deliveryRate.toFixed(1)}% de entrega. Remova bounces, valide emails e evite palavras spam.`)
+    }
     
-    // A/B Testing
-    insights.push('🧪 **Teste A/B**: Experimente diferentes assuntos, horários e CTAs. Pequenas mudanças podem gerar grandes resultados.')
+    // Volume insights
+    if (analytics.totalSent < 100) {
+      insights.push('🚀 **Aumente o volume**: Com apenas ' + analytics.totalSent + ' emails enviados, você está começando. Aumente gradualmente para obter mais insights.')
+    } else if (analytics.totalSent > 1000) {
+      insights.push('📈 **Grande volume**: ' + analytics.totalSent.toLocaleString() + ' emails enviados! Use automações para escalar ainda mais.')
+    }
     
     // Mobile optimization
     insights.push('📱 **Mobile-first**: Mais de 60% dos emails são abertos no celular. Garanta que seus templates sejam responsivos e CTAs sejam fáceis de clicar.')
@@ -460,9 +559,9 @@ export default function Reports() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-green-900">
-                            {analytics.totalOpens > 0 ? Math.round((analytics.totalClicks / analytics.totalOpens) * 100) : 0}%
+                            {engagementSegments.high.toFixed(1)}%
                           </div>
-                          <div className="text-xs text-green-700">~{Math.round(analytics.totalClicks * 1.2).toLocaleString()} contatos</div>
+                          <div className="text-xs text-green-700">{engagementSegments.highCount.toLocaleString()} contatos</div>
                         </div>
                       </div>
                       
@@ -476,9 +575,9 @@ export default function Reports() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-blue-900">
-                            {analytics.totalDelivered > 0 ? Math.round(((analytics.totalOpens - analytics.totalClicks) / analytics.totalDelivered) * 100) : 0}%
+                            {engagementSegments.medium.toFixed(1)}%
                           </div>
-                          <div className="text-xs text-blue-700">~{Math.round((analytics.totalOpens - analytics.totalClicks) * 0.8).toLocaleString()} contatos</div>
+                          <div className="text-xs text-blue-700">{engagementSegments.mediumCount.toLocaleString()} contatos</div>
                         </div>
                       </div>
                       
@@ -492,9 +591,9 @@ export default function Reports() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-amber-900">
-                            {analytics.totalDelivered > 0 ? Math.round(((analytics.totalDelivered - analytics.totalOpens) / analytics.totalDelivered) * 100) : 0}%
+                            {engagementSegments.low.toFixed(1)}%
                           </div>
-                          <div className="text-xs text-amber-700">~{(analytics.totalDelivered - analytics.totalOpens).toLocaleString()} contatos</div>
+                          <div className="text-xs text-amber-700">{engagementSegments.lowCount.toLocaleString()} contatos</div>
                         </div>
                       </div>
                     </div>
@@ -536,7 +635,9 @@ export default function Reports() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Melhores Horários</h3>
-                    <p className="text-xs text-slate-500">Baseado em benchmarks da indústria</p>
+                    <p className="text-xs text-slate-500">
+                      {campaigns.length > 0 ? 'Baseado nas suas campanhas' : 'Baseado em benchmarks da indústria'}
+                    </p>
                   </div>
                 </div>
 
@@ -620,7 +721,17 @@ export default function Reports() {
                       <div className="flex-1">
                         <h5 className="text-sm font-bold text-purple-900 mb-1">Melhor Janela de Envio</h5>
                         <p className="text-xs text-purple-800">
-                          <strong>Terças e Quintas às 10h ou 14h</strong> apresentam as maiores taxas de abertura e engajamento.
+                          {sendingPatterns.bestDay !== null && sendingPatterns.bestHour !== null ? (
+                            <span>
+                              <strong>
+                                {['Domingos', 'Segundas', 'Terças', 'Quartas', 'Quintas', 'Sextas', 'Sábados'][sendingPatterns.bestDay]} às {sendingPatterns.bestHour}h
+                              </strong> tem sido seu melhor horário baseado no histórico.
+                            </span>
+                          ) : (
+                            <span>
+                              <strong>Terças e Quintas às 10h ou 14h</strong> apresentam as maiores taxas de abertura e engajamento.
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -770,30 +881,48 @@ export default function Reports() {
                     <h4 className="font-bold text-white">Ganhos Rápidos (0-7 dias)</h4>
                   </div>
                   <ul className="space-y-3">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-green-400 mt-1">✓</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Limpar lista de emails</div>
-                        <div className="text-xs text-indigo-200">Remova {analytics.totalBounces} bounces para melhorar deliverability</div>
-                        <div className="text-xs text-green-400 font-semibold mt-1">Impacto: +{(analytics.bounceRate * 0.5).toFixed(1)}% taxa de entrega</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-400 mt-1">✓</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Testar novos horários</div>
-                        <div className="text-xs text-indigo-200">Envie terça às 10h em vez do horário atual</div>
-                        <div className="text-xs text-yellow-400 font-semibold mt-1">Impacto: +15% taxa de abertura</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-blue-400 mt-1">✓</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Adicionar personalização</div>
-                        <div className="text-xs text-indigo-200">Use nome do destinatário nos próximos 3 envios</div>
-                        <div className="text-xs text-blue-400 font-semibold mt-1">Impacto: +26% abertura</div>
-                      </div>
-                    </li>
+                    {analytics.totalBounces > 0 && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-green-400 mt-1">✓</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Limpar lista de emails</div>
+                          <div className="text-xs text-indigo-200">Remova {analytics.totalBounces.toLocaleString()} bounces para melhorar deliverability</div>
+                          <div className="text-xs text-green-400 font-semibold mt-1">Impacto: +{(analytics.bounceRate * 0.5).toFixed(1)}% taxa de entrega</div>
+                        </div>
+                      </li>
+                    )}
+                    {sendingPatterns.bestDay !== null && sendingPatterns.bestHour !== null && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-yellow-400 mt-1">✓</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Otimizar horários de envio</div>
+                          <div className="text-xs text-indigo-200">
+                            Seus melhores resultados: {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][sendingPatterns.bestDay]} às {sendingPatterns.bestHour}h
+                          </div>
+                          <div className="text-xs text-yellow-400 font-semibold mt-1">Impacto: +12-18% taxa de abertura</div>
+                        </div>
+                      </li>
+                    )}
+                    {analytics.openRate < 20 && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-blue-400 mt-1">✓</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Melhorar assuntos</div>
+                          <div className="text-xs text-indigo-200">Adicione personalização e urgncia nos próximos envios</div>
+                          <div className="text-xs text-blue-400 font-semibold mt-1">Impacto: +{(20 - analytics.openRate).toFixed(1)}% abertura</div>
+                        </div>
+                      </li>
+                    )}
+                    {(!analytics.totalBounces || analytics.totalBounces === 0) && analytics.openRate >= 20 && (!sendingPatterns.bestDay || sendingPatterns.bestDay === null) && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-green-400 mt-1">✓</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Continuar enviando</div>
+                          <div className="text-xs text-indigo-200">Suas métricas estão boas! Mantenha a consistência</div>
+                          <div className="text-xs text-green-400 font-semibold mt-1">Impacto: Crescimento contínuo</div>
+                        </div>
+                      </li>
+                    )}
                   </ul>
                 </div>
 
@@ -804,30 +933,46 @@ export default function Reports() {
                     <h4 className="font-bold text-white">Estratégias de Longo Prazo</h4>
                   </div>
                   <ul className="space-y-3">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-purple-400 mt-1">◆</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Implementar automações</div>
-                        <div className="text-xs text-indigo-200">Sequências de boas-vindas e re-engajamento</div>
-                        <div className="text-xs text-purple-400 font-semibold mt-1">ROI esperado: 3-5x</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-pink-400 mt-1">◆</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Criar programa VIP</div>
-                        <div className="text-xs text-indigo-200">Campanhas exclusivas para {Math.round(analytics.totalClicks * 1.2)} contatos engajados</div>
-                        <div className="text-xs text-pink-400 font-semibold mt-1">Retenção: +40%</div>
-                      </div>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-cyan-400 mt-1">◆</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-white">Expandir coleta de dados</div>
-                        <div className="text-xs text-indigo-200">Adicione campos de preferências e interesses</div>
-                        <div className="text-xs text-cyan-400 font-semibold mt-1">Segmentação: +60% relevância</div>
-                      </div>
-                    </li>
+                    {campaigns.length >= 3 && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-purple-400 mt-1">◆</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Implementar automações</div>
+                          <div className="text-xs text-indigo-200">Sequências de boas-vindas e re-engajamento</div>
+                          <div className="text-xs text-purple-400 font-semibold mt-1">ROI esperado: 3-5x</div>
+                        </div>
+                      </li>
+                    )}
+                    {engagementSegments.highCount > 0 && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-pink-400 mt-1">◆</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Criar programa VIP</div>
+                          <div className="text-xs text-indigo-200">Campanhas exclusivas para {engagementSegments.highCount.toLocaleString()} contatos engajados</div>
+                          <div className="text-xs text-pink-400 font-semibold mt-1">Retenção: +40%</div>
+                        </div>
+                      </li>
+                    )}
+                    {engagementSegments.lowCount > engagementSegments.highCount && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-cyan-400 mt-1">◆</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Campanha de reanimação</div>
+                          <div className="text-xs text-indigo-200">Reative {engagementSegments.lowCount.toLocaleString()} contatos inativos com conteúdo especial</div>
+                          <div className="text-xs text-cyan-400 font-semibold mt-1">Recuperação: +{Math.min(30, Math.round(engagementSegments.low * 0.3))}%</div>
+                        </div>
+                      </li>
+                    )}
+                    {campaigns.length < 3 && (
+                      <li className="flex items-start space-x-2">
+                        <span className="text-amber-400 mt-1">◆</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-white">Criar mais campanhas</div>
+                          <div className="text-xs text-indigo-200">Envie regularmente para gerar mais dados e insights</div>
+                          <div className="text-xs text-amber-400 font-semibold mt-1">Aprendizado: Contínuo</div>
+                        </div>
+                      </li>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -840,7 +985,13 @@ export default function Reports() {
                     <div className="text-2xl font-bold text-white">Melhoria Estimada nos Próximos 30 Dias:</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-4xl font-bold text-white">+45%</div>
+                    <div className="text-4xl font-bold text-white">
+                      +{Math.round(
+                        (analytics.bounceRate > 0 ? analytics.bounceRate * 0.5 : 0) + 
+                        (analytics.openRate < 20 ? (20 - analytics.openRate) : 5) +
+                        (analytics.clickRate < 3 ? 2 : 1)
+                      )}%
+                    </div>
                     <div className="text-sm text-green-400 font-semibold">em engajamento total</div>
                   </div>
                 </div>
