@@ -264,19 +264,22 @@ export default function Contacts() {
     setResult(null)
     
     try {
+      // Criar metadata apenas com valores definidos (Firestore não aceita undefined)
       const metadata: ContactMetadata = {
-        city,
-        travelStyle,
-        budgetRange,
         temperature,
         tags,
-        notes,
         totalInteractions: editing?.metadata?.totalInteractions || 0,
         emailsOpened: editing?.metadata?.emailsOpened || 0,
         emailsClicked: editing?.metadata?.emailsClicked || 0,
         bookingsCompleted: editing?.metadata?.bookingsCompleted || 0,
-        lastInteraction: editing?.metadata?.lastInteraction,
       }
+      
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (city) metadata.city = city
+      if (travelStyle) metadata.travelStyle = travelStyle
+      if (budgetRange) metadata.budgetRange = budgetRange
+      if (notes) metadata.notes = notes
+      if (editing?.metadata?.lastInteraction) metadata.lastInteraction = editing.metadata.lastInteraction
       
       metadata.leadScore = calculateLeadScore(metadata)
       
