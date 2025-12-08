@@ -170,8 +170,6 @@ export default function Reports() {
       totalUnsubscribes: stats.unsubscriptions || 0
     }
   }, [brevoStats])
-    }
-  }, [brevoStats])
 
   // Top performing campaigns
   const topCampaigns = useMemo(() => {
