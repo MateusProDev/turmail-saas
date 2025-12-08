@@ -18,10 +18,25 @@ export interface TemplateData {
   keyBenefits?: string[]
   priceInfo?: string
   dateRange?: string
+  // Novos campos para conteúdo mais rico
+  subtitle?: string
+  highlights?: string[]  // Destaques/diferenciais
+  testimonial?: string
+  testimonialAuthor?: string
+  urgencyText?: string  // "Últimas 5 vagas", "Oferta expira em 24h"
+  disclaimer?: string  // Termos e condições resumidos
   contactInfo?: {
     phone?: string
     email?: string
     website?: string
+    whatsapp?: string
+    address?: string
+  }
+  socialLinks?: {
+    facebook?: string
+    instagram?: string
+    youtube?: string
+    linkedin?: string
   }
   // Imagens (URLs do Cloudinary ou caminhos locais)
   heroImage?: string
@@ -57,6 +72,12 @@ const destinationPackageTemplate: EmailTemplate = {
       keyBenefits = ['Guias especializados', 'Hospedagem 5 estrelas', 'Transfer incluído'],
       priceInfo = 'A partir de R$ 2.999',
       dateRange = 'Saídas diárias',
+      highlights = ['Café da manhã incluso', 'Seguro viagem', 'Suporte 24h'],
+      testimonial = 'Viagem incrível! A organização foi perfeita e superou todas as expectativas. Recomendo muito!',
+      testimonialAuthor = 'Maria Silva, São Paulo',
+      urgencyText = 'Últimas 8 vagas disponíveis',
+      disclaimer = 'Preços sujeitos a alteração sem aviso prévio. Consulte condições.',
+      contactInfo = data.contactInfo || { phone: '(11) 99999-9999', email: 'contato@agencia.com', whatsapp: '11999999999' },
       heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
       teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=280&h=400&fit=crop',
       teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=280&h=400&fit=crop',
@@ -196,6 +217,98 @@ const destinationPackageTemplate: EmailTemplate = {
             </td>
           </tr>
 
+          <!-- Testimonial Section -->
+          ${testimonial ? `
+          <tr>
+            <td style="padding: 40px 30px; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="text-align: center; padding-bottom: 20px;">
+                    <div style="font-size: 48px; color: #ff6b35; line-height: 1;">"</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 16px; line-height: 1.6; color: #444; text-align: center; font-style: italic; padding: 0 20px;">
+                    ${testimonial}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 20px; text-align: center;">
+                    <div style="display: inline-block; padding: 8px 20px; background: #fff; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                      <span style="font-size: 18px; color: #ffc107;">★★★★★</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 14px; color: #666; text-align: center; padding-top: 15px; font-weight: 600;">
+                    ${testimonialAuthor || 'Cliente Satisfeito'}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Highlights Section -->
+          ${highlights && highlights.length > 0 ? `
+          <tr>
+            <td style="padding: 40px 30px; background: #ffffff;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="font-size: 24px; font-weight: bold; color: #222; text-align: center; padding-bottom: 30px;">
+                    O que está incluído
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                      ${highlights.map((item) => `
+                        <tr>
+                          <td style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                              <tr>
+                                <td width="30" style="vertical-align: top; padding-right: 10px;">
+                                  <div style="width: 24px; height: 24px; background: #4CAF50; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: bold;">✓</div>
+                                </td>
+                                <td style="font-size: 15px; color: #444; line-height: 1.5;">
+                                  ${item}
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Urgency Banner -->
+          ${urgencyText ? `
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); border-radius: 8px; overflow: hidden;">
+                <tr>
+                  <td style="padding: 25px 20px; text-align: center;">
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                      ⚡ Oferta Limitada
+                    </div>
+                    <div style="font-size: 20px; font-weight: bold; color: #fff; line-height: 1.3;">
+                      ${urgencyText}
+                    </div>
+                    <div style="font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 10px;">
+                      Reserve agora e garanta sua vaga!
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- GALERIA VERTICAL 2 ALTAS + 2 HORIZONTAIS -->
           <tr>
             <td style="padding: 0 30px 35px 30px;">
@@ -229,12 +342,98 @@ const destinationPackageTemplate: EmailTemplate = {
 
           <!-- FOOTER -->
           <tr>
-            <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 30px; text-align: center; border-top: 2px solid #0ea5e9;">
-              <p style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px; font-weight: 600; font-family: Arial, sans-serif;">${companyName}</p>
-              <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">Transformando sonhos em viagens ✈️</p>
+            <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 40px 30px; border-top: 2px solid #0ea5e9;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <!-- Logo e Nome -->
                 <tr>
-                  <td align="center" style="font-size: 12px; font-family: Arial, sans-serif;">
+                  <td align="center" style="padding-bottom: 20px;">
+                    <p style="margin: 0 0 8px 0; color: #0f172a; font-size: 18px; font-weight: 700; font-family: Arial, sans-serif;">${companyName}</p>
+                    <p style="margin: 0; color: #64748b; font-size: 13px; font-style: italic; font-family: Arial, sans-serif;">Transformando sonhos em viagens ✈️</p>
+                  </td>
+                </tr>
+                
+                <!-- Informações de Contato -->
+                <tr>
+                  <td style="padding: 25px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td align="center">
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                            ${contactInfo.phone ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #0ea5e9; font-size: 14px; margin-right: 8px;">📞</span>
+                                <a href="tel:${contactInfo.phone.replace(/\D/g, '')}" style="color: #475569; text-decoration: none; font-size: 14px; font-family: Arial, sans-serif;">${contactInfo.phone}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.whatsapp ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #25D366; font-size: 14px; margin-right: 8px;">💬</span>
+                                <a href="https://wa.me/${contactInfo.whatsapp.replace(/\D/g, '')}" style="color: #475569; text-decoration: none; font-size: 14px; font-family: Arial, sans-serif;">WhatsApp: ${contactInfo.whatsapp}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.email ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #667eea; font-size: 14px; margin-right: 8px;">✉️</span>
+                                <a href="mailto:${contactInfo.email}" style="color: #475569; text-decoration: none; font-size: 14px; font-family: Arial, sans-serif;">${contactInfo.email}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.address ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #f59e0b; font-size: 14px; margin-right: 8px;">📍</span>
+                                <span style="color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">${contactInfo.address}</span>
+                              </td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Redes Sociais -->
+                ${data.socialLinks && (data.socialLinks.facebook || data.socialLinks.instagram || data.socialLinks.youtube || data.socialLinks.linkedin) ? `
+                <tr>
+                  <td align="center" style="padding: 25px 0 20px 0;">
+                    <p style="margin: 0 0 15px 0; color: #475569; font-size: 13px; font-weight: 600; font-family: Arial, sans-serif;">Siga-nos nas redes sociais</p>
+                    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                      <tr>
+                        ${data.socialLinks.facebook ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.facebook}" style="display: inline-block; width: 36px; height: 36px; background: #1877f2; border-radius: 50%; text-align: center; line-height: 36px; color: #fff; text-decoration: none; font-size: 18px;">f</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.instagram ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.instagram}" style="display: inline-block; width: 36px; height: 36px; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-radius: 50%; text-align: center; line-height: 36px; color: #fff; text-decoration: none; font-size: 18px;">📷</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.youtube ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.youtube}" style="display: inline-block; width: 36px; height: 36px; background: #ff0000; border-radius: 50%; text-align: center; line-height: 36px; color: #fff; text-decoration: none; font-size: 18px;">▶</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.linkedin ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.linkedin}" style="display: inline-block; width: 36px; height: 36px; background: #0077b5; border-radius: 50%; text-align: center; line-height: 36px; color: #fff; text-decoration: none; font-size: 18px;">in</a>
+                        </td>
+                        ` : ''}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                ` : ''}
+
+                <!-- Links Footer -->
+                <tr>
+                  <td align="center" style="padding-top: 15px; font-size: 12px; font-family: Arial, sans-serif;">
                     <a href="#" style="color: #0ea5e9; text-decoration: none; font-weight: 500; padding: 0 10px;">Política de Privacidade</a>
                     <span style="color: #cbd5e0; padding: 0 5px;">•</span>
                     <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600; padding: 0 10px;">Contato</a>
@@ -242,6 +441,14 @@ const destinationPackageTemplate: EmailTemplate = {
                     <a href="#" style="color: #a0aec0; text-decoration: none; padding: 0 10px;">Descadastrar</a>
                   </td>
                 </tr>
+
+                ${disclaimer ? `
+                <tr>
+                  <td align="center" style="padding-top: 20px;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px; line-height: 1.5; font-family: Arial, sans-serif; font-style: italic;">${disclaimer}</p>
+                  </td>
+                </tr>
+                ` : ''}
               </table>
             </td>
           </tr>
@@ -271,6 +478,12 @@ const newsletterTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Ver Todas as Ofertas',
       keyBenefits = ['Destinos exclusivos', 'Dicas de viagem', 'Ofertas especiais'],
+      highlights = ['Destinos imperdíveis', 'Guias completos de viagem', 'Promoções exclusivas para assinantes'],
+      testimonial = 'A newsletter me ajuda a descobrir destinos incríveis todo mês!',
+      testimonialAuthor = 'João Santos, Assinante há 2 anos',
+      urgencyText = 'Promoções válidas apenas esta semana',
+      disclaimer = 'Esta é uma newsletter informativa. Preços e disponibilidade sujeitos a alteração.',
+      contactInfo = data.contactInfo || { phone: '(11) 99999-9999', email: 'contato@agencia.com', whatsapp: '11999999999' },
       heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=300&fit=crop',
       teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1504150558240-0b4fd8946624?w=380&h=280&fit=crop',
       teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=180&h=280&fit=crop',
@@ -369,15 +582,201 @@ const newsletterTemplate: EmailTemplate = {
             </td>
           </tr>
 
+          <!-- Testimonial Section -->
+          ${testimonial ? `
+          <tr>
+            <td style="padding: 50px 40px; background: #fafafa;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="text-align: center; padding-bottom: 20px;">
+                    <div style="font-size: 48px; color: #1a202c; line-height: 1; font-family: 'Georgia', serif;">"</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 16px; line-height: 1.8; color: #4a5568; text-align: center; font-style: italic; padding: 0 30px; font-family: 'Georgia', serif;">
+                    ${testimonial}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 20px; text-align: center;">
+                    <span style="font-size: 18px; color: #fbbf24;">★★★★★</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 13px; color: #718096; text-align: center; padding-top: 12px; font-weight: 500; font-family: Arial, sans-serif;">
+                    ${testimonialAuthor || 'Assinante'}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Highlights Section -->
+          ${highlights && highlights.length > 0 ? `
+          <tr>
+            <td style="padding: 50px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="font-size: 22px; font-weight: normal; color: #1a202c; text-align: center; padding-bottom: 35px; font-family: 'Georgia', serif; letter-spacing: 0.5px;">
+                    Destaques desta edição
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                      ${highlights.map((item, idx) => `
+                        <tr>
+                          <td style="padding: 15px 0; border-bottom: 1px solid #f0f0f0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                              <tr>
+                                <td width="24" style="vertical-align: top; padding-right: 15px;">
+                                  <div style="width: 20px; height: 20px; background: #1a202c; border-radius: 3px; color: #fff; font-size: 11px; font-weight: bold; text-align: center; line-height: 20px; font-family: Arial, sans-serif;">${idx + 1}</div>
+                                </td>
+                                <td style="font-size: 14px; color: #4a5568; line-height: 1.6; font-family: Arial, sans-serif;">
+                                  ${item}
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Urgency Banner -->
+          ${urgencyText ? `
+          <tr>
+            <td style="padding: 0 40px 40px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background: #1a202c; border-radius: 4px;">
+                <tr>
+                  <td style="padding: 30px 25px; text-align: center;">
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; font-family: Arial, sans-serif;">
+                      ⚡ Oferta Limitada
+                    </div>
+                    <div style="font-size: 18px; font-weight: normal; color: #fff; line-height: 1.4; font-family: 'Georgia', serif;">
+                      ${urgencyText}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- FOOTER CLEAN -->
           <tr>
-            <td style="background-color: #f7fafc; padding: 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0 0 15px 0; color: #2d3748; font-size: 14px; font-weight: normal; font-family: 'Georgia', serif;">${companyName}</p>
-              <p style="margin: 0 0 25px 0; color: #a0aec0; font-size: 12px; line-height: 1.6; font-family: Arial, sans-serif;">Você recebeu este e-mail porque se inscreveu<br>em nosso boletim informativo.</p>
-              <p style="margin: 0; color: #cbd5e0; font-size: 11px; font-family: Arial, sans-serif;">
-                <a href="#" style="color: #718096; text-decoration: none; margin: 0 8px;">Preferências</a> ·
-                <a href="#" style="color: #cbd5e0; text-decoration: none; margin: 0 8px;">Descadastrar</a>
-              </p>
+            <td style="background-color: #f7fafc; padding: 40px; border-top: 1px solid #e5e7eb;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <!-- Logo e Nome -->
+                <tr>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <p style="margin: 0 0 8px 0; color: #2d3748; font-size: 16px; font-weight: normal; font-family: 'Georgia', serif;">${companyName}</p>
+                    <p style="margin: 0; color: #a0aec0; font-size: 12px; font-family: Arial, sans-serif;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo</p>
+                  </td>
+                </tr>
+                
+                <!-- Informações de Contato -->
+                <tr>
+                  <td style="padding: 25px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td align="center">
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                            ${contactInfo.phone ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #718096; font-size: 13px; margin-right: 8px;">📞</span>
+                                <a href="tel:${contactInfo.phone.replace(/\D/g, '')}" style="color: #4a5568; text-decoration: none; font-size: 13px; font-family: Arial, sans-serif;">${contactInfo.phone}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.whatsapp ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #25D366; font-size: 13px; margin-right: 8px;">💬</span>
+                                <a href="https://wa.me/${contactInfo.whatsapp.replace(/\D/g, '')}" style="color: #4a5568; text-decoration: none; font-size: 13px; font-family: Arial, sans-serif;">WhatsApp: ${contactInfo.whatsapp}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.email ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #718096; font-size: 13px; margin-right: 8px;">✉️</span>
+                                <a href="mailto:${contactInfo.email}" style="color: #4a5568; text-decoration: none; font-size: 13px; font-family: Arial, sans-serif;">${contactInfo.email}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.address ? `
+                            <tr>
+                              <td style="padding: 6px 0; text-align: center;">
+                                <span style="color: #718096; font-size: 13px; margin-right: 8px;">📍</span>
+                                <span style="color: #a0aec0; font-size: 12px; font-family: Arial, sans-serif;">${contactInfo.address}</span>
+                              </td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Redes Sociais -->
+                ${data.socialLinks && (data.socialLinks.facebook || data.socialLinks.instagram || data.socialLinks.youtube || data.socialLinks.linkedin) ? `
+                <tr>
+                  <td align="center" style="padding: 25px 0 20px 0;">
+                    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                      <tr>
+                        ${data.socialLinks.facebook ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.facebook}" style="display: inline-block; width: 32px; height: 32px; background: #1877f2; border-radius: 50%; text-align: center; line-height: 32px; color: #fff; text-decoration: none; font-size: 16px;">f</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.instagram ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.instagram}" style="display: inline-block; width: 32px; height: 32px; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-radius: 50%; text-align: center; line-height: 32px; color: #fff; text-decoration: none; font-size: 16px;">📷</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.youtube ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.youtube}" style="display: inline-block; width: 32px; height: 32px; background: #ff0000; border-radius: 50%; text-align: center; line-height: 32px; color: #fff; text-decoration: none; font-size: 16px;">▶</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.linkedin ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.linkedin}" style="display: inline-block; width: 32px; height: 32px; background: #0077b5; border-radius: 50%; text-align: center; line-height: 32px; color: #fff; text-decoration: none; font-size: 16px;">in</a>
+                        </td>
+                        ` : ''}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                ` : ''}
+
+                <!-- Links Footer -->
+                <tr>
+                  <td align="center" style="padding-top: 15px;">
+                    <p style="margin: 0; color: #cbd5e0; font-size: 11px; font-family: Arial, sans-serif;">
+                      <a href="#" style="color: #718096; text-decoration: none; margin: 0 8px;">Preferências</a> ·
+                      <a href="#" style="color: #cbd5e0; text-decoration: none; margin: 0 8px;">Descadastrar</a>
+                    </p>
+                  </td>
+                </tr>
+
+                ${disclaimer ? `
+                <tr>
+                  <td align="center" style="padding-top: 20px;">
+                    <p style="margin: 0; color: #cbd5e0; font-size: 10px; line-height: 1.5; font-family: Arial, sans-serif; font-style: italic;">${disclaimer}</p>
+                  </td>
+                </tr>
+                ` : ''}
+              </table>
             </td>
           </tr>
         </table>
@@ -408,6 +807,10 @@ const promotionalTemplate: EmailTemplate = {
       priceInfo = '50% OFF',
       dateRange = 'Válido até 31/12',
       keyBenefits = ['Todos os destinos', 'Sem taxas extras', 'Pagamento facilitado'],
+      highlights = ['Pacotes completos com desconto', 'Parcelamento em até 12x sem juros', 'Cancelamento grátis até 24h antes'],
+      testimonial = 'Consegui economizar mais de R$ 1.500 nesta promoção!',
+      testimonialAuthor = 'Ana Costa, Cliente Premiado',
+      urgencyText = 'Termina em 48 horas',
       heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&h=300&fit=crop',
       teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=250&h=250&fit=crop',
       teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=250&h=250&fit=crop',
@@ -569,11 +972,78 @@ const promotionalTemplate: EmailTemplate = {
             </td>
           </tr>
 
+          <!-- Testimonial Section -->
+          ${testimonial ? `
+          <tr>
+            <td style="padding: 40px 30px; background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="text-align: center; padding-bottom: 20px;">
+                    <div style="font-size: 60px; color: #ffd700; line-height: 1; font-weight: 900;">"</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 16px; line-height: 1.6; color: #fff; text-align: center; font-style: italic; padding: 0 20px;">
+                    ${testimonial}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 20px; text-align: center;">
+                    <span style="font-size: 20px; color: #ffd700;">★★★★★</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 14px; color: #ffd700; text-align: center; padding-top: 15px; font-weight: 900; text-transform: uppercase;">
+                    ${testimonialAuthor || 'Cliente Satisfeito'}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Highlights Section -->
+          ${highlights && highlights.length > 0 ? `
+          <tr>
+            <td style="padding: 40px 30px; background: #ffffff;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="font-size: 24px; font-weight: 900; color: #1a1a2e; text-align: center; padding-bottom: 30px; text-transform: uppercase;">
+                    🎯 O QUE VOCÊ GANHA
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                      ${highlights.map((item) => `
+                        <tr>
+                          <td style="padding: 12px 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                              <tr>
+                                <td width="40" style="vertical-align: top; padding-right: 12px;">
+                                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #ff3264 0%, #ffd700 100%); border-radius: 50%; color: #1a1a2e; font-size: 16px; font-weight: 900; text-align: center; line-height: 32px;">✓</div>
+                                </td>
+                                <td style="font-size: 15px; color: #333; line-height: 1.5; font-weight: 600;">
+                                  ${item}
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- CTA MEGA BOLD -->
           <tr>
             <td align="center" class="mobile-padding-small" style="padding: 0 30px 45px 30px; background: #ffffff;">
               <a href="${ctaLink}" class="cta-button" style="display: block; background: linear-gradient(135deg, #ff3264 0%, #ffd700 100%); color: #1a1a2e; padding: 22px 50px; border-radius: 60px; text-decoration: none; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 15px 40px rgba(255,50,100,0.5), 0 0 0 4px rgba(255,215,0,0.3); text-align: center;">${ctaText} 🚀</a>
-              <p style="margin: 20px 0 0 0; color: #ff3264; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">⚡ VAGAS LIMITADAS!</p>
+              <p style="margin: 20px 0 0 0; color: #ff3264; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">⚡ ${urgencyText || 'VAGAS LIMITADAS'}!</p>
             </td>
           </tr>
 
@@ -613,6 +1083,12 @@ const returningCustomerTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Explorar Destinos',
       keyBenefits = ['Desconto exclusivo para clientes VIP', 'Consultoria personalizada', 'Flexibilidade total'],
+      highlights = ['Priority Check-in em hotéis parceiros', 'Upgrades gratuitos conforme disponibilidade', 'Atendimento dedicado 24/7'],
+      testimonial = 'Ser cliente VIP faz toda a diferença! Atendimento impecável em cada viagem.',
+      testimonialAuthor = 'Ricardo Almeida, Cliente VIP desde 2020',
+      urgencyText = 'Oferta válida para os próximos 7 dias',
+      disclaimer = 'Benefícios VIP sujeitos a termos e condições específicos.',
+      contactInfo = data.contactInfo || { phone: '(11) 99999-9999', email: 'vip@agencia.com', whatsapp: '11999999999' },
       heroImage = data.heroImage?.trim() || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=540&h=360&fit=crop',
       teamImage1 = data.teamImage1?.trim() || 'https://images.unsplash.com/photo-1540541338287-41700207dee6?w=240&h=320&fit=crop',
       teamImage2 = data.teamImage2?.trim() || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=240&h=320&fit=crop',
@@ -720,8 +1196,50 @@ const returningCustomerTemplate: EmailTemplate = {
           <tr>
             <td align="center" style="padding: 0 35px 45px;">
               <a href="${ctaLink}" style="display: inline-block; background: linear-gradient(135deg, #d4af37, #f4d03f); color: #1a1a1a; padding: 18px 50px; border-radius: 50px; text-decoration: none; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 10px 30px rgba(212,175,55,0.5);">${ctaText} ✨</a>
+              ${urgencyText ? `<p style="margin: 15px 0 0; color: #d4af37; font-size: 13px; font-weight: bold; text-transform: uppercase;">⏰ ${urgencyText}</p>` : ''}
             </td>
           </tr>
+
+          <!-- Highlights VIP Adicionais -->
+          ${highlights && highlights.length > 0 ? `
+          <tr>
+            <td style="padding: 0 35px 35px;">
+              <div style="background: linear-gradient(135deg, #fffef7, #f9f6ed); border: 2px solid #d4af37; border-radius: 8px; padding: 30px 25px;">
+                <h3 style="margin: 0 0 25px 0; color: #2c1810; font-size: 20px; text-align: center; text-transform: uppercase;">🌟 Mais Vantagens VIP</h3>
+                ${highlights.map((item, idx) => `
+                  <div style="margin-bottom: ${idx < highlights.length - 1 ? '15px' : '0'}; padding-bottom: ${idx < highlights.length - 1 ? '15px' : '0'}; ${idx < highlights.length - 1 ? 'border-bottom: 1px dotted #d4af37;' : ''}">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="35" align="center">
+                          <span style="display: inline-block; width: 28px; height: 28px; background: linear-gradient(135deg, #d4af37, #f4d03f); border-radius: 50%; line-height: 28px; color: #1a1a1a; font-weight: bold; font-size: 14px;">⭐</span>
+                        </td>
+                        <td style="padding-left: 12px;">
+                          <p style="margin: 0; color: #4a4a4a; font-size: 15px;">${item}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                `).join('')}
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Testimonial VIP -->
+          ${testimonial ? `
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <div style="border-left: 4px solid #d4af37; background: #fffef7; padding: 25px 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="text-align: center; margin-bottom: 15px;">
+                  <span style="font-size: 20px; color: #d4af37;">★★★★★</span>
+                </div>
+                <p style="margin: 0 0 15px; color: #4a4a4a; font-size: 15px; font-style: italic; text-align: center; line-height: 1.6;">"${testimonial}"</p>
+                <p style="margin: 0; color: #d4af37; font-size: 13px; font-weight: bold; text-align: center;">— ${testimonialAuthor || 'Cliente VIP'}</p>
+              </div>
+            </td>
+          </tr>
+          ` : ''}
+
           <tr>
             <td style="padding: 0 40px 40px;">
               <div style="border-left: 4px solid #d4af37; padding: 20px 25px;">
@@ -731,13 +1249,116 @@ const returningCustomerTemplate: EmailTemplate = {
             </td>
           </tr>
           <tr>
-            <td style="background: linear-gradient(135deg, #2c1810, #3d2415); padding: 35px 30px; text-align: center; border-top: 3px solid #d4af37;">
-              <p style="margin: 0 0 15px; color: #d4af37; font-size: 18px; font-weight: bold;">${companyName}</p>
-              <p style="margin: 0 0 20px; color: #c9b998; font-size: 13px;">Obrigado por ser um cliente VIP.</p>
-              <p style="margin: 0; color: #8b7355; font-size: 11px;">
-                <a href="#" style="color: #d4af37; text-decoration: none;">Preferências</a> · 
-                <a href="#" style="color: #8b7355; text-decoration: none;">Descadastrar</a>
-              </p>
+            <td style="background: linear-gradient(135deg, #2c1810, #3d2415); padding: 40px 30px; border-top: 3px solid #d4af37;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <!-- Nome Agência -->\n                <tr>
+                  <td align="center" style="padding-bottom: 15px;">
+                    <p style="margin: 0 0 8px; color: #d4af37; font-size: 18px; font-weight: bold;">${companyName}</p>
+                    <p style="margin: 0; color: #c9b998; font-size: 13px;">Obrigado por ser um cliente VIP ⭐</p>
+                  </td>
+                </tr>
+                
+                <!-- Informações de Contato VIP -->
+                <tr>
+                  <td style="padding: 25px 0; border-top: 1px solid #5a4a38; border-bottom: 1px solid #5a4a38;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td align="center">
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                            <tr>
+                              <td style="padding-bottom: 10px; text-align: center;">
+                                <p style="margin: 0; color: #d4af37; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Atendimento VIP</p>
+                              </td>
+                            </tr>
+                            ${contactInfo.phone ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #d4af37; font-size: 13px; margin-right: 8px;">📞</span>
+                                <a href="tel:${contactInfo.phone.replace(/\\D/g, '')}" style="color: #c9b998; text-decoration: none; font-size: 13px;">${contactInfo.phone}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.whatsapp ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #25D366; font-size: 13px; margin-right: 8px;">💬</span>
+                                <a href="https://wa.me/${contactInfo.whatsapp.replace(/\\D/g, '')}" style="color: #c9b998; text-decoration: none; font-size: 13px;">WhatsApp VIP: ${contactInfo.whatsapp}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.email ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #d4af37; font-size: 13px; margin-right: 8px;">✉️</span>
+                                <a href="mailto:${contactInfo.email}" style="color: #c9b998; text-decoration: none; font-size: 13px;">${contactInfo.email}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.address ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #d4af37; font-size: 13px; margin-right: 8px;">📍</span>
+                                <span style="color: #8b7355; font-size: 12px;">${contactInfo.address}</span>
+                              </td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Redes Sociais -->
+                ${data.socialLinks && (data.socialLinks.facebook || data.socialLinks.instagram || data.socialLinks.youtube || data.socialLinks.linkedin) ? `
+                <tr>
+                  <td align="center" style="padding: 25px 0 20px 0;">
+                    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                      <tr>
+                        ${data.socialLinks.facebook ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.facebook}" style="display: inline-block; width: 34px; height: 34px; background: #1877f2; border-radius: 50%; text-align: center; line-height: 34px; color: #fff; text-decoration: none; font-size: 17px; font-weight: bold;">f</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.instagram ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.instagram}" style="display: inline-block; width: 34px; height: 34px; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-radius: 50%; text-align: center; line-height: 34px; color: #fff; text-decoration: none; font-size: 17px;">📷</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.youtube ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.youtube}" style="display: inline-block; width: 34px; height: 34px; background: #ff0000; border-radius: 50%; text-align: center; line-height: 34px; color: #fff; text-decoration: none; font-size: 17px; font-weight: bold;">▶</a>
+                        </td>
+                        ` : ''}
+                        ${data.socialLinks.linkedin ? `
+                        <td style="padding: 0 8px;">
+                          <a href="${data.socialLinks.linkedin}" style="display: inline-block; width: 34px; height: 34px; background: #0077b5; border-radius: 50%; text-align: center; line-height: 34px; color: #fff; text-decoration: none; font-size: 16px; font-weight: bold;">in</a>
+                        </td>
+                        ` : ''}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                ` : ''}
+
+                <!-- Links Footer -->
+                <tr>
+                  <td align="center" style="padding-top: 15px;">
+                    <p style="margin: 0; color: #8b7355; font-size: 11px;">
+                      <a href="#" style="color: #d4af37; text-decoration: none;">Preferências</a> · 
+                      <a href="#" style="color: #8b7355; text-decoration: none;">Descadastrar</a>
+                    </p>
+                  </td>
+                </tr>
+
+                ${disclaimer ? `
+                <tr>
+                  <td align="center" style="padding-top: 20px;">
+                    <p style="margin: 0; color: #6a5a48; font-size: 10px; line-height: 1.5; font-style: italic;">${disclaimer}</p>
+                  </td>
+                </tr>
+                ` : ''}
+              </table>
             </td>
           </tr>
         </table>
@@ -767,6 +1388,12 @@ const eventTemplate: EmailTemplate = {
       ctaLink = '#',
       ctaText = 'Reservar Pacote',
       priceInfo = 'A partir de R$ 3.299',
+      highlights = ['Hospedagem 5 estrelas com café da manhã', 'Passeios guiados em português', 'Seguro viagem incluso', 'Transfer aeroporto-hotel'],
+      testimonial = 'Fizemos esse pacote e foi a melhor viagem das nossas vidas! Tudo perfeito!',
+      testimonialAuthor = 'Paula e Marcos, Julho 2024',
+      urgencyText = 'Apenas 3 vagas restantes',
+      disclaimer = 'Valores e disponibilidade sujeitos a alteração. Consulte condições detalhadas.',
+      contactInfo = data.contactInfo || { phone: '(11) 99999-9999', email: 'contato@agencia.com', whatsapp: '11999999999' },
       // 🔄 URLs corrigidas e fallbacks adicionados
       heroImage = data.heroImage?.trim() || 'https://via.placeholder.com/600x400.jpg?text=Hero+Image',
       teamImage1 = data.teamImage1?.trim() || 'https://via.placeholder.com/250x250.jpg?text=Hospedagem+Luxo',
@@ -993,6 +1620,96 @@ const eventTemplate: EmailTemplate = {
             </td>
           </tr>
 
+          <!-- Testimonial Section -->
+          ${testimonial ? `
+          <tr>
+            <td style="padding: 40px 32px; background: linear-gradient(135deg, #fef3f9, #ffffff);">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="text-align: center; padding-bottom: 16px;">
+                    <div style="font-size: 42px; color: #4f1337; line-height: 1;">"</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 15px; line-height: 1.6; color: #444; text-align: center; font-style: italic; padding: 0 20px;">
+                    ${testimonial}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 16px; text-align: center;">
+                    <span style="font-size: 18px; color: #fbbf24;">★★★★★</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 13px; color: #64748b; text-align: center; padding-top: 12px; font-weight: 600;">
+                    ${testimonialAuthor || 'Cliente Satisfeito'}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Highlights Section -->
+          ${highlights && highlights.length > 0 ? `
+          <tr>
+            <td style="padding: 40px 32px; background: #ffffff;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <tr>
+                  <td style="font-size: 22px; font-weight: bold; color: #26081a; text-align: center; padding-bottom: 28px;">
+                    ✨ Incluído no Pacote
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                      ${highlights.map((item) => `
+                        <tr>
+                          <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                              <tr>
+                                <td width="32" style="vertical-align: top; padding-right: 12px;">
+                                  <div style="width: 24px; height: 24px; background: #4f1337; border-radius: 50%; color: #fff; font-size: 13px; font-weight: bold; text-align: center; line-height: 24px;">✓</div>
+                                </td>
+                                <td style="font-size: 14px; color: #444; line-height: 1.5;">
+                                  ${item}
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Urgency Banner -->
+          ${urgencyText ? `
+          <tr>
+            <td style="padding: 0 32px 32px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background: linear-gradient(135deg, #4f1337 0%, #7e2257 100%); border-radius: 8px;">
+                <tr>
+                  <td style="padding: 24px 20px; text-align: center;">
+                    <div style="font-size: 13px; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+                      ⚡ Atenção
+                    </div>
+                    <div style="font-size: 18px; font-weight: bold; color: #fff; line-height: 1.3;">
+                      ${urgencyText}
+                    </div>
+                    <div style="font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 8px;">
+                      Reserve agora antes que acabe!
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
           <!-- PREÇO -->
           <tr>
             <td align="center" style="padding: 24px 32px 0 32px;">
@@ -1002,63 +1719,164 @@ const eventTemplate: EmailTemplate = {
 
           <!-- FOOTER -->
           <tr>
-            <td style="background-color: #f9f9f9; padding: 32px 32px; text-align: center; margin-top: 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
-                <tr align="center">
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" class="social-icon"
-                           style="width: 28px !important; height: 28px !important; display: block !important;">
-                    </a>
+            <td style="background-color: #f9f9f9; padding: 40px 32px; margin-top: 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+                <!-- Nome Agência -->
+                <tr>
+                  <td align="center" style="padding-bottom: 20px;">
+                    <p style="margin: 0 0 8px 0; color: #334155; font-size: 16px; font-weight: bold;">${companyName}</p>
+                    <p style="margin: 0; color: #64748b; font-size: 12px;">Sua próxima aventura te espera! ✈️</p>
                   </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" class="social-icon"
-                           style="width: 28px !important; height: 28px !important; display: block !important;">
-                    </a>
+                </tr>
+                
+                <!-- Informações de Contato -->
+                <tr>
+                  <td style="padding: 25px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td align="center">
+                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="display: inline-block;">
+                            ${contactInfo.phone ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #4f1337; font-size: 13px; margin-right: 8px;">📞</span>
+                                <a href="tel:${contactInfo.phone.replace(/\\D/g, '')}" style="color: #475569; text-decoration: none; font-size: 13px;">${contactInfo.phone}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.whatsapp ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #25D366; font-size: 13px; margin-right: 8px;">💬</span>
+                                <a href="https://wa.me/${contactInfo.whatsapp.replace(/\\D/g, '')}" style="color: #475569; text-decoration: none; font-size: 13px;">WhatsApp: ${contactInfo.whatsapp}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.email ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #4f1337; font-size: 13px; margin-right: 8px;">✉️</span>
+                                <a href="mailto:${contactInfo.email}" style="color: #475569; text-decoration: none; font-size: 13px;">${contactInfo.email}</a>
+                              </td>
+                            </tr>
+                            ` : ''}
+                            ${contactInfo.address ? `
+                            <tr>
+                              <td style="padding: 5px 0; text-align: center;">
+                                <span style="color: #4f1337; font-size: 13px; margin-right: 8px;">📍</span>
+                                <span style="color: #64748b; font-size: 12px;">${contactInfo.address}</span>
+                              </td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" class="social-icon"
-                           style="width: 28px !important; height: 28px !important; display: block !important;">
-                    </a>
+                </tr>
+
+                <!-- Redes Sociais -->
+                <tr>
+                  <td align="center" style="padding: 25px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 0;">
+                      <tr align="center">
+                        ${data.socialLinks?.facebook ? `
+                        <td style="padding: 5px;">
+                          <a href="${data.socialLinks.facebook}" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        ` : `
+                        <td style="padding: 5px;">
+                          <a href="#" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/facebook_32px.png" alt="Facebook" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        `}
+                        ${data.socialLinks?.instagram ? `
+                        <td style="padding: 5px;">
+                          <a href="${data.socialLinks.instagram}" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        ` : `
+                        <td style="padding: 5px;">
+                          <a href="#" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/instagram_32px.png" alt="Instagram" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        `}
+                        ${data.socialLinks?.linkedin ? `
+                        <td style="padding: 5px;">
+                          <a href="${data.socialLinks.linkedin}" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        ` : `
+                        <td style="padding: 5px;">
+                          <a href="#" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/linkedin_32px.png" alt="LinkedIn" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        `}
+                        ${data.socialLinks?.youtube ? `
+                        <td style="padding: 5px;">
+                          <a href="${data.socialLinks.youtube}" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        ` : `
+                        <td style="padding: 5px;">
+                          <a href="#" style="display: inline-block;">
+                            <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" style="width: 28px !important; height: 28px !important; display: block !important;">
+                          </a>
+                        </td>
+                        `}
+                      </tr>
+                    </table>
                   </td>
-                  <td style="padding: 5px;">
-                    <a href="#" style="display: inline-block;">
-                      <img src="https://creative-assets.mailinblue.com/editor/social-icons/rounded_colored/youtube_32px.png" alt="YouTube" class="social-icon"
-                           style="width: 28px !important; height: 28px !important; display: block !important;">
-                    </a>
+                </tr>
+
+                <!-- Links Footer -->
+                <tr>
+                  <td align="center">
+                    <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 20px;">
+                      <tr align="center">
+                        <td style="padding: 0 8px; font-size: 12px;">
+                          <a href="#" style="color: #26081a; text-decoration: none;">Download App</a>
+                        </td>
+                        <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                          <a href="#" style="color: #26081a; text-decoration: none;">Reservar</a>
+                        </td>
+                        <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                          <a href="#" style="color: #26081a; text-decoration: none;">Contato</a>
+                        </td>
+                        <td style="padding: 15px 8px 0 8px; font-size: 12px;">
+                          <a href="#" style="color: #26081a; text-decoration: none;">Descadastrar</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Logo Inferior -->
+                <tr>
+                  <td align="center">
+                    <div class="logo-container" style="margin-top: 16px;">
+                      <img src="${logoImage}" alt="${companyName}" class="logo"
+                           style="height: 100px !important; width: auto !important; max-width: 200px !important; object-fit: contain !important; display: inline-block !important; margin: 0 auto !important; border-radius: 8px !important;">
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Disclaimer -->
+                <tr>
+                  <td align="center" style="padding-top: 16px;">
+                    <p style="margin: 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
+                    ${disclaimer ? `<p style="margin: 12px 0 0; color: #94a3b8; font-size: 10px; line-height: 1.5; font-style: italic;">${disclaimer}</p>` : ''}
                   </td>
                 </tr>
               </table>
-
-              <p style="margin: 0 0 8px 0; color: #334155; font-size: 15px; font-weight: bold;">${companyName}</p>
-              <p style="margin: 0 0 18px 0; color: #64748b; font-size: 12px;">Sua próxima aventura te espera! ✈️</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
-                <tr align="center">
-                  <td style="padding: 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Download App</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Reservar</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Contato</a>
-                  </td>
-                  <td style="padding: 15px 8px 0 8px; font-size: 12px;">
-                    <a href="#" style="color: #26081a; text-decoration: none;">Descadastrar</a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- LOGO INFERIOR -->
-              <div class="logo-container" style="margin-top: 16px;">
-                <img src="${logoImage}" alt="${companyName}" class="logo"
-                     style="height: 100px !important; width: auto !important; max-width: 200px !important; object-fit: contain !important; display: inline-block !important; margin: 0 auto !important; border-radius: 8px !important;">
-              </div>
-              
-              <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 11px;">Você recebeu este e-mail porque se inscreveu em nosso boletim informativo.</p>
             </td>
           </tr>
 
