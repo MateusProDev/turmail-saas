@@ -212,7 +212,7 @@ export default function Reports() {
   // Analyze campaign sending patterns (real data)
   const sendingPatterns = useMemo(() => {
     if (!Array.isArray(campaigns) || campaigns.length === 0) {
-      return { byDay: {}, byHour: {}, bestDay: null, bestHour: null }
+      return { byDay: {}, byHour: {}, bestDay: null, bestHour: null, dayPerformance: [], hourPerformance: [] }
     }
 
     const byDay: Record<number, { sends: number; opens: number; clicks: number }> = {}
@@ -239,6 +239,56 @@ export default function Reports() {
       byHour[hour].clicks += clicks
     })
 
+    // Calculate performance for each day (0-100 score)
+    const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+    const dayPerformance = dayNames.map((name, idx) => {
+      const stats = byDay[idx] || { sends: 0, opens: 0, clicks: 0 }
+      const score = stats.sends > 0 ? ((stats.opens + stats.clicks * 2) / stats.sends) * 100 : 0
+      return {
+        day: name,
+        dayIndex: idx,
+        score: Math.min(100, Math.round(score)),
+        sends: stats.sends,
+        opens: stats.opens,
+        clicks: stats.clicks
+      }
+    }).sort((a, b) => b.score - a.score)
+
+    // Calculate performance by hour (group in ranges)
+    const hourRanges = [
+      { range: '00:00-06:00', hours: [0, 1, 2, 3, 4, 5], emoji: '🌙' },
+      { range: '06:00-09:00', hours: [6, 7, 8], emoji: '🌅' },
+      { range: '09:00-12:00', hours: [9, 10, 11], emoji: '☀️' },
+      { range: '12:00-14:00', hours: [12, 13], emoji: '🍽️' },
+      { range: '14:00-17:00', hours: [14, 15, 16], emoji: '☕' },
+      { range: '17:00-20:00', hours: [17, 18, 19], emoji: '🌤️' },
+      { range: '20:00-24:00', hours: [20, 21, 22, 23], emoji: '🌙' }
+    ]
+
+    const hourPerformance = hourRanges.map(range => {
+      let totalSends = 0
+      let totalOpens = 0
+      let totalClicks = 0
+      
+      range.hours.forEach(h => {
+        const stats = byHour[h] || { sends: 0, opens: 0, clicks: 0 }
+        totalSends += stats.sends
+        totalOpens += stats.opens
+        totalClicks += stats.clicks
+      })
+      
+      const score = totalSends > 0 ? ((totalOpens + totalClicks * 2) / totalSends) * 100 : 0
+      
+      return {
+        time: range.range,
+        emoji: range.emoji,
+        score: Math.min(100, Math.round(score)),
+        sends: totalSends,
+        opens: totalOpens,
+        clicks: totalClicks
+      }
+    }).filter(h => h.sends > 0).sort((a, b) => b.score - a.score)
+
     // Find best performing day and hour
     let bestDay = null
     let bestDayScore = 0
@@ -260,7 +310,7 @@ export default function Reports() {
       }
     })
 
-    return { byDay, byHour, bestDay, bestHour }
+    return { byDay, byHour, bestDay, bestHour, dayPerformance, hourPerformance }
   }, [campaigns])
 
   // Calculate real engagement segments
@@ -290,6 +340,101 @@ export default function Reports() {
       lowCount
     }
   }, [analytics])
+
+  // Analyze subject lines that perform best
+  const subjectAnalysis = useMemo(() => {
+    if (!Array.isArray(campaigns) || campaigns.length === 0) {
+      return { patterns: [], topSubjects: [], avgLength: 0 }
+    }
+
+    const subjectsWithMetrics = campaigns
+      .filter(c => c.subject || c.title || c.name)
+      .map(c => {
+        const subject = c.subject || c.title || c.name || ''
+        const delivered = c.metrics?.delivered ?? c.to?.length ?? 0
+        const opens = c.metrics?.uniqueOpeners?.length ?? 0
+        const clicks = c.metrics?.uniqueClickers?.length ?? 0
+        
+        return {
+          subject,
+          length: subject.length,
+          hasEmoji: /[\u{1F300}-\u{1F9FF}]/u.test(subject),
+          hasNumbers: /\d+/.test(subject),
+          hasQuestion: /\?/.test(subject),
+          hasUrgency: /(hoje|agora|últim|rápi|expir|limit)/i.test(subject),
+          hasPersonalization: /(você|seu|sua)/i.test(subject),
+          delivered,
+          opens,
+          clicks,
+          openRate: delivered > 0 ? (opens / delivered) * 100 : 0,
+          clickRate: delivered > 0 ? (clicks / delivered) * 100 : 0
+        }
+      })
+
+    // Calculate average performance by pattern
+    const patterns = [
+      {
+        name: 'Personalização',
+        description: 'Uso de "você", "seu", "sua"',
+        campaigns: subjectsWithMetrics.filter(s => s.hasPersonalization),
+        icon: '👤'
+      },
+      {
+        name: 'Urgência',
+        description: 'Palavras como "hoje", "agora", "última hora"',
+        campaigns: subjectsWithMetrics.filter(s => s.hasUrgency),
+        icon: '⚡'
+      },
+      {
+        name: 'Números',
+        description: 'Contém números ou listas',
+        campaigns: subjectsWithMetrics.filter(s => s.hasNumbers),
+        icon: '🔢'
+      },
+      {
+        name: 'Emojis',
+        description: 'Uso de emojis no assunto',
+        campaigns: subjectsWithMetrics.filter(s => s.hasEmoji),
+        icon: '😊'
+      },
+      {
+        name: 'Perguntas',
+        description: 'Termina com "?"',
+        campaigns: subjectsWithMetrics.filter(s => s.hasQuestion),
+        icon: '❓'
+      }
+    ].map(pattern => {
+      if (pattern.campaigns.length === 0) {
+        return { ...pattern, avgOpenRate: 0, avgClickRate: 0, count: 0, lift: 0 }
+      }
+      
+      const avgOpenRate = pattern.campaigns.reduce((sum, c) => sum + c.openRate, 0) / pattern.campaigns.length
+      const avgClickRate = pattern.campaigns.reduce((sum, c) => sum + c.clickRate, 0) / pattern.campaigns.length
+      const overallAvgOpen = subjectsWithMetrics.reduce((sum, c) => sum + c.openRate, 0) / subjectsWithMetrics.length
+      const lift = overallAvgOpen > 0 ? ((avgOpenRate - overallAvgOpen) / overallAvgOpen) * 100 : 0
+      
+      return {
+        ...pattern,
+        avgOpenRate,
+        avgClickRate,
+        count: pattern.campaigns.length,
+        lift
+      }
+    }).sort((a, b) => b.lift - a.lift)
+
+    // Top performing subjects
+    const topSubjects = subjectsWithMetrics
+      .filter(s => s.delivered > 0)
+      .sort((a, b) => (b.openRate + b.clickRate * 2) - (a.openRate + a.clickRate * 2))
+      .slice(0, 5)
+
+    // Average subject length
+    const avgLength = subjectsWithMetrics.length > 0
+      ? Math.round(subjectsWithMetrics.reduce((sum, s) => sum + s.length, 0) / subjectsWithMetrics.length)
+      : 0
+
+    return { patterns, topSubjects, avgLength }
+  }, [campaigns])
 
   // Generate AI insights based on real data
   const generateAIInsights = async () => {
@@ -646,76 +791,84 @@ export default function Reports() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Days of Week */}
+                  {/* Days of Week - REAL DATA */}
                   <div>
                     <h4 className="text-sm font-semibold text-slate-700 mb-3">Performance por Dia da Semana</h4>
-                    <div className="space-y-2">
-                      {[
-                        { day: 'Terça-feira', score: 95, color: 'green' },
-                        { day: 'Quinta-feira', score: 92, color: 'green' },
-                        { day: 'Quarta-feira', score: 88, color: 'blue' },
-                        { day: 'Segunda-feira', score: 75, color: 'blue' },
-                        { day: 'Sexta-feira', score: 65, color: 'amber' },
-                        { day: 'Sábado', score: 45, color: 'red' },
-                        { day: 'Domingo', score: 40, color: 'red' }
-                      ].map((item) => (
-                        <div key={item.day} className="flex items-center space-x-3">
-                          <div className="w-24 text-xs font-medium text-slate-600">{item.day}</div>
-                          <div className="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
-                            <div
-                              className={`h-6 rounded-full transition-all ${
-                                item.color === 'green' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
-                                item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
-                                item.color === 'amber' ? 'bg-gradient-to-r from-amber-500 to-orange-600' :
-                                'bg-gradient-to-r from-red-500 to-rose-600'
-                              }`}
-                              style={{ width: `${item.score}%` }}
-                            >
-                              <div className="flex items-center justify-end h-full pr-2">
-                                <span className="text-xs font-bold text-white">{item.score}%</span>
+                    {sendingPatterns.dayPerformance && sendingPatterns.dayPerformance.length > 0 ? (
+                      <div className="space-y-2">
+                        {sendingPatterns.dayPerformance.map((item) => {
+                          const color = item.score >= 70 ? 'green' : item.score >= 50 ? 'blue' : item.score >= 30 ? 'amber' : 'red'
+                          return (
+                            <div key={item.day} className="flex items-center space-x-3">
+                              <div className="w-28 text-xs font-medium text-slate-600">{item.day}</div>
+                              <div className="flex-1 bg-slate-100 rounded-full h-6 overflow-hidden">
+                                <div
+                                  className={`h-6 rounded-full transition-all ${
+                                    color === 'green' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
+                                    color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-indigo-600' :
+                                    color === 'amber' ? 'bg-gradient-to-r from-amber-500 to-orange-600' :
+                                    'bg-gradient-to-r from-red-500 to-rose-600'
+                                  }`}
+                                  style={{ width: `${Math.max(5, item.score)}%` }}
+                                >
+                                  <div className="flex items-center justify-end h-full pr-2">
+                                    <span className="text-xs font-bold text-white">{item.score}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-xs text-slate-500 w-16 text-right">
+                                {item.sends} envio{item.sends !== 1 ? 's' : ''}
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500 italic py-4 text-center">
+                        Envie mais campanhas para ver dados de performance por dia da semana
+                      </div>
+                    )}
                   </div>
 
-                  {/* Time of Day */}
+                  {/* Time of Day - REAL DATA */}
                   <div>
                     <h4 className="text-sm font-semibold text-slate-700 mb-3">Horários Ideais</h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { time: '08:00', label: 'Manhã', score: 75, icon: '🌅' },
-                        { time: '10:00', label: 'Meio da Manhã', score: 95, icon: '☀️' },
-                        { time: '12:00', label: 'Almoço', score: 60, icon: '🍽️' },
-                        { time: '14:00', label: 'Início Tarde', score: 92, icon: '☕' },
-                        { time: '16:00', label: 'Fim Tarde', score: 70, icon: '🌤️' },
-                        { time: '20:00', label: 'Noite', score: 50, icon: '🌙' }
-                      ].map((slot) => (
-                        <div
-                          key={slot.time}
-                          className={`p-3 rounded-lg border-2 ${
-                            slot.score >= 90 ? 'bg-green-50 border-green-300' :
-                            slot.score >= 70 ? 'bg-blue-50 border-blue-300' :
-                            'bg-slate-50 border-slate-200'
-                          }`}
-                        >
-                          <div className="text-center">
-                            <div className="text-xl mb-1">{slot.icon}</div>
-                            <div className="text-xs font-bold text-slate-900">{slot.time}</div>
-                            <div className="text-xs text-slate-600 mb-1">{slot.label}</div>
-                            <div className={`text-xs font-semibold ${
-                              slot.score >= 90 ? 'text-green-700' :
-                              slot.score >= 70 ? 'text-blue-700' :
-                              'text-slate-600'
-                            }`}>
-                              {slot.score}% eficaz
+                    {sendingPatterns.hourPerformance && sendingPatterns.hourPerformance.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {sendingPatterns.hourPerformance.map((slot) => {
+                          const color = slot.score >= 70 ? 'green' : slot.score >= 50 ? 'blue' : 'slate'
+                          return (
+                            <div
+                              key={slot.time}
+                              className={`p-3 rounded-lg border-2 ${
+                                color === 'green' ? 'bg-green-50 border-green-300' :
+                                color === 'blue' ? 'bg-blue-50 border-blue-300' :
+                                'bg-slate-50 border-slate-200'
+                              }`}
+                            >
+                              <div className="text-center">
+                                <div className="text-xl mb-1">{slot.emoji}</div>
+                                <div className="text-xs font-bold text-slate-900">{slot.time}</div>
+                                <div className={`text-xs font-semibold mt-1 ${
+                                  color === 'green' ? 'text-green-700' :
+                                  color === 'blue' ? 'text-blue-700' :
+                                  'text-slate-600'
+                                }`}>
+                                  {slot.score}% eficaz
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {slot.opens} aberturas
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500 italic py-4 text-center">
+                        Envie campanhas em diferentes horários para análise
+                      </div>
+                    )}
                   </div>
 
                   {/* Recommendation */}
@@ -759,69 +912,77 @@ export default function Reports() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Subject Line Insights */}
+                {/* Subject Line Insights - REAL DATA */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-slate-700 flex items-center">
                     <span className="mr-2">📧</span>
                     Assuntos que Convertem
                   </h4>
-                  <div className="space-y-2">
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-green-900">Personalização</span>
-                        <span className="text-xs text-green-700">+26%</span>
-                      </div>
-                      <p className="text-xs text-green-800">Use o nome do destinatário</p>
+                  {subjectAnalysis.patterns && subjectAnalysis.patterns.length > 0 ? (
+                    <div className="space-y-2">
+                      {subjectAnalysis.patterns.slice(0, 4).map((pattern, idx) => {
+                        if (pattern.count === 0) return null
+                        const colors = ['green', 'blue', 'purple', 'amber']
+                        const color = colors[idx % colors.length]
+                        return (
+                          <div key={pattern.name} className={`p-3 bg-${color}-50 rounded-lg border border-${color}-200`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-xs font-semibold text-${color}-900 flex items-center gap-1`}>
+                                <span>{pattern.icon}</span>
+                                {pattern.name}
+                              </span>
+                              <span className={`text-xs text-${color}-700 font-bold`}>
+                                {pattern.lift > 0 ? '+' : ''}{pattern.lift.toFixed(0)}%
+                              </span>
+                            </div>
+                            <p className={`text-xs text-${color}-800`}>
+                              {pattern.avgOpenRate.toFixed(1)}% abertura · {pattern.count} campanha{pattern.count !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        )
+                      }).filter(Boolean)}
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-blue-900">Urgência</span>
-                        <span className="text-xs text-blue-700">+18%</span>
-                      </div>
-                      <p className="text-xs text-blue-800">"Últimas horas", "Só hoje"</p>
+                  ) : (
+                    <div className="text-sm text-slate-500 italic py-4">
+                      Envie mais campanhas para análise de assuntos
                     </div>
-                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-purple-900">Números</span>
-                        <span className="text-xs text-purple-700">+15%</span>
-                      </div>
-                      <p className="text-xs text-purple-800">"5 dicas", "3 passos"</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* CTA Effectiveness */}
+                {/* CTA Effectiveness - Using Top Campaigns */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-slate-700 flex items-center">
                     <span className="mr-2">🎯</span>
-                    CTAs Mais Eficazes
+                    Campanhas Top
                   </h4>
-                  <div className="space-y-2">
-                    <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                      <div className="text-xs font-semibold text-indigo-900 mb-1">"Começar Agora"</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-indigo-800">Taxa de clique</div>
-                        <div className="text-sm font-bold text-indigo-900">8.2%</div>
-                      </div>
+                  {topCampaigns && topCampaigns.length > 0 ? (
+                    <div className="space-y-2">
+                      {topCampaigns.slice(0, 3).map((campaign, idx) => {
+                        const colors = ['indigo', 'emerald', 'pink']
+                        const color = colors[idx]
+                        return (
+                          <div key={campaign.id} className={`p-3 bg-${color}-50 rounded-lg border border-${color}-200`}>
+                            <div className={`text-xs font-semibold text-${color}-900 mb-1 line-clamp-1`}>
+                              {campaign.name}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className={`text-xs text-${color}-800`}>Taxa de clique</div>
+                              <div className={`text-sm font-bold text-${color}-900`}>
+                                {campaign.clickRate.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                      <div className="text-xs font-semibold text-emerald-900 mb-1">"Ver Oferta"</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-emerald-800">Taxa de clique</div>
-                        <div className="text-sm font-bold text-emerald-900">7.5%</div>
-                      </div>
+                  ) : (
+                    <div className="text-sm text-slate-500 italic py-4">
+                      Envie campanhas para ver as mais eficazes
                     </div>
-                    <div className="p-3 bg-pink-50 rounded-lg border border-pink-200">
-                      <div className="text-xs font-semibold text-pink-900 mb-1">"Quero Saber Mais"</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-pink-800">Taxa de clique</div>
-                        <div className="text-sm font-bold text-pink-900">6.8%</div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Email Length */}
+                {/* Email Length - REAL DATA */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-slate-700 flex items-center">
                     <span className="mr-2">📏</span>
@@ -831,35 +992,63 @@ export default function Reports() {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-slate-600">Assunto</span>
-                        <span className="text-xs font-bold text-slate-900">40-50 caracteres</span>
+                        <span className="text-xs font-bold text-slate-900">
+                          {subjectAnalysis.avgLength > 0 ? `${subjectAnalysis.avgLength} caracteres` : '40-50 caracteres'}
+                        </span>
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-2 bg-gradient-to-r from-green-500 to-emerald-600" style={{ width: '70%' }}></div>
+                        <div 
+                          className="h-2 bg-gradient-to-r from-green-500 to-emerald-600" 
+                          style={{ width: subjectAnalysis.avgLength > 0 ? `${Math.min(100, (subjectAnalysis.avgLength / 60) * 100)}%` : '70%' }}
+                        ></div>
+                      </div>
+                      {subjectAnalysis.avgLength > 0 && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          {subjectAnalysis.avgLength < 40 ? 'Considere assuntos um pouco mais descritivos' :
+                           subjectAnalysis.avgLength > 60 ? 'Seus assuntos estão longos, tente reduzir' :
+                           'Tamanho ideal para máxima visibilidade'}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-slate-600">Taxa Abertura Média</span>
+                        <span className="text-xs font-bold text-slate-900">
+                          {analytics?.openRate ? `${analytics.openRate.toFixed(1)}%` : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-2 bg-gradient-to-r from-blue-500 to-indigo-600" 
+                          style={{ width: analytics?.openRate ? `${Math.min(100, analytics.openRate)}%` : '0%' }}
+                        ></div>
                       </div>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-600">Preview Text</span>
-                        <span className="text-xs font-bold text-slate-900">90-100 caracteres</span>
+                        <span className="text-xs font-medium text-slate-600">Taxa Cliques Média</span>
+                        <span className="text-xs font-bold text-slate-900">
+                          {analytics?.clickRate ? `${analytics.clickRate.toFixed(1)}%` : 'N/A'}
+                        </span>
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-2 bg-gradient-to-r from-blue-500 to-indigo-600" style={{ width: '85%' }}></div>
+                        <div 
+                          className="h-2 bg-gradient-to-r from-purple-500 to-pink-600" 
+                          style={{ width: analytics?.clickRate ? `${Math.min(100, analytics.clickRate * 10)}%` : '0%' }}
+                        ></div>
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-600">Corpo do Email</span>
-                        <span className="text-xs font-bold text-slate-900">200-500 palavras</span>
+                    {analytics && analytics.totalSent > 10 && (
+                      <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 mt-3">
+                        <p className="text-xs text-amber-900">
+                          <strong>Dica:</strong> {
+                            analytics.clickRate < 2 ? 'Use CTAs mais visíveis e diretos' :
+                            analytics.clickRate > 5 ? 'Excelente! Continue assim' :
+                            'Emails concisos com 1-2 CTAs têm +35% mais cliques'
+                          }
+                        </p>
                       </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-2 bg-gradient-to-r from-purple-500 to-pink-600" style={{ width: '60%' }}></div>
-                      </div>
-                    </div>
-                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 mt-3">
-                      <p className="text-xs text-amber-900">
-                        <strong>Dica:</strong> Emails concisos com 1-2 CTAs têm +35% mais cliques
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
