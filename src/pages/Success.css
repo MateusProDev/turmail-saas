@@ -1,3 +1,33 @@
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
+
 .success-reset, .success-reset * {
   margin: 0 !important;
   padding: 0 !important;
@@ -8,8 +38,10 @@
   max-width: 720px !important;
   margin: 0 auto !important;
 }
+
 .session-card {
   background: #ffffff !important;
   padding: 1rem !important;
   border-radius: 8px !important;
 }
+

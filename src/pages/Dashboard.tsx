@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
+import EmailUsageCard from '../components/EmailUsageCard'
 
 // Helper function to compute open rate
 
@@ -710,22 +711,37 @@ export default function Dashboard(){
                     </div>
                     <p className="text-emerald-50 text-lg font-semibold">
                       {subscription.planId === 'starter' && 'Starter'}
+                      {subscription.planId === 'pro' && 'Professional'}
                       {subscription.planId === 'agency' && 'Agency'}
                       {subscription.planId === 'trial' && 'Trial Gratuito'}
-                      {!['starter', 'agency', 'trial'].includes(subscription.planId) && 'Plano Personalizado'}
+                      {!['starter', 'pro', 'agency', 'trial'].includes(subscription.planId) && 'Plano Personalizado'}
                     </p>
                     <p className="text-emerald-100 text-xs mt-1">
                       Status: {subscription.status === 'active' ? 'Ativo' : subscription.status === 'trial' ? 'Trial' : 'Inativo'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold">
-                      {subscription.emailsSentToday || 0} / {subscription.dailyEmailLimit || '∞'}
+                    <div className="text-xs text-emerald-100 mb-1">Limites do Plano</div>
+                    <div className="space-y-1 text-sm">
+                      {subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 ? (
+                        <div className="text-white font-semibold">{subscription.limits.emailsPerDay.toLocaleString()} emails/dia</div>
+                      ) : (
+                        <div className="text-white font-semibold">✨ Emails ilimitados</div>
+                      )}
+                      {subscription.limits?.contacts && subscription.limits.contacts !== -1 ? (
+                        <div className="text-emerald-100 text-xs">{subscription.limits.contacts.toLocaleString()} contatos</div>
+                      ) : (
+                        <div className="text-emerald-100 text-xs">Contatos ilimitados</div>
+                      )}
                     </div>
-                    <div className="text-emerald-100 text-sm">Emails enviados hoje</div>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Email Usage Card - mostrar se o plano tiver limite */}
+            {subscription && tenantId && subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 && (
+              <EmailUsageCard tenantId={tenantId} subscription={subscription} />
             )}
 
             {/* Metrics Grid - Estilo Brevo */}

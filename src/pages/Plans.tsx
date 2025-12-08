@@ -280,15 +280,44 @@ export default function Plans() {
         <p className="text-sm text-gray-600 mt-1">Escolha um plano que atenda seu projeto — atualize quando quiser.</p>
       </header>
 
-      {/* Trial Banner - Discreto */}
+      {/* Trial Banner - Destacado */}
       {!subscription?.planId || subscription?.planId === 'trial' ? (
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 mb-1">🎉 Teste Grátis - 14 Dias</h3>
-              <p className="text-sm text-blue-700">
-                Comece agora com 50 emails/dia e 1.000 contatos • Sem cartão de crédito
+        <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl shadow-lg relative overflow-hidden">
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+          </div>
+          
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center space-x-2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold mb-3">
+                <span>✨</span>
+                <span>OFERTA ESPECIAL</span>
+              </div>
+              <h3 className="font-bold text-blue-900 text-xl mb-2">🎉 Teste Grátis - 14 Dias Completos</h3>
+              <p className="text-blue-700 text-sm md:text-base">
+                Comece agora com <strong>50 emails/dia</strong> e <strong>1.000 contatos</strong> • Todos os recursos incluídos • Sem cartão de crédito
               </p>
+              <div className="mt-3 flex flex-wrap gap-2 justify-center md:justify-start">
+                <span className="inline-flex items-center text-xs bg-white/60 px-2 py-1 rounded-lg">
+                  <svg className="w-3 h-3 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  IA Integrada
+                </span>
+                <span className="inline-flex items-center text-xs bg-white/60 px-2 py-1 rounded-lg">
+                  <svg className="w-3 h-3 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  Templates Ilimitados
+                </span>
+                <span className="inline-flex items-center text-xs bg-white/60 px-2 py-1 rounded-lg">
+                  <svg className="w-3 h-3 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                  Analytics Completo
+                </span>
+              </div>
             </div>
             <button
               onClick={() => {
@@ -296,9 +325,18 @@ export default function Plans() {
                 if (trialPlan) handleCheckout(trialPlan)
               }}
               disabled={loading || (subscription?.planId === 'trial')}
-              className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors ${loading || subscription?.planId === 'trial' ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex-shrink-0 ${loading || subscription?.planId === 'trial' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {subscription?.planId === 'trial' ? '✓ Trial Ativo' : 'Começar Grátis'}
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Processando...</span>
+                </div>
+              ) : subscription?.planId === 'trial' ? (
+                <span>✓ Trial Ativo</span>
+              ) : (
+                <span>Começar Grátis Agora →</span>
+              )}
             </button>
           </div>
         </div>
