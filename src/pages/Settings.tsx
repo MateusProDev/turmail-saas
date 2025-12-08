@@ -175,8 +175,6 @@ export default function Settings(){
       
       setTenantKey('')
       setShowTenantKey(false)
-      // reload keys
-      if (tenantId) await loadTenantKeys(tenantId)
     } catch (e: any) {
       try {
         const parsed = JSON.parse(String(e.message || e))
@@ -189,19 +187,6 @@ export default function Settings(){
         setResult(String(e.message || e))
       }
     } finally { setSavingTenant(false) }
-  }
-
-  const loadTenantKeys = async (tenantId: string) => {
-    setLoadingKeys(true)
-    try {
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
-      const resp = await fetch('/api/tenant/list-keys', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId }) })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(JSON.stringify(data))
-      setTenantKeys(data.keys || [])
-    } catch (e:any) {
-      console.error('failed to load tenant keys', e)
-    } finally { setLoadingKeys(false) }
   }
 
   // wrapper called by button: if no selectedTenant, open modal to force selection
@@ -278,13 +263,6 @@ export default function Settings(){
     })
     return () => unsub && unsub()
   }, [])
-
-  // Load tenant keys when selectedTenant changes
-  useEffect(() => {
-    if (selectedTenant) {
-      loadTenantKeys(selectedTenant)
-    }
-  }, [selectedTenant])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 py-8">
