@@ -29,6 +29,117 @@ if (!getApps().length) {
 
 const db = getFirestore()
 
+/**
+ * Atualiza o engajamento do contato com base em interações de email
+ * Aumenta o score automaticamente quando abre/clica em emails
+ */
+async function updateContactEngagement(email, eventType, campaignId) {
+  try {
+    // Buscar contato pelo email
+    const contactsRef = db.collection('contacts')
+    const contactSnap = await contactsRef
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+
+    if (contactSnap.empty) {
+      console.log('[Webhook] Contact not found for email:', email)
+      return
+    }
+
+    const contactDoc = contactSnap.docs[0]
+    const contactRef = contactDoc.ref
+    const contactData = contactDoc.data()
+    const metadata = contactData.metadata || {}
+
+    // Atualizar contadores de interação
+    const updates = {
+      'metadata.lastInteraction': new Date(),
+      'metadata.totalInteractions': FieldValue.increment(1)
+    }
+
+    if (eventType === 'opened') {
+      updates['metadata.emailsOpened'] = FieldValue.increment(1)
+    } else if (eventType === 'clicked') {
+      updates['metadata.emailsClicked'] = FieldValue.increment(1)
+    }
+
+    // Recalcular temperatura automaticamente
+    const currentOpens = metadata.emailsOpened || 0
+    const currentClicks = metadata.emailsClicked || 0
+    const currentInteractions = metadata.totalInteractions || 0
+
+    // Novas métricas após este evento
+    const newOpens = eventType === 'opened' ? currentOpens + 1 : currentOpens
+    const newClicks = eventType === 'clicked' ? currentClicks + 1 : currentClicks
+    const newInteractions = currentInteractions + 1
+
+    // Calcular taxa de engajamento
+    const openRate = newInteractions > 0 ? (newOpens / newInteractions) : 0
+    const clickRate = newOpens > 0 ? (newClicks / newOpens) : 0
+
+    // Lógica de temperatura automática baseada em engajamento
+    let newTemperature = metadata.temperature || 'cold'
+    
+    if (clickRate > 0.5 && newClicks >= 3) {
+      newTemperature = 'hot' // 🔥 Clicou em 50%+ dos emails abertos E clicou pelo menos 3x
+    } else if (clickRate > 0.3 || (openRate > 0.6 && newOpens >= 3)) {
+      newTemperature = 'warm' // ☀️ Bom engajamento
+    } else if (newInteractions >= 5 && openRate < 0.3) {
+      newTemperature = 'cold' // ❄️ Muitos emails mas baixo engajamento
+    }
+
+    updates['metadata.temperature'] = newTemperature
+
+    // Recalcular lead score
+    const budgetScores = {
+      'até 2k': 5,
+      '2k-5k': 8,
+      '5k-10k': 11,
+      '10k-20k': 13,
+      '20k+': 15
+    }
+    
+    let leadScore = 0
+    
+    // Temperatura (+30)
+    if (newTemperature === 'hot') leadScore += 30
+    else if (newTemperature === 'warm') leadScore += 20
+    else if (newTemperature === 'cold') leadScore += 10
+    
+    // Engajamento (+25)
+    leadScore += openRate * 25
+    
+    // Compras anteriores (+20)
+    if (metadata.bookingsCompleted) {
+      leadScore += Math.min(20, metadata.bookingsCompleted * 5)
+    }
+    
+    // Budget (+15)
+    leadScore += budgetScores[metadata.budgetRange || 'até 2k']
+    
+    // Recência (+10) - acabou de interagir agora!
+    leadScore += 10
+    
+    updates['metadata.leadScore'] = Math.min(100, Math.round(leadScore))
+
+    await contactRef.update(updates)
+    
+    console.log('[Webhook] Contact engagement updated:', {
+      email,
+      eventType,
+      newTemperature,
+      leadScore: updates['metadata.leadScore'],
+      opens: newOpens,
+      clicks: newClicks
+    })
+
+  } catch (error) {
+    console.error('[Webhook] Error updating contact engagement:', error)
+    // Não propagar erro para não quebrar webhook
+  }
+}
+
 export default async function handler(req, res) {
   // Only accept POST requests
   if (req.method !== 'POST') {
@@ -109,6 +220,9 @@ export default async function handler(req, res) {
         updates['metrics.lastOpenedAt'] = timestamp
         // Adicionar email à lista de quem abriu
         updates['metrics.uniqueOpeners'] = FieldValue.arrayUnion(email)
+        
+        // 🔥 ATUALIZAR SCORE DO CONTATO
+        await updateContactEngagement(email, 'opened', campaignId)
         break
 
       case 'click':
@@ -120,6 +234,9 @@ export default async function handler(req, res) {
         if (link) {
           updates[`metrics.clickedLinks.${Buffer.from(link).toString('base64')}`] = increment
         }
+        
+        // 🔥 ATUALIZAR SCORE DO CONTATO (click vale mais que open)
+        await updateContactEngagement(email, 'clicked', campaignId)
         break
 
       case 'soft_bounce':
