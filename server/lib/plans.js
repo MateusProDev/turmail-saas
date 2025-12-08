@@ -8,21 +8,23 @@ export const PLANS = {
     id: 'trial',
     name: 'Trial Gratuito',
     price: 0,
-    duration: 7, // dias
+    duration: 14, // dias
     limits: {
       emailsPerDay: 50,
-      emailsPerMonth: 350, // 50 * 7
-      campaigns: 5,
-      contacts: 100,
-      templates: 3,
+      emailsPerMonth: 700, // 50/dia * 14 dias
+      campaigns: -1, // ILIMITADO
+      contacts: 1000, // GENEROSO: 1.000 contatos no trial
+      templates: -1, // ILIMITADO
     },
     features: [
-      '7 dias grátis',
-      '50 emails/dia',
-      'Até 100 contatos',
-      'Até 5 campanhas',
-      '3 templates personalizados',
-      'Estatísticas básicas',
+      '14 dias grátis',
+      '50 emails por dia',
+      '700 emails total',
+      'Até 1.000 contatos',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Todos os recursos incluídos',
+      'Sem cartão de crédito',
     ],
   },
   
@@ -30,47 +32,54 @@ export const PLANS = {
     id: 'starter',
     name: 'Starter',
     price: 47,
-    priceAnnual: 470, // ~10% desconto (47*12 = 564)
+    priceAnnual: 42, // 10% desconto anual (R$ 504/ano)
     limits: {
-      emailsPerDay: 500,
-      emailsPerMonth: 15000,
-      campaigns: 50,
-      contacts: 5000,
-      templates: 20,
+      emailsPerDay: 167,
+      emailsPerMonth: 5000,
+      campaigns: -1, // ILIMITADO
+      contacts: 25000, // GENEROSO: 25mil contatos (vs 500k do Brevo mas mais emails)
+      templates: -1, // ILIMITADO
     },
     features: [
-      '500 emails/dia',
-      '15.000 emails/mês',
-      'Até 5.000 contatos',
-      'Até 50 campanhas',
-      '20 templates personalizados',
-      'Estatísticas avançadas',
-      'Suporte por email',
+      '5.000 emails/mês',
+      '167 emails por dia',
+      '25.000 contatos incluídos',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Editor drag & drop',
+      'IA para criar conteúdo',
+      'Galeria de imagens',
+      'Relatórios e analytics',
+      'Suporte em português',
     ],
   },
 
   pro: {
     id: 'pro',
-    name: 'Pro',
+    name: 'Professional',
     price: 97,
-    priceAnnual: 970, // ~10% desconto (97*12 = 1164)
+    priceAnnual: 87, // 10% desconto anual (R$ 1.044/ano)
     limits: {
-      emailsPerDay: 2000,
-      emailsPerMonth: 60000,
-      campaigns: 200,
-      contacts: 25000,
-      templates: 100,
+      emailsPerDay: 667,
+      emailsPerMonth: 20000,
+      campaigns: -1, // ILIMITADO
+      contacts: 100000, // GENEROSO: 100mil contatos
+      templates: -1, // ILIMITADO
     },
     features: [
-      '2.000 emails/dia',
-      '60.000 emails/mês',
-      'Até 25.000 contatos',
-      'Até 200 campanhas',
-      '100 templates personalizados',
-      'Estatísticas avançadas',
-      'Automações',
+      '20.000 emails/mês',
+      '667 emails por dia',
+      '100.000 contatos incluídos',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Tudo do Starter, mais:',
+      'Automação avançada',
+      'Testes A/B',
+      'Relatórios em tempo real',
+      'Mapas de calor de cliques',
+      'Webhooks personalizados',
       'Suporte prioritário',
-      'Webhooks',
+      'Sem marca Turmail',
     ],
     recommended: true,
   },
@@ -79,25 +88,29 @@ export const PLANS = {
     id: 'agency',
     name: 'Agency',
     price: 197,
-    priceAnnual: 1970, // ~10% desconto (197*12 = 2364)
+    priceAnnual: 177, // 10% desconto anual (R$ 2.124/ano)
     limits: {
-      emailsPerDay: 10000,
-      emailsPerMonth: 300000,
-      campaigns: -1, // ilimitado
-      contacts: 100000,
-      templates: -1, // ilimitado
+      emailsPerDay: 1667,
+      emailsPerMonth: 50000,
+      campaigns: -1, // ILIMITADO
+      contacts: -1, // ILIMITADO (diferencial KILLER!)
+      templates: -1, // ILIMITADO
     },
     features: [
-      '10.000 emails/dia',
-      '300.000 emails/mês',
-      'Até 100.000 contatos',
+      '50.000 emails/mês',
+      '1.667 emails por dia',
+      'Contatos ILIMITADOS',
       'Campanhas ilimitadas',
       'Templates ilimitados',
-      'Estatísticas avançadas',
-      'Automações avançadas',
-      'Multi-tenant',
-      'Suporte prioritário',
-      'Webhooks',
+      'Tudo do Professional, mais:',
+      'Multi-tenant (múltiplos clientes)',
+      'White-label completo',
+      'API ilimitada',
+      'Integração com CRM',
+      'Relatórios personalizados',
+      'Suporte VIP dedicado',
+      'Onboarding personalizado',
+      'SLA garantido',
       'API completa',
       'White label',
     ],

@@ -29,92 +29,104 @@ const PLANS: {
     price: 0,
     limits: {
       emailsPerDay: 50,
-      emailsPerMonth: 350,
-      campaigns: 5,
-      contacts: 100,
+      emailsPerMonth: 700,
+      campaigns: -1,
+      contacts: 1000,
     },
     features: [
-      '7 dias grátis',
-      '50 emails/dia',
-      'Até 100 contatos',
-      'Até 5 campanhas',
-      '3 templates',
-      'Estatísticas básicas',
+      '14 dias grátis',
+      '50 emails por dia',
+      '700 emails total',
+      'Até 1.000 contatos',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Sem cartão de crédito',
     ]
   },
   { 
     id: 'starter', 
     name: 'Starter', 
     price: 47,
-    priceAnnual: 470,
+    priceAnnual: 42,
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_STARTER',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_STARTER_ANNUAL',
     limits: {
-      emailsPerDay: 500,
-      emailsPerMonth: 15000,
-      campaigns: 50,
-      contacts: 5000,
+      emailsPerDay: 167,
+      emailsPerMonth: 5000,
+      campaigns: -1,
+      contacts: 25000,
     },
     features: [
-      '500 emails/dia',
-      '15.000 emails/mês',
-      'Até 5.000 contatos',
-      'Até 50 campanhas',
-      '20 templates',
-      'Estatísticas avançadas',
-      'Suporte por email',
+      '5.000 emails/mês',
+      '167 emails por dia',
+      '25.000 contatos incluídos 🔥',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Editor drag & drop',
+      'IA para criar conteúdo',
+      'Galeria de imagens',
+      'Relatórios e analytics',
+      'Suporte em português',
     ]
   },
   { 
     id: 'pro', 
-    name: 'Pro', 
+    name: 'Professional', 
     price: 97,
-    priceAnnual: 970,
+    priceAnnual: 87,
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_PRO',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_PRO_ANNUAL',
     recommended: true,
     limits: {
-      emailsPerDay: 2000,
-      emailsPerMonth: 60000,
-      campaigns: 200,
-      contacts: 25000,
+      emailsPerDay: 667,
+      emailsPerMonth: 20000,
+      campaigns: -1,
+      contacts: 100000,
     },
     features: [
-      '2.000 emails/dia',
-      '60.000 emails/mês',
-      'Até 25.000 contatos',
-      'Até 200 campanhas',
-      '100 templates',
-      'Automações',
-      'Estatísticas avançadas',
+      '20.000 emails/mês',
+      '667 emails por dia',
+      '100.000 contatos incluídos 🔥',
+      'Campanhas ilimitadas',
+      'Templates ilimitados',
+      'Tudo do Starter, mais:',
+      'Automação avançada',
+      'Testes A/B',
+      'Relatórios em tempo real',
+      'Mapas de calor de cliques',
+      'Webhooks personalizados',
       'Suporte prioritário',
-      'Webhooks',
+      'Sem marca Turmail',
     ]
   },
   { 
     id: 'agency', 
     name: 'Agency', 
     price: 197,
-    priceAnnual: 1970,
+    priceAnnual: 177,
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_AGENCY',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_AGENCY_ANNUAL',
     limits: {
-      emailsPerDay: 10000,
-      emailsPerMonth: 300000,
+      emailsPerDay: 1667,
+      emailsPerMonth: 50000,
       campaigns: -1,
-      contacts: 100000,
+      contacts: -1,
     },
     features: [
-      '10.000 emails/dia',
-      '300.000 emails/mês',
-      'Até 100.000 contatos',
+      '50.000 emails/mês',
+      '1.667 emails por dia',
+      'Contatos ILIMITADOS 🚀',
       'Campanhas ilimitadas',
       'Templates ilimitados',
-      'Automações avançadas',
-      'Multi-tenant',
-      'White label',
-      'Suporte prioritário',
-      'API completa',
+      'Tudo do Professional, mais:',
+      'Multi-tenant (múltiplos clientes)',
+      'White-label completo',
+      'API ilimitada',
+      'Integração com CRM',
+      'Relatórios personalizados',
+      'Suporte VIP dedicado',
+      'Onboarding personalizado',
+      'SLA garantido',
     ]
   },
 ]
@@ -201,7 +213,7 @@ export default function Plans() {
           console.error('start-trial failed', json)
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
-          alert('🎉 Trial gratuito iniciado! Você tem 7 dias com 50 emails/dia.')
+          alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
           navigate('/dashboard')
         }
       } catch (err) {
@@ -273,9 +285,9 @@ export default function Plans() {
         <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 mb-1">🎉 Teste Grátis - 7 Dias</h3>
+              <h3 className="font-semibold text-blue-900 mb-1">🎉 Teste Grátis - 14 Dias</h3>
               <p className="text-sm text-blue-700">
-                Comece agora com 50 emails/dia • Sem cartão de crédito
+                Comece agora com 50 emails/dia e 1.000 contatos • Sem cartão de crédito
               </p>
             </div>
             <button
