@@ -452,12 +452,6 @@ export default function Settings(){
                         ))}
                       </select>
                     </div>
-                  ) : selectedTenant ? (
-                    <div className="bg-blue-50 rounded-xl p-3">
-                      <div className="text-sm text-blue-700">
-                        Tenant selecionado: <strong className="font-semibold">{selectedTenant}</strong>
-                      </div>
-                    </div>
                   ) : null}
 
                   {/* Action Buttons */}
@@ -470,15 +464,15 @@ export default function Settings(){
                       >
                         {savingTenant ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             <span>Salvando...</span>
                           </>
                         ) : (
                           <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                             </svg>
-                            <span>Salvar para este tenant</span>
+                            <span>Salvar Configuração</span>
                           </>
                         )}
                       </button>
@@ -504,48 +498,6 @@ export default function Settings(){
                       </button>
                     </div>
 
-                    {/* Tenant Keys list */}
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-slate-700 mb-2">Chaves do Tenant</h4>
-                      {loadingKeys ? (
-                        <div className="text-sm text-slate-600">Carregando chaves...</div>
-                      ) : (
-                        <div className="space-y-2">
-                          {tenantKeys.length === 0 && <div className="text-sm text-slate-500">Nenhuma chave configurada.</div>}
-                          {tenantKeys.map(k => (
-                            <div key={k.id} className="flex items-center justify-between bg-slate-50 p-3 rounded-lg">
-                              <div>
-                                <div className="text-sm font-medium">ID: {k.id}</div>
-                                <div className="text-xs text-slate-500">Criada por: {k.createdBy || 'desconhecido'} • {k.createdAt ? new Date(k.createdAt.seconds * 1000).toLocaleString() : ''}</div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button onClick={async () => {
-                                  try {
-                                    const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
-                                    const resp = await fetch('/api/tenant/set-active-key', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId: selectedTenant, keyId: k.id }) })
-                                    const data = await resp.json()
-                                    if (!resp.ok) throw new Error(JSON.stringify(data))
-                                    setResult('Chave ativada')
-                                    await loadTenantKeys(selectedTenant!)
-                                  } catch (e:any) { setResult(String(e.message || e)) }
-                                }} className="px-3 py-1 bg-indigo-600 text-white rounded">Ativar</button>
-                                <button onClick={async () => {
-                                  try {
-                                    const token = auth.currentUser ? await auth.currentUser.getIdToken() : null
-                                    const resp = await fetch('/api/tenant/delete-key', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ tenantId: selectedTenant, keyId: k.id }) })
-                                    const data = await resp.json()
-                                    if (!resp.ok) throw new Error(JSON.stringify(data))
-                                    setResult('Chave removida')
-                                    await loadTenantKeys(selectedTenant!)
-                                  } catch (e:any) { setResult(String(e.message || e)) }
-                                }} className="px-3 py-1 bg-red-600 text-white rounded">Remover</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
                     {/* Test Results */}
                     <div className="flex-1">
                       {testSuccess === true && (
@@ -560,10 +512,6 @@ export default function Settings(){
                       )}
                     </div>
                   </div>
-
-                    <p className="text-xs text-slate-500">
-                      Para salvar a chave Brevo você precisa ser <strong>Owner</strong> ou <strong>Admin</strong> da conta. Se administra várias contas, selecione a conta correta no seletor acima.
-                    </p>
 
                     {/* Tenant selection modal (shown when user clicks Save without a selected tenant) */}
                     {showTenantSelect && (
