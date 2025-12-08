@@ -74,61 +74,76 @@ const destinationPackageTemplate: EmailTemplate = {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${mainTitle}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    table { border-collapse: collapse; }
+    .ReadMsgBody { width: 100%; }
+    .ExternalClass { width: 100%; }
+  </style>
+  <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); font-family: 'Segoe UI', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); padding: 30px 10px;">
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f9ff 100%); padding: 30px 10px;">
     <tr>
       <td align="center">
-        <!-- HEADER COM LOGO -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); border: 1px solid #e0f2fe;">
+        <!-- Container principal com largura fixa -->
+        <table width="600" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width: 600px; max-width: 100%; background: rgba(255,255,255,0.98); border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); border: 1px solid #e0f2fe;">
+          <!-- HEADER COM LOGO -->
           <tr>
             <td align="center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 25px;">
-              <img src="${logoImage}" alt="${companyName}" width="200" height="80" style="height: 60px; width: auto; max-width: 180px; display: block; margin: 0 auto; opacity: 0.9;">
+              <img src="${logoImage}" alt="${companyName}" width="200" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
             </td>
           </tr>
           
           <!-- HERO FULL WIDTH -->
           <tr>
-            <td style="padding: 0;">
-              <img src="${heroImage}" alt="${destination}" width="600" height="400" style="width: 100%; height: auto; display: block; border-radius: 0;">
+            <td style="padding: 0; line-height: 0;">
+              <img src="${heroImage}" alt="${destination}" width="600" style="width: 100%; max-width: 600px; height: auto; display: block; border: 0;">
             </td>
           </tr>
 
           <!-- TÍTULO E SUBTÍTULO -->
           <tr>
             <td style="padding: 35px 40px 25px 40px; text-align: center; background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(14,165,233,0.03) 100%);">
-              <h1 style="margin: 0 0 12px 0; color: #0f172a; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px;">${mainTitle}</h1>
-              <p style="margin: 0; color: #64748b; font-size: 18px; line-height: 1.6; font-weight: 400; max-width: 500px; margin: 0 auto;">${description}</p>
+              <h1 style="margin: 0 0 12px 0; color: #0f172a; font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px; font-family: 'Segoe UI', Arial, sans-serif;">${mainTitle}</h1>
+              <p style="margin: 0; color: #64748b; font-size: 18px; line-height: 1.6; font-weight: 400; max-width: 500px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif;">${description}</p>
             </td>
           </tr>
 
           <!-- CARD DE PREÇO E BENEFÍCIOS -->
           <tr>
             <td style="padding: 0 30px 40px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; overflow: hidden; border: 2px solid #e0f2fe;">
+              <table width="540" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width: 540px; max-width: 100%; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; border: 2px solid #e0f2fe;">
                 <tr>
-                  <td style="padding: 35px 35px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
+                  <td style="padding: 35px;">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
                       <tr>
-                        <!-- Coluna Esquerda: Benefícios -->
-                        <td width="60%" style="vertical-align: top; padding-right: 25px;">
-                          <h3 style="margin: 0 0 20px 0; color: #0ea5e9; font-size: 22px; font-weight: 700; display: flex; align-items: center;">
-                            <span style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: white; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 18px;">✨</span>
-                            O Que Está Incluído
-                          </h3>
-                          <table width="100%" cellpadding="0" cellspacing="0">
+                        <!-- Coluna Esquerda: Benefícios (60%) -->
+                        <td width="324" style="width: 324px; vertical-align: top; padding-right: 25px;">
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td style="padding-bottom: 20px;">
+                                <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                  <tr>
+                                    <td style="font-size: 22px; font-weight: 700; color: #0ea5e9; font-family: Arial, sans-serif;">
+                                      <span style="display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: white; width: 36px; height: 36px; border-radius: 50%; text-align: center; line-height: 36px; margin-right: 12px; vertical-align: middle; font-size: 18px;">✨</span>
+                                      O Que Está Incluído
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
                             ${keyBenefits.map((benefit, index) => `
                               <tr>
-                                <td style="padding: 10px 0; ${index < keyBenefits.length - 1 ? 'border-bottom: 1px solid #e2e8f0;' : ''}">
-                                  <table width="100%" cellpadding="0" cellspacing="0">
+                                <td style="padding: 12px 0; ${index < keyBenefits.length - 1 ? 'border-bottom: 1px solid #e2e8f0;' : ''}">
+                                  <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
                                     <tr>
-                                      <td width="32" style="vertical-align: top; padding-right: 12px;">
-                                        <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: bold;">✓</div>
+                                      <td width="32" style="width: 32px; vertical-align: top; padding-right: 12px;">
+                                        <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; text-align: center; line-height: 24px; color: white; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">✓</div>
                                       </td>
-                                      <td style="vertical-align: middle;">
-                                        <p style="margin: 0; color: #334155; font-size: 16px; line-height: 1.5; font-weight: 500;">${benefit}</p>
-                                      </td>
+                                      <td style="vertical-align: middle; color: #334155; font-size: 16px; line-height: 1.5; font-weight: 500; font-family: Arial, sans-serif;">${benefit}</td>
                                     </tr>
                                   </table>
                                 </td>
@@ -137,18 +152,38 @@ const destinationPackageTemplate: EmailTemplate = {
                           </table>
                         </td>
                         
-                        <!-- Coluna Direita: Preço e CTA -->
-                        <td width="40%" style="vertical-align: top;">
-                          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 16px; padding: 30px 25px; text-align: center; box-shadow: 0 10px 30px rgba(14,165,233,0.3);">
+                        <!-- Coluna Direita: Preço e CTA (40%) -->
+                        <td width="186" style="width: 186px; vertical-align: top;">
+                          <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 16px; box-shadow: 0 10px 30px rgba(14,165,233,0.3);">
                             <tr>
-                              <td>
-                                <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px; display: inline-block; margin-bottom: 15px;">
-                                  <p style="margin: 0; color: rgba(255,255,255,0.95); font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;">OFERTA ESPECIAL</p>
-                                </div>
-                                <p style="margin: 0 0 5px 0; color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500;">A partir de</p>
-                                <p style="margin: 0 0 5px 0; color: #ffffff; font-size: 38px; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${priceInfo.replace('A partir de ', '')}</p>
-                                <p style="margin: 0 0 25px 0; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500;">${dateRange}</p>
-                                <a href="${ctaLink}" style="display: block; background: #ffffff; color: #0284c7; padding: 16px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s;">${ctaText}</a>
+                              <td style="padding: 30px 25px; text-align: center;">
+                                <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                                  <tr>
+                                    <td style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px; margin-bottom: 15px;">
+                                      <p style="margin: 0; color: rgba(255,255,255,0.95); font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; font-family: Arial, sans-serif;">OFERTA ESPECIAL</p>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 5px 0;">
+                                      <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500; font-family: Arial, sans-serif;">A partir de</p>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 5px 0;">
+                                      <p style="margin: 0; color: #ffffff; font-size: 38px; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1); font-family: Arial, sans-serif;">${priceInfo.replace('A partir de ', '')}</p>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td style="padding: 5px 0 25px 0;">
+                                      <p style="margin: 0; color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 500; font-family: Arial, sans-serif;">${dateRange}</p>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td>
+                                      <a href="${ctaLink}" style="display: block; background: #ffffff; color: #0284c7; padding: 16px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; font-family: Arial, sans-serif;">${ctaText}</a>
+                                    </td>
+                                  </tr>
+                                </table>
                               </td>
                             </tr>
                           </table>
@@ -164,25 +199,25 @@ const destinationPackageTemplate: EmailTemplate = {
           <!-- GALERIA VERTICAL 2 ALTAS + 2 HORIZONTAIS -->
           <tr>
             <td style="padding: 0 30px 35px 30px;">
-              <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 24px; font-weight: 600; text-align: center;">📸 Momentos Inesquecíveis</h3>
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 24px; font-weight: 600; text-align: center; font-family: Arial, sans-serif;">📸 Momentos Inesquecíveis</h3>
+              <table width="540" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width: 540px; max-width: 100%;">
                 <tr>
-                  <td width="48%" style="padding-right: 10px; vertical-align: top;">
-                    <img src="${teamImage1}" alt="Galeria 1" width="280" height="400" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
+                  <td width="265" style="width: 265px; padding-right: 10px; vertical-align: top; line-height: 0;">
+                    <img src="${teamImage1}" alt="Galeria 1" width="265" style="width: 265px; max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block; border: 0;">
                   </td>
-                  <td width="48%" style="padding-left: 10px; vertical-align: top;">
-                    <img src="${teamImage2}" alt="Galeria 2" width="280" height="400" style="width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block;">
+                  <td width="265" style="width: 265px; padding-left: 10px; vertical-align: top; line-height: 0;">
+                    <img src="${teamImage2}" alt="Galeria 2" width="265" style="width: 265px; max-width: 100%; height: auto; border-radius: 12px; margin-bottom: 12px; display: block; border: 0;">
                   </td>
                 </tr>
                 <tr>
                   <td colspan="2" style="padding-top: 12px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
+                    <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
                       <tr>
-                        <td width="48%" style="padding-right: 6px;">
-                          <img src="${teamImage3}" alt="Galeria 3" width="280" height="200" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                        <td width="265" style="width: 265px; padding-right: 6px; line-height: 0;">
+                          <img src="${teamImage3}" alt="Galeria 3" width="265" style="width: 265px; max-width: 100%; height: auto; border-radius: 12px; display: block; border: 0;">
                         </td>
-                        <td width="48%" style="padding-left: 6px;">
-                          <img src="${teamImage4}" alt="Galeria 4" width="280" height="200" style="width: 100%; height: auto; border-radius: 12px; display: block;">
+                        <td width="265" style="width: 265px; padding-left: 6px; line-height: 0;">
+                          <img src="${teamImage4}" alt="Galeria 4" width="265" style="width: 265px; max-width: 100%; height: auto; border-radius: 12px; display: block; border: 0;">
                         </td>
                       </tr>
                     </table>
@@ -195,20 +230,16 @@ const destinationPackageTemplate: EmailTemplate = {
           <!-- FOOTER -->
           <tr>
             <td style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 30px; text-align: center; border-top: 2px solid #0ea5e9;">
-              <p style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px; font-weight: 600;">${companyName}</p>
-              <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px;">Transformando sonhos em viagens ✈️</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr align="center">
-                  <td style="padding: 0 10px; font-size: 12px;">
-                    <a href="#" style="color: #0ea5e9; text-decoration: none; font-weight: 500;">Política de Privacidade</a>
-                  </td>
-                  <td style="padding: 0 10px; font-size: 12px; color: #cbd5e0;">•</td>
-                  <td style="padding: 0 10px; font-size: 12px;">
-                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600;">Contato</a>
-                  </td>
-                  <td style="padding: 0 10px; font-size: 12px; color: #cbd5e0;">•</td>
-                  <td style="padding: 0 10px; font-size: 12px;">
-                    <a href="#" style="color: #a0aec0; text-decoration: none;">Descadastrar</a>
+              <p style="margin: 0 0 10px 0; color: #0f172a; font-size: 16px; font-weight: 600; font-family: Arial, sans-serif;">${companyName}</p>
+              <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; font-family: Arial, sans-serif;">Transformando sonhos em viagens ✈️</p>
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td align="center" style="font-size: 12px; font-family: Arial, sans-serif;">
+                    <a href="#" style="color: #0ea5e9; text-decoration: none; font-weight: 500; padding: 0 10px;">Política de Privacidade</a>
+                    <span style="color: #cbd5e0; padding: 0 5px;">•</span>
+                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 600; padding: 0 10px;">Contato</a>
+                    <span style="color: #cbd5e0; padding: 0 5px;">•</span>
+                    <a href="#" style="color: #a0aec0; text-decoration: none; padding: 0 10px;">Descadastrar</a>
                   </td>
                 </tr>
               </table>

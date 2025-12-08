@@ -1,6 +1,13 @@
 export function renderTemplate(htmlContent = '', subject = '', preheader = ''): string {
+  const content = String(htmlContent || '').trim()
+  
+  // Se o HTML já é um documento completo (tem DOCTYPE), retorna direto
+  if (content.toLowerCase().includes('<!doctype') || content.toLowerCase().includes('<html')) {
+    return content
+  }
+  
+  // Se é apenas conteúdo HTML (sem estrutura completa), envolve em template básico
   const safePreheader = String(preheader || '').replace(/<[^>]*>?/gm, '')
-  const content = String(htmlContent || '')
   const escapedTitle = escapeHtml(subject || '')
 
   return `<!doctype html>
