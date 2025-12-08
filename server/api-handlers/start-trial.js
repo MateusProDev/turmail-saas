@@ -72,13 +72,13 @@ export default async function handler(req, res) {
       }, { merge: true })
     }
 
-    // 7 days trial ending at 23:59:59 of the 7th day
+    // 14 days trial ending at 23:59:59 of the 14th day
     const now = new Date()
-    const trialEndDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
     trialEndDate.setHours(23, 59, 59, 999)
     const trialEndsAt = trialEndDate
 
-    // Create subscription with trial limits
+    // Create subscription with NEW trial limits (14 dias)
     const doc = {
       uid,
       email: email || '',
@@ -98,20 +98,20 @@ export default async function handler(req, res) {
       ownerUid: uid,
       status: 'trial',
       trialEndsAt,
-      trialDays: 7,
+      trialDays: 14,
       limits: {
         emailsPerDay: 50,
-        emailsPerMonth: 350,
-        campaigns: 5,
-        contacts: 100,
-        templates: 3,
+        emailsPerMonth: 700, // 50/dia * 14 dias
+        campaigns: -1, // ILIMITADO
+        contacts: 1000, // 1.000 contatos
+        templates: -1, // ILIMITADO
       },
       ipAddress: ip,
       createdAt: new Date(),
     }
 
     const ref = await db.collection('subscriptions').add(doc)
-    if (debug) console.log('[start-trial] created subscription', ref.id, '- 7 days, 50 emails/day')
+    if (debug) console.log('[start-trial] created subscription', ref.id, '- 14 days, 50 emails/day, 1k contacts')
 
     return res.json({ 
       ok: true, 
