@@ -36,43 +36,23 @@ interface Campaign {
 export default function Reports() {
   const [currentUser] = useAuthState(auth)
   const [loading, setLoading] = useState(true)
-  const [tenantId, setTenantId] = useState<string | null>(null)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [contacts, setContacts] = useState<any[]>([])
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d')
   const [aiInsights, setAiInsights] = useState<string[]>([])
   const [generatingInsights, setGeneratingInsights] = useState(false)
 
-  // Fetch tenant
-  useEffect(() => {
-    async function fetchTenant() {
-      if (!currentUser) return
-      try {
-        const token = await currentUser.getIdToken()
-        const res = await fetch('/api/my-tenants', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (data.tenants?.[0]?.tenantId) {
-          setTenantId(data.tenants[0].tenantId)
-        }
-      } catch (err) {
-        console.error('[Reports] Error fetching tenant:', err)
-      }
-    }
-    fetchTenant()
-  }, [currentUser])
-
-  // Fetch Firestore campaigns with webhook metrics
+  // Fetch Firestore campaigns with webhook metrics - FILTERED BY USER (ownerUid)
   useEffect(() => {
     async function fetchStats() {
-      if (!currentUser || !tenantId) return
+      if (!currentUser) return
       setLoading(true)
       try {
-        // Fetch campaigns from Firestore (with webhook metrics)
+        // Fetch campaigns from Firestore filtered by ownerUid (individual user)
         const campaignsRef = collection(db, 'campaigns')
         const q = query(
           campaignsRef,
-          where('tenantId', '==', tenantId),
+          where('ownerUid', '==', currentUser.uid),
           firestoreOrderBy('createdAt', 'desc'),
           firestoreLimit(100)
         )
@@ -86,7 +66,7 @@ export default function Reports() {
           }
         }) as Campaign[]
         
-        console.log('[Reports] Campaigns loaded:', firestoreCampaigns.length)
+        console.log('[Reports] Campaigns loaded for user:', currentUser.uid, '- Total:', firestoreCampaigns.length)
         console.log('[Reports] Sample campaign:', firestoreCampaigns[0])
         
         setCampaigns(firestoreCampaigns)
@@ -98,7 +78,33 @@ export default function Reports() {
       }
     }
     fetchStats()
-  }, [currentUser, tenantId])
+  }, [currentUser])
+
+  // Fetch contacts filtered by user (ownerUid) for audience segmentation
+  useEffect(() => {
+    async function fetchContacts() {
+      if (!currentUser) return
+      try {
+        const contactsRef = collection(db, 'contacts')
+        const q = query(
+          contactsRef,
+          where('ownerUid', '==', currentUser.uid)
+        )
+        const snapshot = await getDocs(q)
+        const userContacts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        
+        console.log('[Reports] Contacts loaded for user:', currentUser.uid, '- Total:', userContacts.length)
+        setContacts(userContacts)
+      } catch (err) {
+        console.error('[Reports] Error fetching contacts:', err)
+        setContacts([])
+      }
+    }
+    fetchContacts()
+  }, [currentUser])
 
   // Calculate analytics from Firestore campaigns (webhook metrics)
   const analytics = useMemo(() => {
@@ -326,6 +332,14 @@ export default function Reports() {
     
     if (engagementSegments.highCount > 0) {
       insights.push(`⭐ **Segmento VIP**: ${engagementSegments.highCount.toLocaleString()} contatos engajados (${engagementSegments.high.toFixed(1)}%). Crie campanhas exclusivas para este grupo.`)
+    }
+    
+    // Contact list growth insight
+    if (contacts.length > 0) {
+      const contactsNotReached = Math.max(0, contacts.length - analytics.totalSent)
+      if (contactsNotReached > 0) {
+        insights.push(`📬 **Audiência não alcançada**: Você tem ${contactsNotReached.toLocaleString()} contatos que ainda não receberam campanhas. Expanda seu alcance!`)
+      }
     }
     
     // Best practices from top campaigns
