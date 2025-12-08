@@ -62,6 +62,12 @@ export default function Campaigns(){
   const [selectedContactIds, setSelectedContactIds] = useState<Record<string, boolean>>({})
   const [showRecipientsModal, setShowRecipientsModal] = useState(false)
   const [useCompanyAsFrom, setUseCompanyAsFrom] = useState(true)
+  
+  // Filtros do modal de contatos
+  const [contactSearchTerm, setContactSearchTerm] = useState('')
+  const [contactFilterTemp, setContactFilterTemp] = useState<string>('all')
+  const [contactFilterBudget, setContactFilterBudget] = useState<string>('all')
+  const [contactFilterStyle, setContactFilterStyle] = useState<string>('all')
   // variants UI
   const [variants, setVariants] = useState<any[]>([])
   const [showVariantsModal, setShowVariantsModal] = useState(false)
@@ -212,6 +218,36 @@ export default function Campaigns(){
     // if sent but no delivered recorded, show 100% per preference
     if (delivered === 0) return '100%'
     return `${Math.round((delivered / sent) * 10000) / 100}%`
+  }
+  
+  // Helper para filtrar contatos no modal
+  const getFilteredContacts = () => {
+    let filtered = [...contacts]
+    
+    // Search filter
+    if (contactSearchTerm) {
+      filtered = filtered.filter(c => 
+        c.name?.toLowerCase().includes(contactSearchTerm.toLowerCase()) ||
+        c.email?.toLowerCase().includes(contactSearchTerm.toLowerCase())
+      )
+    }
+    
+    // Temperature filter
+    if (contactFilterTemp !== 'all') {
+      filtered = filtered.filter(c => c.metadata?.temperature === contactFilterTemp)
+    }
+    
+    // Budget filter
+    if (contactFilterBudget !== 'all') {
+      filtered = filtered.filter(c => c.metadata?.budgetRange === contactFilterBudget)
+    }
+    
+    // Style filter
+    if (contactFilterStyle !== 'all') {
+      filtered = filtered.filter(c => c.metadata?.travelStyle === contactFilterStyle)
+    }
+    
+    return filtered
   }
 
   // Campaigns listener: filter by tenantId for complete isolation
@@ -1717,38 +1753,250 @@ export default function Campaigns(){
 
         {/* MODAIS - Renderizados fora do formulário para cobrir toda a página */}
         
-        {/* Contacts Selection Modal */}
+        {/* Contacts Selection Modal - MODAL PROFISSIONAL */}
         {showContactsModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overflow-auto">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setShowContactsModal(false)} />
-            <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-2xl p-6 my-auto">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">Selecionar Contatos</h3>
-              <div className="max-h-64 overflow-auto space-y-2">
-                {contacts.length === 0 ? (
-                  <div className="text-sm text-slate-500">Nenhum contato disponível</div>
-                ) : (
-                  contacts.map(c => (
-                    <label key={c.id} className="flex items-center justify-between p-2 rounded hover:bg-slate-50">
-                      <div>
-                        <div className="font-medium text-slate-900">{c.name || c.email}</div>
-                        <div className="text-xs text-slate-500">{c.email}</div>
-                      </div>
-                      <input type="checkbox" checked={!!selectedContactIds[c.id]} onChange={(e) => setSelectedContactIds(prev => ({ ...prev, [c.id]: e.target.checked }))} />
-                    </label>
-                  ))
-                )}
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-2xl font-bold text-slate-900">👥 Selecionar Contatos</h3>
+                  <button 
+                    onClick={() => setShowContactsModal(false)}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Stats */}
+                <div className="flex items-center space-x-4 text-sm">
+                  <div className="px-3 py-1 bg-slate-100 rounded-lg">
+                    <span className="text-slate-600">Total: </span>
+                    <span className="font-bold text-slate-900">{contacts.length}</span>
+                  </div>
+                  <div className="px-3 py-1 bg-indigo-100 rounded-lg">
+                    <span className="text-indigo-600">Selecionados: </span>
+                    <span className="font-bold text-indigo-900">{Object.values(selectedContactIds).filter(Boolean).length}</span>
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 flex justify-end space-x-2">
-                <button onClick={() => setShowContactsModal(false)} className="px-4 py-2 border rounded">Cancelar</button>
-                <button onClick={() => {
-                  const selected = contacts.filter(c => selectedContactIds[c.id])
-                  const emails = selected.map(s => s.email).filter(Boolean)
-                  const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
-                  const merged = Array.from(new Set([...existing, ...emails]))
-                  setRecipientsText(merged.join('\n'))
-                    // keep selectedContactIds so modal reflects selection if reopened
-                  setShowContactsModal(false)
-                }} className="px-4 py-2 bg-indigo-600 text-white rounded">Adicionar Selecionados</button>
+
+              {/* Filtros e Busca */}
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                  <input
+                    type="search"
+                    value={contactSearchTerm}
+                    onChange={(e) => setContactSearchTerm(e.target.value)}
+                    placeholder="🔍 Buscar por nome ou email..."
+                    className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                  
+                  <select
+                    value={contactFilterTemp}
+                    onChange={(e) => setContactFilterTemp(e.target.value)}
+                    className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  >
+                    <option value="all">Todas Temperaturas</option>
+                    <option value="hot">🔥 Quentes</option>
+                    <option value="warm">☀️ Mornos</option>
+                    <option value="cold">❄️ Frios</option>
+                    <option value="cliente">⭐ Clientes</option>
+                  </select>
+                  
+                  <select
+                    value={contactFilterBudget}
+                    onChange={(e) => setContactFilterBudget(e.target.value)}
+                    className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  >
+                    <option value="all">Todos os Orçamentos</option>
+                    <option value="até 2k">Até R$ 2.000</option>
+                    <option value="2k-5k">R$ 2.000 - R$ 5.000</option>
+                    <option value="5k-10k">R$ 5.000 - R$ 10.000</option>
+                    <option value="10k-20k">R$ 10.000 - R$ 20.000</option>
+                    <option value="20k+">Acima de R$ 20.000</option>
+                  </select>
+                  
+                  <select
+                    value={contactFilterStyle}
+                    onChange={(e) => setContactFilterStyle(e.target.value)}
+                    className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                  >
+                    <option value="all">Todos os Estilos</option>
+                    <option value="luxo">🌟 Luxo</option>
+                    <option value="econômico">💰 Econômico</option>
+                    <option value="aventura">🏔️ Aventura</option>
+                    <option value="cultural">🏛️ Cultural</option>
+                    <option value="praia">🏖️ Praia</option>
+                    <option value="montanha">⛰️ Montanha</option>
+                  </select>
+                </div>
+                
+                {/* Ações Rápidas */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      const filtered = getFilteredContacts()
+                      const newSelection: Record<string, boolean> = {}
+                      filtered.forEach(c => { newSelection[c.id] = true })
+                      setSelectedContactIds(newSelection)
+                    }}
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
+                  >
+                    ✓ Selecionar Todos ({getFilteredContacts().length})
+                  </button>
+                  
+                  <button
+                    onClick={() => setSelectedContactIds({})}
+                    className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300 transition-colors"
+                  >
+                    ✗ Limpar Seleção
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      const filtered = getFilteredContacts()
+                      const newSelection: Record<string, boolean> = {}
+                      filtered.forEach(c => { newSelection[c.id] = !selectedContactIds[c.id] })
+                      setSelectedContactIds(newSelection)
+                    }}
+                    className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300 transition-colors"
+                  >
+                    ⇄ Inverter Seleção
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de Contatos */}
+              <div className="flex-1 overflow-auto px-6 py-4">
+                {(() => {
+                  const filtered = getFilteredContacts()
+                  
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">📭</div>
+                        <h3 className="text-xl font-semibold text-slate-900 mb-2">Nenhum contato encontrado</h3>
+                        <p className="text-slate-600">
+                          {contacts.length === 0 
+                            ? 'Você ainda não tem contatos cadastrados' 
+                            : 'Tente ajustar os filtros de busca'}
+                        </p>
+                      </div>
+                    )
+                  }
+                  
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {filtered.map(c => {
+                        const score = c.metadata?.leadScore || 0
+                        const temp = c.metadata?.temperature || 'cold'
+                        const tempIcons = { hot: '🔥', warm: '☀️', cold: '❄️', cliente: '⭐' }
+                        const tempColors = {
+                          hot: 'bg-red-50 border-red-200 text-red-700',
+                          warm: 'bg-orange-50 border-orange-200 text-orange-700',
+                          cold: 'bg-blue-50 border-blue-200 text-blue-700',
+                          cliente: 'bg-green-50 border-green-200 text-green-700'
+                        }
+                        
+                        return (
+                          <label
+                            key={c.id}
+                            className={`flex items-start space-x-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                              selectedContactIds[c.id]
+                                ? 'border-indigo-500 bg-indigo-50'
+                                : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!selectedContactIds[c.id]}
+                              onChange={(e) => setSelectedContactIds(prev => ({ ...prev, [c.id]: e.target.checked }))}
+                              className="mt-1 w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-semibold text-slate-900 truncate">
+                                  {c.name || c.email?.split('@')[0] || 'Sem nome'}
+                                </div>
+                                <div className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${tempColors[temp as keyof typeof tempColors]}`}>
+                                  {tempIcons[temp as keyof typeof tempIcons]} {temp}
+                                </div>
+                              </div>
+                              <div className="text-sm text-slate-500 truncate mb-1">{c.email}</div>
+                              
+                              {/* Score Bar */}
+                              <div className="flex items-center space-x-2 mb-1">
+                                <div className="flex-1 bg-slate-200 rounded-full h-1.5">
+                                  <div
+                                    className={`h-1.5 rounded-full ${
+                                      score >= 75 ? 'bg-green-500' : score >= 50 ? 'bg-orange-500' : 'bg-gray-400'
+                                    }`}
+                                    style={{ width: `${score}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs font-semibold text-slate-600">{score}</span>
+                              </div>
+                              
+                              {/* Metadata Tags */}
+                              <div className="flex flex-wrap gap-1">
+                                {c.metadata?.budgetRange && (
+                                  <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                    💵 {c.metadata.budgetRange}
+                                  </span>
+                                )}
+                                {c.metadata?.travelStyle && (
+                                  <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                    ✈️ {c.metadata.travelStyle}
+                                  </span>
+                                )}
+                                {c.metadata?.city && (
+                                  <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                    📍 {c.metadata.city}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-600">
+                    {Object.values(selectedContactIds).filter(Boolean).length} contato(s) selecionado(s)
+                  </div>
+                  <div className="flex space-x-3">
+                    <button 
+                      onClick={() => setShowContactsModal(false)} 
+                      className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-white transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const selected = contacts.filter(c => selectedContactIds[c.id])
+                        const emails = selected.map(s => s.email).filter(Boolean)
+                        const existing = recipientsText.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
+                        const merged = Array.from(new Set([...existing, ...emails]))
+                        setRecipientsText(merged.join('\n'))
+                        setShowContactsModal(false)
+                      }}
+                      disabled={Object.values(selectedContactIds).filter(Boolean).length === 0}
+                      className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Adicionar {Object.values(selectedContactIds).filter(Boolean).length > 0 && `(${Object.values(selectedContactIds).filter(Boolean).length})`}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
