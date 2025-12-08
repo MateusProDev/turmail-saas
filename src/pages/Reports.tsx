@@ -22,6 +22,7 @@ interface Campaign {
     opens?: number
     clicks?: number
     bounces?: number
+    unsubscribes?: number
     uniqueOpeners?: string[]
     uniqueClickers?: string[]
   }
@@ -32,26 +33,11 @@ interface Campaign {
   createdAt?: any
 }
 
-interface BrevoStats {
-  account?: any
-  emailStats?: {
-    requests: number
-    delivered: number
-    uniqueOpens: number
-    uniqueClicks: number
-    hardBounces: number
-    softBounces: number
-    unsubscriptions: number
-  }
-  campaigns?: any[]
-}
-
 export default function Reports() {
   const [currentUser] = useAuthState(auth)
   const [loading, setLoading] = useState(true)
   const [tenantId, setTenantId] = useState<string | null>(null)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [brevoStats, setBrevoStats] = useState<BrevoStats | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d')
   const [aiInsights, setAiInsights] = useState<string[]>([])
   const [generatingInsights, setGeneratingInsights] = useState(false)
@@ -76,66 +62,37 @@ export default function Reports() {
     fetchTenant()
   }, [currentUser])
 
-  // Fetch Brevo stats (overall metrics) AND Firestore campaigns (your created campaigns)
+  // Fetch Firestore campaigns with webhook metrics
   useEffect(() => {
     async function fetchStats() {
       if (!currentUser || !tenantId) return
       setLoading(true)
       try {
-        const token = await currentUser.getIdToken()
+        // Fetch campaigns from Firestore (with webhook metrics)
+        const campaignsRef = collection(db, 'campaigns')
+        const q = query(
+          campaignsRef,
+          where('tenantId', '==', tenantId),
+          firestoreOrderBy('createdAt', 'desc'),
+          firestoreLimit(100)
+        )
+        const snapshot = await getDocs(q)
+        const firestoreCampaigns = snapshot.docs.map(doc => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            ...data,
+            status: data.status || data.result?.status || 'draft'
+          }
+        }) as Campaign[]
         
-        // 1. Fetch overall stats from Brevo API (account info, global email stats)
-        const res = await fetch('/api/get-brevo-stats', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ tenantId })
-        })
-        const data = await res.json()
+        console.log('[Reports] Campaigns loaded:', firestoreCampaigns.length)
+        console.log('[Reports] Sample campaign:', firestoreCampaigns[0])
         
-        console.log('[Reports] Brevo stats response:', data)
-        
-        if (data.success && data.stats) {
-          setBrevoStats(data.stats)
-        }
-        
-        // 2. Fetch YOUR campaigns from Firestore (created in Turmail)
-        try {
-          console.log('[Reports] Current user UID:', currentUser?.uid)
-          console.log('[Reports] Current tenant ID:', tenantId)
-          
-          // Fetch campaigns filtered by tenantId
-          const campaignsRef = collection(db, 'campaigns')
-          const q = query(
-            campaignsRef,
-            where('tenantId', '==', tenantId),
-            firestoreOrderBy('createdAt', 'desc'),
-            firestoreLimit(100)
-          )
-          const snapshot = await getDocs(q)
-          const firestoreCampaigns = snapshot.docs.map(doc => {
-            const data = doc.data()
-            return {
-              id: doc.id,
-              ...data,
-              status: data.status || data.result?.status || 'draft'
-            }
-          }) as Campaign[]
-          
-          console.log('[Reports] Campaigns for this tenant:', firestoreCampaigns.length)
-          console.log('[Reports] Sample campaign:', firestoreCampaigns[0])
-          
-          setCampaigns(firestoreCampaigns)
-        } catch (firestoreErr: any) {
-          console.error('[Reports] Error fetching Firestore campaigns:', firestoreErr)
-          console.error('[Reports] Error code:', firestoreErr?.code)
-          console.error('[Reports] Error message:', firestoreErr?.message)
-          setCampaigns([])
-        }
+        setCampaigns(firestoreCampaigns)
       } catch (err) {
-        console.error('[Reports] Error fetching stats:', err)
+        console.error('[Reports] Error fetching campaigns:', err)
+        setCampaigns([])
       } finally {
         setLoading(false)
       }
@@ -143,17 +100,50 @@ export default function Reports() {
     fetchStats()
   }, [currentUser, tenantId])
 
-  // Calculate analytics
+  // Calculate analytics from Firestore campaigns (webhook metrics)
   const analytics = useMemo(() => {
-    if (!brevoStats?.emailStats) return null
+    if (!Array.isArray(campaigns) || campaigns.length === 0) return null
 
-    const stats = brevoStats.emailStats
-    const deliveryRate = stats.requests > 0 ? (stats.delivered / stats.requests) * 100 : 0
-    const openRate = stats.delivered > 0 ? (stats.uniqueOpens / stats.delivered) * 100 : 0
-    const clickRate = stats.delivered > 0 ? (stats.uniqueClicks / stats.delivered) * 100 : 0
-    const clickToOpenRate = stats.uniqueOpens > 0 ? (stats.uniqueClicks / stats.uniqueOpens) * 100 : 0
-    const bounceRate = stats.requests > 0 ? ((stats.hardBounces + stats.softBounces) / stats.requests) * 100 : 0
-    const unsubscribeRate = stats.delivered > 0 ? (stats.unsubscriptions / stats.delivered) * 100 : 0
+    let totalSent = 0
+    let totalDelivered = 0
+    let totalOpens = 0
+    let totalClicks = 0
+    let totalBounces = 0
+    let totalUnsubscribes = 0
+
+    campaigns.forEach(c => {
+      // Use webhook metrics from campaigns
+      const sent = c.metrics?.sent ?? c.to?.length ?? c.sent ?? 0
+      const delivered = c.metrics?.delivered ?? c.delivered ?? sent
+      const opens = c.metrics?.uniqueOpeners?.length ?? c.metrics?.opens ?? 0
+      const clicks = c.metrics?.uniqueClickers?.length ?? c.metrics?.clicks ?? 0
+      const bounces = c.metrics?.bounces ?? 0
+      const unsubscribes = c.metrics?.unsubscribes ?? 0
+
+      totalSent += sent
+      totalDelivered += delivered
+      totalOpens += opens
+      totalClicks += clicks
+      totalBounces += bounces
+      totalUnsubscribes += unsubscribes
+    })
+
+    const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0
+    const openRate = totalDelivered > 0 ? (totalOpens / totalDelivered) * 100 : 0
+    const clickRate = totalDelivered > 0 ? (totalClicks / totalDelivered) * 100 : 0
+    const clickToOpenRate = totalOpens > 0 ? (totalClicks / totalOpens) * 100 : 0
+    const bounceRate = totalSent > 0 ? (totalBounces / totalSent) * 100 : 0
+    const unsubscribeRate = totalDelivered > 0 ? (totalUnsubscribes / totalDelivered) * 100 : 0
+
+    console.log('[Reports] Calculated analytics from campaigns:', {
+      totalSent,
+      totalDelivered,
+      totalOpens,
+      totalClicks,
+      deliveryRate: deliveryRate.toFixed(1) + '%',
+      openRate: openRate.toFixed(1) + '%',
+      clickRate: clickRate.toFixed(1) + '%'
+    })
 
     return {
       deliveryRate: deliveryRate || 0,
@@ -162,14 +152,14 @@ export default function Reports() {
       clickToOpenRate: clickToOpenRate || 0,
       bounceRate: bounceRate || 0,
       unsubscribeRate: unsubscribeRate || 0,
-      totalSent: stats.requests || 0,
-      totalDelivered: stats.delivered || 0,
-      totalOpens: stats.uniqueOpens || 0,
-      totalClicks: stats.uniqueClicks || 0,
-      totalBounces: (stats.hardBounces || 0) + (stats.softBounces || 0),
-      totalUnsubscribes: stats.unsubscriptions || 0
+      totalSent,
+      totalDelivered,
+      totalOpens,
+      totalClicks,
+      totalBounces,
+      totalUnsubscribes
     }
-  }, [brevoStats])
+  }, [campaigns])
 
   // Top performing campaigns
   const topCampaigns = useMemo(() => {
@@ -433,13 +423,13 @@ export default function Reports() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Nenhum dado disponível</h3>
-            <p className="text-slate-500 mb-6">Configure sua conta Brevo para ver relatórios detalhados</p>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Nenhuma campanha enviada ainda</h3>
+            <p className="text-slate-500 mb-6">Crie e envie sua primeira campanha para ver relatórios detalhados</p>
             <Link
-              to="/settings"
+              to="/dashboard"
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
-              Configurar Brevo
+              Criar Campanha
             </Link>
           </div>
         ) : (
