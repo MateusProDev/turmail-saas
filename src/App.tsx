@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import SubscriptionGuard from './components/SubscriptionGuard'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Plans from './pages/Plans'
@@ -22,6 +23,7 @@ import './App.css'
 export default function App() {
   return (
     <BrowserRouter>
+      <SubscriptionGuard>
       <main className="w-full">
         <div className="app-container">
           <Routes>
@@ -46,6 +48,7 @@ export default function App() {
           </Routes>
         </div>
       </main>
+      </SubscriptionGuard>
     </BrowserRouter>
   )
 }

@@ -238,6 +238,8 @@ export default function Plans() {
 
     try {
       setLoading(true)
+      // Clear the requiresPlan flag - user is taking action
+      try { localStorage.removeItem('requiresPlan') } catch (e) {}
       const json = await createCheckoutSession(priceId, plan.id, user?.email || null)
       if (json?.url) {
         window.location.href = json.url
@@ -251,6 +253,15 @@ export default function Plans() {
       setLoading(false)
     }
   }
+
+  // show banner if redirected here by guard
+  const [showRedirectBanner, setShowRedirectBanner] = useState(false)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('requiresPlan')
+      if (v === '1') setShowRedirectBanner(true)
+    } catch (e) {}
+  }, [])
 
   const formatPrice = (p: typeof PLANS[number]) => {
     const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -275,6 +286,17 @@ export default function Plans() {
 
   return (
     <div className="plans-root w-full p-8">
+      {showRedirectBanner && (
+        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-semibold text-amber-800">Seu trial expirou</div>
+              <div className="text-sm text-amber-700">Você foi redirecionado para escolher um plano. Selecione um plano para renovar o acesso.</div>
+            </div>
+            <button onClick={() => { try { localStorage.removeItem('requiresPlan') } catch (e) {} setShowRedirectBanner(false) }} className="text-amber-700 underline text-sm">Fechar</button>
+          </div>
+        </div>
+      )}
       <header className="plans-header mb-6">
         <h1 className="text-2xl font-bold">Planos</h1>
         <p className="text-sm text-gray-600 mt-1">Escolha um plano que atenda seu projeto — atualize quando quiser.</p>

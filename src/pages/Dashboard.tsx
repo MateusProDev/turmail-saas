@@ -21,6 +21,8 @@ export default function Dashboard(){
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const planButtonRef = useRef<HTMLButtonElement | null>(null)
 
   // Check for checkout success in URL
   const [showSuccessToast, setShowSuccessToast] = useState(false)
@@ -391,6 +393,39 @@ export default function Dashboard(){
     } catch (e) { return null }
   })()
 
+  // Show blocking modal when trial expired and user is on trial plan
+  useEffect(() => {
+    try {
+      if (trialInfo && trialInfo.expired && subscription && subscription.planId === 'trial') {
+        setShowPlanModal(true)
+      } else {
+        setShowPlanModal(false)
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [trialInfo, subscription])
+
+  useEffect(() => {
+    if (showPlanModal) {
+      // focus primary CTA
+      setTimeout(() => planButtonRef.current?.focus(), 50)
+    }
+  }, [showPlanModal])
+
+  // Prevent closing modal with Escape key while it's shown
+  useEffect(() => {
+    if (!showPlanModal) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [showPlanModal])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       {/* Success Toast */}
@@ -417,6 +452,31 @@ export default function Dashboard(){
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Blocking modal when trial expired - forces user to choose a plan */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" aria-hidden="true"></div>
+          <div role="dialog" aria-modal="true" aria-labelledby="plan-modal-title" className="relative z-10 max-w-xl w-full mx-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6" tabIndex={-1}>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Seu período gratuito terminou</h3>
+              <p className="text-sm text-slate-600 mb-4">Seu trial gratuito expirou. Para continuar usando o Turmail escolha um dos planos e renove sua conta.</p>
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  ref={planButtonRef}
+                  onClick={() => {
+                    try { localStorage.setItem('requiresPlan', '1') } catch (e) {}
+                    navigate('/plans')
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-200"
+                >
+                  Ver Planos
+                </button>
+              </div>
             </div>
           </div>
         </div>
