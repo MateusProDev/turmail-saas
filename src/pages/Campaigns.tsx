@@ -429,13 +429,28 @@ export default function Campaigns(){
     try {
       if (editingCampaign && editingCampaign.id) {
           const resp = await fetch('/api/update-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id: editingCampaign.id, subject, htmlContent, preheader, to, scheduledAt: payload.scheduledAt, companyName: companyName || null, productName: productName || null, destination: destination || null, ctaLink: ctaLink || null, mainTitle: mainTitle || null, tone: tone || null, vertical: vertical || null, description: description || null, audience: audience || null, keyBenefits: (keyBenefits && keyBenefits.length) ? keyBenefits : null }) })
-          const data = await resp.json()
-          if (!resp.ok) throw new Error(JSON.stringify(data))
+          const ct = resp.headers.get('content-type') || ''
+          const text = await resp.text()
+          let data: any = null
+          if (ct.includes('application/json')) {
+            try { data = JSON.parse(text) } catch(e) { data = null }
+          }
+          if (!resp.ok) {
+            // prefer structured error when available
+            throw new Error(JSON.stringify(data || { message: text }))
+          }
           setResult('Campanha atualizada')
         } else {
         const resp = await fetch('/api/create-campaign', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-        const data = await resp.json()
-        if (!resp.ok) throw new Error(JSON.stringify(data))
+        const ct = resp.headers.get('content-type') || ''
+        const text = await resp.text()
+        let data: any = null
+        if (ct.includes('application/json')) {
+          try { data = JSON.parse(text) } catch(e) { data = null }
+        }
+        if (!resp.ok) {
+          throw new Error(JSON.stringify(data || { message: text }))
+        }
         setResult(`Campanha criada: ${data.id}`)
         // store a lightweight summary for the user's AI helper / dashboard
         try {
