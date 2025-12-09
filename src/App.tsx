@@ -45,7 +45,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/success" element={<Success />} />
-          </Routes>
+          </Routes> 
         </div>
       </main>
       </SubscriptionGuard>
