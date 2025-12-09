@@ -59,13 +59,13 @@ Pergunte sobre suas métricas, melhores horários, assuntos que convertem ou pe�
         line = line.replace(/\*(.*?)\*/g, '<em>$1</em>')
         // Lista
         if (line.trim().startsWith('- ')) {
-          return `<div key="${i}" class="ml-4">• ${line.substring(2)}</div>`
+          return `<div key="${i}" class="text-left">• ${line.substring(2)}</div>`
         }
         // Checkmark
         if (line.trim().startsWith('✅')) {
-          return `<div key="${i}" class="flex items-start gap-2"><span class="text-green-500">✅</span><span>${line.substring(2)}</span></div>`
+          return `<div key="${i}" class="flex items-start gap-2 text-left"><span class="text-green-500">✅</span><span>${line.substring(2)}</span></div>`
         }
-        return `<div key="${i}">${line || '<br/>'}</div>`
+        return `<div key="${i}" class="text-left">${line || '<br/>'}</div>`
       })
       .join('')
   }
@@ -201,7 +201,7 @@ Responda em português brasileiro de forma natural e útil.`
 
       const genAI = new GoogleGenerativeAI(apiKey)
       const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash-latest',
+        model: 'gemini-1.5-flash',
         generationConfig: {
           temperature: 0.9,
           topK: 40,
