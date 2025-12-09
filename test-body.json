@@ -1,0 +1,13 @@
+﻿{
+  "stream": false,
+  "messages": [
+    {
+      "role": "system",
+      "content": "Responda em uma frase, seja direto."
+    },
+    {
+      "role": "user",
+      "content": "Explique o que é A/B testing."
+    }
+  ]
+}
