@@ -25,43 +25,28 @@ export default function AIAnalystChat({
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `👋 **Olá! Sou seu Analista de Marketing Sênior com IA.**
+      content: `Olá! Sou **Turia**, sua analista de marketing com IA. 👋
 
-🤖 **Sobre mim:**
-- Modelo: **Gemini 1.5 Flash** (Google AI)
-- Experiência: Especialista em email marketing
-- Superpoder: Analiso SEUS dados em tempo real
+Tenho acesso aos seus **${campaigns.length} campanha${campaigns.length !== 1 ? 's' : ''}** e **${contacts.length} contato${contacts.length !== 1 ? 's' : ''}**.
 
-📊 **Tenho acesso a:**
-${campaigns.length > 0 ? `✅ ${campaigns.length} campanhas suas
-✅ ${contacts.length} contatos ativos
-✅ Padrões de performance únicos
-✅ Benchmarks da indústria 2025` : '⏳ Aguardando suas primeiras campanhas...'}
-
-💬 **Posso ajudar com:**
-- Análise profunda de métricas
-- Recomendações personalizadas  
-- Otimização de horários
-- Padrões de assuntos vencedores
-- Segmentação estratégica
-
-🚀 **Diferencial:** Cada resposta é baseada nos SEUS dados específicos!
-
-**Pergunte qualquer coisa!** Quanto mais específico, melhor posso ajudar. 😊`,
+Pergunte sobre suas métricas, melhores horários, assuntos que convertem ou peça recomendações! 🚀`,
       timestamp: new Date()
     }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (isExpanded) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, isExpanded])
 
   // Função para renderizar markdown básico
   const renderMarkdown = (text: string) => {
@@ -298,104 +283,129 @@ Tente perguntar novamente!`
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      {/* Header - Acordeão */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 p-4 hover:from-indigo-700 hover:to-purple-700 transition-all"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                🤖 Turia - Analista IA
+              </h3>
+              <p className="text-xs text-indigo-100">Análise inteligente em tempo real</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-1.5 bg-white/10 px-2.5 py-1 rounded-full">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-xs text-white font-medium">Online</span>
+            </div>
+            <svg 
+              className={`w-5 h-5 text-white transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-white">🤖 Analista IA</h3>
-            <p className="text-xs text-indigo-100">Análise inteligente em tempo real</p>
-          </div>
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs text-white">Online</span>
-          </div>
         </div>
-      </div>
+      </button>
 
-      {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-white">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                message.role === 'user'
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
-              }`}
-            >
-              <div 
-                className="text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
-              />
-              <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-indigo-100' : 'text-slate-400'}`}>
-                {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-          </div>
-        ))}
-        
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Suggested Questions */}
-      {messages.length === 1 && (
-        <div className="px-4 py-3 bg-slate-50 border-t border-slate-200">
-          <p className="text-xs font-semibold text-slate-700 mb-2">💡 Perguntas sugeridas:</p>
-          <div className="flex flex-wrap gap-2">
-            {suggestedQuestions.map((question, idx) => (
-              <button
-                key={idx}
-                onClick={() => setInput(question)}
-                className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-full hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+      {/* Chat Content - Expansível */}
+      {isExpanded && (
+        <div className="flex flex-col h-[500px]">
+          {/* Messages - Scroll fixo */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50 to-white">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {question}
-              </button>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
+                  }`}
+                >
+                  <div 
+                    className="text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+                  />
+                  <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-indigo-100' : 'text-slate-400'}`}>
+                    {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
             ))}
+            
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Suggestions */}
+          {messages.length === 1 && (
+            <div className="px-4 pb-3 bg-white border-t border-slate-100">
+              <p className="text-xs text-slate-500 mb-2 font-medium">💡 Sugestões rápidas:</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedQuestions.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setInput(suggestion)
+                      handleSendMessage()
+                    }}
+                    className="text-xs px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-full text-slate-700 hover:text-indigo-700 transition-all"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Input - Fixo no rodapé */}
+          <div className="p-4 bg-white border-t border-slate-200">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !loading && input.trim() && handleSendMessage()}
+                placeholder="Pergunte sobre suas campanhas..."
+                disabled={loading}
+                className="flex-1 px-4 py-2 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={loading || !input.trim()}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-sm shadow-sm hover:shadow-md"
+              >
+                {loading ? '...' : '✨ Enviar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Input */}
-      <div className="p-4 bg-white border-t border-slate-200">
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Pergunte sobre suas campanhas..."
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            disabled={loading}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={loading || !input.trim()}
-            className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
-          >
-            {loading ? '...' : 'Enviar'}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
