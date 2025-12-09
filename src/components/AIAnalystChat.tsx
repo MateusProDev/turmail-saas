@@ -63,6 +63,28 @@ ${campaigns.length > 0 ? `✅ ${campaigns.length} campanhas suas
     scrollToBottom()
   }, [messages])
 
+  // Função para renderizar markdown básico
+  const renderMarkdown = (text: string) => {
+    return text
+      .split('\n')
+      .map((line, i) => {
+        // Negrito
+        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Itálico
+        line = line.replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Lista
+        if (line.trim().startsWith('- ')) {
+          return `<div key="${i}" class="ml-4">• ${line.substring(2)}</div>`
+        }
+        // Checkmark
+        if (line.trim().startsWith('✅')) {
+          return `<div key="${i}" class="flex items-start gap-2"><span class="text-green-500">✅</span><span>${line.substring(2)}</span></div>`
+        }
+        return `<div key="${i}">${line || '<br/>'}</div>`
+      })
+      .join('')
+  }
+
   const prepareContext = () => {
     const totalCampaigns = campaigns.length
     const totalSent = campaigns.reduce((sum: number, c: any) => sum + (c.totalRecipients || 0), 0)
@@ -309,7 +331,10 @@ Tente perguntar novamente!`
                   : 'bg-white border border-slate-200 text-slate-900 shadow-sm'
               }`}
             >
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+              <div 
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+              />
               <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-indigo-100' : 'text-slate-400'}`}>
                 {message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </div>
