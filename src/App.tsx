@@ -24,7 +24,7 @@ export default function App() {
     <BrowserRouter>
       <main className="w-full">
         <div className="app-container">
-          <Routes>
+          <Routes> 
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
