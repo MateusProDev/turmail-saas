@@ -1,79 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
+// Respect client-side disable flag (Vite exposes env vars under import.meta.env)
+const clientDisable = (import.meta && import.meta.env && import.meta.env.VITE_DISABLE_LOCAL_AI === '1') || false;
+
+import React from 'react'
+
+// AI features have been removed from the active codebase. This placeholder
+// component keeps imports stable but renders nothing so the UI remains
+// functional without any AI functionality.
+
+export default function AIAnalystChat(): JSX.Element | null {
+  return null
 }
-
-interface AIAnalystChatProps {
-  campaigns: any[]
-  contacts: any[]
-  sendingPatterns: any
-  subjectAnalysis: any
-  engagementSegments: any
-}
-
-export default function AIAnalystChat({ 
-  campaigns, 
-  contacts,
-  sendingPatterns,
-  subjectAnalysis,
-  engagementSegments
-}: AIAnalystChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: `Olá! Sou **Turia**, sua analista de marketing com IA. 👋
-
-Tenho acesso aos seus **${campaigns.length} campanha${campaigns.length !== 1 ? 's' : ''}** e **${contacts.length} contato${contacts.length !== 1 ? 's' : ''}**.
-
-Pergunte sobre suas métricas, melhores horários, assuntos que convertem ou peça recomendações! 🚀`,
-      timestamp: new Date()
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const scrollToBottom = () => {
-    if (isExpanded) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, isExpanded])
-
-  // Função para renderizar markdown básico
-  const renderMarkdown = (text: string) => {
-    return text
-      .split('\n')
-      .map((line, i) => {
-        // Negrito
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Itálico
-        line = line.replace(/\*(.*?)\*/g, '<em>$1</em>')
-        // Lista
-        if (line.trim().startsWith('- ')) {
-          return `<div key="${i}" class="text-left">• ${line.substring(2)}</div>`
-        }
-        // Checkmark
-        if (line.trim().startsWith('✅')) {
-          return `<div key="${i}" class="flex items-start gap-2 text-left"><span class="text-green-500">✅</span><span>${line.substring(2)}</span></div>`
-        }
-        return `<div key="${i}" class="text-left">${line || '<br/>'}</div>`
-      })
-      .join('')
-  }
-
-  const prepareContext = () => {
-    const totalCampaigns = campaigns.length
-    const totalSent = campaigns.reduce((sum: number, c: any) => sum + (c.totalRecipients || 0), 0)
-    const totalDelivered = campaigns.reduce((sum: number, c: any) => sum + (c.metrics?.delivered || 0), 0)
     const totalOpens = campaigns.reduce((sum: number, c: any) => sum + (c.metrics?.opens || 0), 0)
     const totalClicks = campaigns.reduce((sum: number, c: any) => sum + (c.metrics?.clicks || 0), 0)
 

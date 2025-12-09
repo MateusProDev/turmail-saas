@@ -1,0 +1,7 @@
+﻿{
+  "messages": [
+    { "role": "system", "content": "Teste de integração - modo local" },
+    { "role": "user", "content": "Olá, apenas testando a conexão com o endpoint local." }
+  ],
+  "stream": false
+}
