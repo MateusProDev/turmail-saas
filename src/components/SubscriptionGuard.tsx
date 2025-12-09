@@ -1,10 +1,10 @@
-import { ReactNode, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-type Props = { children: ReactNode }
+type Props = { children: React.ReactNode }
 
 const ALLOWED_PATHS = ['/', '/login', '/plans', '/terms', '/privacy', '/about', '/demo', '/success']
 
