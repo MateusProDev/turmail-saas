@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
 import { collection, query, getDocs, orderBy as firestoreOrderBy, limit as firestoreLimit, where } from 'firebase/firestore'
+import AIAnalystChat from '../components/AIAnalystChat'
 
 interface Campaign {
   id: string
@@ -39,8 +40,6 @@ export default function Reports() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [contacts, setContacts] = useState<any[]>([])
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d')
-  const [aiInsights, setAiInsights] = useState<string[]>([])
-  const [generatingInsights, setGeneratingInsights] = useState(false)
 
   // Fetch Firestore campaigns with webhook metrics - FILTERED BY USER (ownerUid)
   useEffect(() => {
@@ -436,94 +435,6 @@ export default function Reports() {
     return { patterns, topSubjects, avgLength }
   }, [campaigns])
 
-  // Generate AI insights based on real data
-  const generateAIInsights = async () => {
-    if (!analytics) return
-    
-    setGeneratingInsights(true)
-    
-    // Simulate AI analysis (in production, call OpenAI/Claude API)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const insights: string[] = []
-    
-    // Performance insights based on actual metrics
-    if (analytics.openRate < 15) {
-      insights.push(`📧 **Taxa de abertura baixa**: Sua taxa atual é ${analytics.openRate.toFixed(1)}%, abaixo da média de 18%. Teste assuntos mais curtos, personalizados e com senso de urgência.`)
-    } else if (analytics.openRate > 25) {
-      insights.push(`🎯 **Excelente taxa de abertura**: ${analytics.openRate.toFixed(1)}% está acima da média! Continue usando assuntos diretos e personalizados.`)
-    } else {
-      insights.push(`📊 **Taxa de abertura na média**: ${analytics.openRate.toFixed(1)}% está dentro do esperado. Para melhorar, teste personalização e horários diferentes.`)
-    }
-    
-    if (analytics.clickRate < 2) {
-      insights.push(`🖱️ **Baixo engajamento**: Apenas ${analytics.clickRate.toFixed(1)}% clicam. Adicione CTAs mais visíveis, use botões coloridos e posicione links estrategicamente.`)
-    } else if (analytics.clickRate > 5) {
-      insights.push(`💎 **Alto engajamento**: Taxa de ${analytics.clickRate.toFixed(1)}% de cliques é excelente! Seu conteúdo está ressoando com a audiência.`)
-    } else {
-      insights.push(`👆 **Engajamento moderado**: ${analytics.clickRate.toFixed(1)}% de CTR é bom, mas pode melhorar com CTAs mais claros e posicionamento estratégico.`)
-    }
-    
-    if (analytics.bounceRate > 5) {
-      insights.push(`⚠️ **Taxa de rejeição alta**: ${analytics.bounceRate.toFixed(1)}% de bounces (${analytics.totalBounces} emails). Limpe sua lista removendo emails inválidos.`)
-    } else if (analytics.bounceRate < 2) {
-      insights.push(`✅ **Lista limpa**: Taxa de bounce de ${analytics.bounceRate.toFixed(1)}% é excelente! Sua lista está saudável.`)
-    }
-    
-    // Segmentation insights
-    if (engagementSegments.lowCount > engagementSegments.highCount) {
-      insights.push(`🎯 **Oportunidade de reativação**: Você tem ${engagementSegments.lowCount.toLocaleString()} contatos inativos. Crie uma campanha de win-back com oferta especial.`)
-    }
-    
-    if (engagementSegments.highCount > 0) {
-      insights.push(`⭐ **Segmento VIP**: ${engagementSegments.highCount.toLocaleString()} contatos engajados (${engagementSegments.high.toFixed(1)}%). Crie campanhas exclusivas para este grupo.`)
-    }
-    
-    // Contact list growth insight
-    if (contacts.length > 0) {
-      const contactsNotReached = Math.max(0, contacts.length - analytics.totalSent)
-      if (contactsNotReached > 0) {
-        insights.push(`📬 **Audiência não alcançada**: Você tem ${contactsNotReached.toLocaleString()} contatos que ainda não receberam campanhas. Expanda seu alcance!`)
-      }
-    }
-    
-    // Best practices from top campaigns
-    if (topCampaigns.length > 0) {
-      const bestCampaign = topCampaigns[0]
-      if (bestCampaign.openRate > 0) {
-        insights.push(`✨ **Campanha destaque**: "${bestCampaign.name}" teve ${bestCampaign.openRate.toFixed(1)}% de abertura e ${bestCampaign.clickRate.toFixed(1)}% de cliques. Analise o que funcionou!`)
-      }
-    }
-    
-    // Timing insights based on real data
-    if (sendingPatterns.bestDay !== null && sendingPatterns.bestHour !== null) {
-      const dayNames = ['Domingos', 'Segundas', 'Terças', 'Quartas', 'Quintas', 'Sextas', 'Sábados']
-      insights.push(`⏰ **Seu melhor horário**: ${dayNames[sendingPatterns.bestDay]} às ${sendingPatterns.bestHour}h tem gerado os melhores resultados. Priorize este horário!`)
-    } else if (campaigns.length > 0) {
-      insights.push('⏰ **Teste horários**: Você já enviou campanhas, mas precisa de mais dados para identificar o melhor horário. Continue enviando regularmente!')
-    } else {
-      insights.push('⏰ **Melhor horário**: Terças e quintas às 10h ou 14h têm maior taxa de abertura segundo estudos. Comece por aí!')
-    }
-    
-    // Delivery rate
-    if (analytics.deliveryRate < 95) {
-      insights.push(`📬 **Melhore a entregabilidade**: ${analytics.deliveryRate.toFixed(1)}% de entrega. Remova bounces, valide emails e evite palavras spam.`)
-    }
-    
-    // Volume insights
-    if (analytics.totalSent < 100) {
-      insights.push('🚀 **Aumente o volume**: Com apenas ' + analytics.totalSent + ' emails enviados, você está começando. Aumente gradualmente para obter mais insights.')
-    } else if (analytics.totalSent > 1000) {
-      insights.push('📈 **Grande volume**: ' + analytics.totalSent.toLocaleString() + ' emails enviados! Use automações para escalar ainda mais.')
-    }
-    
-    // Mobile optimization
-    insights.push('📱 **Mobile-first**: Mais de 60% dos emails são abertos no celular. Garanta que seus templates sejam responsivos e CTAs sejam fáceis de clicar.')
-    
-    setAiInsights(insights)
-    setGeneratingInsights(false)
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 py-8 px-4">
@@ -629,52 +540,15 @@ export default function Reports() {
               />
             </section>
 
-            {/* AI Insights */}
-            <section className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg border border-indigo-400/20 p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-                    <span className="text-2xl">🤖</span>
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Insights de IA</h2>
-                    <p className="text-indigo-100 text-sm">Análise inteligente das suas campanhas</p>
-                  </div>
-                </div>
-                <button
-                  onClick={generateAIInsights}
-                  disabled={generatingInsights}
-                  className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  {generatingInsights ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      <span>Analisando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span>Gerar Insights</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {aiInsights.length > 0 ? (
-                <div className="space-y-3">
-                  {aiInsights.map((insight, idx) => (
-                    <div key={idx} className="bg-white/10 backdrop-blur rounded-xl p-4 hover:bg-white/15 transition-colors">
-                      <p className="text-white leading-relaxed">{insight}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 bg-white/10 backdrop-blur rounded-xl">
-                  <p className="text-indigo-100">Clique em "Gerar Insights" para receber recomendações personalizadas</p>
-                </div>
-              )}
+            {/* AI Insights - NEW CHAT INTERFACE */}
+            <section>
+              <AIAnalystChat
+                campaigns={campaigns}
+                contacts={contacts}
+                sendingPatterns={sendingPatterns}
+                subjectAnalysis={subjectAnalysis}
+                engagementSegments={engagementSegments}
+              />
             </section>
 
             {/* Advanced Analytics Grid */}
