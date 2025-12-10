@@ -9,7 +9,23 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end('Method not allowed')
 
   try {
-    const { uid, email, planId } = req.body || {}
+    // Require authentication: verify Firebase ID token
+    const authHeader = req.headers.authorization || req.headers.Authorization || ''
+    if (!authHeader || !String(authHeader).startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing Authorization Bearer token' })
+    }
+    const idToken = String(authHeader).replace(/^Bearer\s+/i, '')
+    let decoded
+    try {
+      decoded = await admin.auth().verifyIdToken(idToken)
+    } catch (e) {
+      console.error('[start-trial] token verify failed', e && e.message ? e.message : e)
+      return res.status(401).json({ error: 'Invalid authentication token' })
+    }
+
+    const { uid: bodyUid, email: bodyEmail, planId } = req.body || {}
+    const uid = decoded.uid || bodyUid
+    const email = decoded.email || bodyEmail || ''
     if (!uid) return res.status(400).json({ error: 'uid required' })
 
     // Attempt to determine client IP
