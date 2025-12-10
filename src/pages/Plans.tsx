@@ -91,8 +91,8 @@ const PLANS: {
   { 
     id: 'agency', 
     name: 'Agency', 
-    price: 197,
-    priceAnnual: 177,
+    price: 297,
+    priceAnnual: 3207.6,
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_AGENCY',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_AGENCY_ANNUAL',
     limits: {
@@ -245,7 +245,7 @@ export default function Plans() {
 
     // annual - use priceAnnual if available
     const annualPrice = p.priceAnnual || (monthly * 12 * 0.9) // 10% discount default
-    const equivMonthly = `${fmt.format(Math.round(annualPrice / 12))}/mês`
+    const equivMonthly = `${fmt.format(annualPrice / 12)}/mês`
     const discountedLabel = `${fmt.format(annualPrice)}/ano`
     return {
       type: 'annual',

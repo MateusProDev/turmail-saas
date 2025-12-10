@@ -76,8 +76,8 @@ export const PLANS = {
   agency: {
     id: 'agency',
     name: 'Agency',
-    price: 197,
-    priceAnnual: 177,
+    price: 297,
+    priceAnnual: 3207.6, // R$ 3.207,60/ano (equiv. R$ 267,30/mês)
     limits: {
       emailsPerDay: -1,
       emailsPerMonth: 50000,
