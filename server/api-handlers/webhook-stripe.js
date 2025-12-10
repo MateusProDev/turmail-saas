@@ -87,6 +87,27 @@ export default async function handler(req, res) {
         }
       }
 
+      // Try to locate tenant: primary by ownerEmail, fallback by stripeCustomerId -> user -> ownerUid
+      let tenantDoc = null
+      if (email) {
+        const tenantsRef = db.collection('tenants')
+        const tQ = await tenantsRef.where('ownerEmail', '==', email).limit(1).get()
+        if (!tQ.empty) tenantDoc = tQ.docs[0]
+      }
+      if (!tenantDoc && stripeCustomerId) {
+        const usersRef = db.collection('users')
+        const uQ = await usersRef.where('stripeCustomerId', '==', stripeCustomerId).limit(1).get()
+        if (!uQ.empty) {
+          const userDoc = uQ.docs[0]
+          const ownerUid = userDoc.id
+          const tenantsRef = db.collection('tenants')
+          const tQ2 = await tenantsRef.where('ownerUid', '==', ownerUid).limit(1).get()
+          if (!tQ2.empty) tenantDoc = tQ2.docs[0]
+        }
+      }
+      if (tenantDoc) console.log('[webhook-stripe] tenant resolved for session:', tenantDoc.id)
+      else console.warn('[webhook-stripe] tenant NOT found for session; will still record subscription for reconciliation')
+
       if (stripeSubscriptionId) {
         const subscriptionData = {
           stripeSubscriptionId,
@@ -136,24 +157,27 @@ export default async function handler(req, res) {
           }
         }
 
-        await db.collection('subscriptions').doc(stripeSubscriptionId).set(subscriptionData, { merge: true })
+        // Idempotent write: update if exists, create otherwise
+        const subRef = db.collection('subscriptions').doc(stripeSubscriptionId)
+        const existingSub = await subRef.get()
+        if (existingSub.exists) {
+          console.log('[webhook-stripe] subscription exists, updating:', stripeSubscriptionId)
+          await subRef.set(Object.assign({}, subscriptionData, { updatedAt: new Date() }), { merge: true })
+        } else {
+          console.log('[webhook-stripe] creating subscription document:', stripeSubscriptionId)
+          await subRef.set(Object.assign({}, subscriptionData, { createdAt: new Date() }))
+        }
         
         // Also update tenant if we can find it by email
-        if (email) {
-          const tenantsRef = db.collection('tenants')
-          const tenantQuery = await tenantsRef.where('ownerEmail', '==', email).limit(1).get()
-          if (!tenantQuery.empty) {
-            const tenantDoc = tenantQuery.docs[0]
-            const tenantUpdateData = {
-              stripeSubscriptionId,
-              status: 'active',
-            }
-            if (planId) tenantUpdateData.planId = planId
-            if (planConfig && planConfig.limits) tenantUpdateData.limits = planConfig.limits
-            
-            await tenantDoc.ref.update(tenantUpdateData)
-            console.log('[webhook-stripe] Updated tenant with plan:', { tenantId: tenantDoc.id, planId })
+        if (tenantDoc) {
+          const tenantUpdateData = {
+            stripeSubscriptionId,
+            status: 'active',
           }
+          if (planId) tenantUpdateData.planId = planId
+          if (planConfig && planConfig.limits) tenantUpdateData.limits = planConfig.limits
+          await tenantDoc.ref.update(tenantUpdateData)
+          console.log('[webhook-stripe] Updated tenant with plan:', { tenantId: tenantDoc.id, planId })
         }
       }
     }
