@@ -51,19 +51,11 @@ export default async function handler(req, res) {
     const tenantId = `tenant_${uid}`
     const tenantRef = db.collection('tenants').doc(tenantId)
     const tenantSnap = await tenantRef.get()
-    
+
     if (!tenantSnap.exists) {
       if (debug) console.log('[start-trial] creating tenant', tenantId)
-      await tenantRef.set({ 
-        createdAt: admin.firestore.FieldValue.serverTimestamp(), 
-        ownerUid: uid, 
-        ownerEmail: userEmail || '',
-        name: `Account ${uid}`,
-        plan: 'trial',
-      }, { merge: true })
-      
-      // Add user as owner member
-      const memberRef = tenantRef.collection('members').doc(uid)
+
+      // Determine user info first so we can persist ownerEmail correctly
       let displayName = ''
       let userEmail = email || ''
       try {
@@ -71,15 +63,26 @@ export default async function handler(req, res) {
         displayName = userRecord.displayName || ''
         userEmail = userRecord.email || userEmail
       } catch (e) {
-        // ignore
+        // ignore if unable to fetch user
       }
+
+      await tenantRef.set({ 
+        createdAt: admin.firestore.FieldValue.serverTimestamp(), 
+        ownerUid: uid, 
+        ownerEmail: userEmail || '',
+        name: `Account ${uid}`,
+        plan: 'trial',
+      }, { merge: true })
+
+      // Add user as owner member
+      const memberRef = tenantRef.collection('members').doc(uid)
       await memberRef.set({ 
         role: 'owner', 
         createdAt: admin.firestore.FieldValue.serverTimestamp(), 
         email: userEmail, 
         displayName 
       }, { merge: true })
-      
+
       // Initialize settings
       const secretsRef = tenantRef.collection('settings').doc('secrets')
       await secretsRef.set({ 

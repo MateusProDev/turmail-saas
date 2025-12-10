@@ -34,6 +34,8 @@ app.use(express.json())
 // Import handlers
 const myTenantsHandler = (await import('./api-handlers/my-tenants.js')).default
 const { getBrevoStats } = await import('./api-handlers/get-brevo-stats.js')
+// Mount create-tenant handler for local testing
+const createTenantHandler = (await import('./api-handlers/tenant/create-tenant.js')).default
 
 // API routes
 app.all('/api/my-tenants', async (req, res) => {
@@ -41,6 +43,15 @@ app.all('/api/my-tenants', async (req, res) => {
     await myTenantsHandler(req, res)
   } catch (error) {
     console.error('Error in my-tenants:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.all('/api/tenant/create-tenant', async (req, res) => {
+  try {
+    await createTenantHandler(req, res)
+  } catch (error) {
+    console.error('Error in tenant/create-tenant:', error)
     res.status(500).json({ error: error.message })
   }
 })
