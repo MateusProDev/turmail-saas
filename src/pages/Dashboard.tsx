@@ -5,7 +5,7 @@ import { auth, db } from '../lib/firebase'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, setDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import EmailUsageCard from '../components/EmailUsageCard'
 
 // Helper function to compute open rate
@@ -16,20 +16,35 @@ export default function Dashboard(){
   const [brevoStats, setBrevoStats] = useState<any>(null)
   const [loadingBrevo, setLoadingBrevo] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
-  const [tenant, setTenant] = useState<any>(null)
+  type Tenant = {
+    id: string;
+    logoUrl?: string;
+    name?: string;
+    industry?: string;
+    settings?: {
+      fromEmail?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
+  const [tenant, setTenant] = useState<Tenant | null>(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
-  // Onboarding modal state
+  // Onboarding modal state - CRÍTICO: Estado de carregamento
   const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [isOnboardingReady, setIsOnboardingReady] = useState(false)
+  const [checkoutPending, setCheckoutPending] = useState(false)
+  
   const onboardingStepsDef = [
-    { key: 'profile', label: 'Completar perfil (nome, logo) ', href: '/settings' },
-    { key: 'sending', label: 'Configurar remetente / domain (From email)', href: '/settings' },
-    { key: 'contacts', label: 'Importar contatos', href: '/contacts' },
-    { key: 'campaign', label: 'Criar primeira campanha', href: '/campaigns' },
-    { key: 'test', label: 'Enviar email de teste', href: '/campaigns' },
+    { key: 'profile', label: 'Completar perfil (nome, logo)', href: '/settings', targetStep: 'profile' },
+    { key: 'sending', label: 'Configurar remetente / domain (From email)', href: '/settings', targetStep: 'sending' },
+    { key: 'contacts', label: 'Importar contatos', href: '/contacts', targetStep: 'import' },
+    { key: 'campaign', label: 'Criar primeira campanha', href: '/campaigns', targetStep: 'create' },
+    { key: 'test', label: 'Enviar email de teste', href: '/campaigns', targetStep: 'test' },
   ]
 
   // Check for checkout success in URL
@@ -43,21 +58,109 @@ export default function Dashboard(){
       // Show success toast
       setShowSuccessToast(true)
       setTimeout(() => setShowSuccessToast(false), 5000)
+      // Mark that checkout just completed so we can show onboarding even if subscription hasn't synced yet
+      setCheckoutPending(true)
       
       // Clean URL
       window.history.replaceState({}, '', '/dashboard')
     }
   }, [])
   
-  // Open onboarding modal when user has subscription and hasn't completed onboarding
+  // 🚨 CORREÇÃO CRÍTICA: Verificar se dados estão completamente carregados antes de mostrar modal
   useEffect(() => {
-    // show onboarding only when subscription and tenant are loaded and auth isn't loading
-    if (!subscription) return
-    if (tenant === null) return
-    if (loading) return
-    const completed = !!subscription.onboardingCompleted
-    setOnboardingOpen(!completed)
-  }, [subscription, tenant, loading])
+    // Não mostrar onboarding enquanto estiver carregando
+    if (loading) {
+      setIsOnboardingReady(false)
+      return
+    }
+    
+    // Verificar se subscription e tenant estão carregados
+    const subscriptionLoaded = subscription !== undefined && subscription !== null
+    const tenantLoaded = tenant !== undefined && tenant !== null
+    
+    // Verificar se o onboarding foi completado no subscription
+    const onboardingCompleted = subscription?.onboardingCompleted === true
+    
+    // CRÍTICO: Somente abrir modal se:
+    // 1. Subscription foi carregada
+    // 2. Tenant foi carregado
+    // 3. Onboarding NÃO está completo
+    // 4. OU estamos com checkout pendente
+    const shouldOpenOnboarding = 
+      subscriptionLoaded && 
+      tenantLoaded && 
+      !onboardingCompleted &&
+      (checkoutPending || !onboardingCompleted)
+    
+    setIsOnboardingReady(subscriptionLoaded && tenantLoaded)
+    
+    // Pequeno delay para evitar flicker
+    if (shouldOpenOnboarding) {
+      const timer = setTimeout(() => {
+        setOnboardingOpen(true)
+      }, 300)
+      return () => clearTimeout(timer)
+    } else {
+      setOnboardingOpen(false)
+    }
+  }, [subscription, tenant, loading, checkoutPending])
+  
+  // Fechar modal quando onboarding for completado
+  useEffect(() => {
+    if (subscription?.onboardingCompleted === true) {
+      setOnboardingOpen(false)
+      setCheckoutPending(false)
+      // Limpar qualquer estado de pending
+      try { navigate('/dashboard', { replace: true }) } catch (e) { /* ignore */ }
+    }
+  }, [subscription?.onboardingCompleted, navigate])
+
+  // Close and navigate when onboarding is completed (could be updated by server/webhook)
+  useEffect(() => {
+    if (subscription && subscription.onboardingCompleted) {
+      setOnboardingOpen(false)
+      setCheckoutPending(false)
+      // ensure user sees dashboard (we're already on dashboard route, but navigate to refresh state)
+      try { navigate('/dashboard', { replace: true }) } catch (e) { /* ignore */ }
+    }
+  }, [subscription?.onboardingCompleted])
+
+  // 🆕 Melhor navegação com deep linking para onboarding
+  const openOnboardingStep = (stepKey: string, targetStep?: string) => {
+    // Fechar modal primeiro
+    setOnboardingOpen(false)
+    
+    // Encontrar o passo correspondente
+    const step = onboardingStepsDef.find(s => s.key === stepKey)
+    if (!step) return
+    
+    // Navegar com estado para abrir modal ou seção específica
+    if (step.href === '/settings' && targetStep) {
+      navigate(step.href, { 
+        state: { 
+          focusOnStep: targetStep,
+          fromOnboarding: true 
+        } 
+      })
+    } else if (step.href === '/contacts' && targetStep) {
+      navigate(step.href, { 
+        state: { 
+          openImportModal: true,
+          fromOnboarding: true 
+        } 
+      })
+    } else if (step.href === '/campaigns' && targetStep) {
+      navigate(step.href, { 
+        state: { 
+          template: 'onboard',
+          focusOnStep: targetStep,
+          fromOnboarding: true 
+        } 
+      })
+    } else {
+      navigate(step.href, { state: { fromOnboarding: true } })
+    }
+  }
 
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {
@@ -96,7 +199,8 @@ export default function Dashboard(){
           const tenantRef = doc(db, 'tenants', firstTenant.tenantId)
           const tenantSnap = await getDoc(tenantRef)
           if (tenantSnap.exists()) {
-            setTenant({ id: tenantSnap.id, ...tenantSnap.data() })
+            const data = tenantSnap.data()
+            setTenant({ id: tenantSnap.id, ...data })
           }
         } else {
           console.log('[Dashboard] No tenant found for user')
@@ -119,13 +223,50 @@ export default function Dashboard(){
     const tenantRef = doc(db, 'tenants', tenantId)
     const unsubscribe = onSnapshot(tenantRef, (snap) => {
       if (snap.exists()) {
-        setTenant({ id: snap.id, ...snap.data() })
-        console.log('[Dashboard] Tenant data updated:', snap.data())
+        const snapData = snap.data() as Tenant;
+        const { id: _removed, ...restSnapData } = snapData;
+        const tenantData: Tenant = { id: snap.id, ...restSnapData };
+        setTenant(tenantData);
+        console.log('[Dashboard] Tenant data updated:', tenantData);
+        
+        // 🆕 Verificar automaticamente se passos do onboarding foram completados
+        if (subscription) {
+          const progress = subscription.onboardingProgress || {};
+          const newProgress = { ...progress };
+          
+          // Verificar se profile está completo (tem logo e nome)
+          if (!progress.profile && (tenantData.logoUrl || tenantData.name)) {
+            newProgress.profile = { 
+              completed: true, 
+              completedAt: new Date(),
+              autoVerified: true 
+            };
+          }
+          
+          // Verificar se sending está completo (tem fromEmail)
+          if (!progress.sending && tenantData.settings?.fromEmail) {
+            newProgress.sending = { 
+              completed: true, 
+              completedAt: new Date(),
+              autoVerified: true 
+            };
+          }
+          
+          // Atualizar se houver mudanças
+          if (JSON.stringify(progress) !== JSON.stringify(newProgress)) {
+            const allDone = onboardingStepsDef.every(st => newProgress[st.key]);
+            const subscriptionRef = doc(db, 'subscriptions', subscription.id);
+            setDoc(subscriptionRef, { 
+              onboardingProgress: newProgress, 
+              onboardingCompleted: allDone 
+            }, { merge: true }).catch(console.error);
+          }
+        }
       }
     })
     
     return () => unsubscribe()
-  }, [tenantId])
+  }, [tenantId, subscription])
 
   // subscription listener (ownerUid preferred, fallback to email)
   useEffect(() => {
@@ -146,6 +287,7 @@ export default function Dashboard(){
 
     unsubUid = onSnapshot(qByUid, (snap) => {
       const found = handleSnap(snap)
+      if (found) setCheckoutPending(false)
       if (!found && user.email) {
         if (unsubEmail) unsubEmail()
         const qByEmail = query(subsRef, where('email', '==', user.email))
@@ -153,6 +295,7 @@ export default function Dashboard(){
           if (!snap2.empty) {
             const doc = snap2.docs[0]
             setSubscription({ id: doc.id, ...doc.data() })
+            setCheckoutPending(false)
           } else {
             setSubscription(null)
           }
@@ -200,7 +343,30 @@ export default function Dashboard(){
       const cRef = collection(db, 'contacts')
       const q = query(cRef, where('ownerUid', '==', user.uid))
       const unsub = onSnapshot(q, (snap) => {
-        setContactsCount(snap.size)
+        const count = snap.size
+        setContactsCount(count)
+        
+        // 🆕 Verificar automaticamente se passo de contacts foi completado
+        if (subscription && count > 0) {
+          const progress = subscription.onboardingProgress || {}
+          if (!progress.contacts) {
+            const newProgress = {
+              ...progress,
+              contacts: { 
+                completed: true, 
+                completedAt: new Date(),
+                autoVerified: true,
+                count: count 
+              }
+            }
+            const allDone = onboardingStepsDef.every(st => newProgress[st.key])
+            const subscriptionRef = doc(db, 'subscriptions', subscription.id)
+            setDoc(subscriptionRef, { 
+              onboardingProgress: newProgress, 
+              onboardingCompleted: allDone 
+            }, { merge: true }).catch(console.error)
+          }
+        }
       }, (err) => {
         console.error('contacts snapshot error', err)
         setContactsCount(null)
@@ -210,7 +376,7 @@ export default function Dashboard(){
       console.error('contacts listener error', e)
       setContactsCount(null)
     }
-  }, [user])
+  }, [user, subscription])
 
   // Buscar estatísticas da Brevo
   useEffect(() => {
@@ -416,24 +582,22 @@ export default function Dashboard(){
       {/* Success Toast */}
       {showSuccessToast && (
         <div className="fixed top-4 right-4 z-50 animate-slideInRight">
-          <div className="bg-white rounded-xl shadow-2xl border-2 border-green-200 p-4 max-w-md">
-            <div className="flex items-start gap-3">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-2xl p-4 max-w-md">
+            <div className="flex items-start">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-green-900 text-sm">🎉 Pagamento Confirmado!</h3>
-                <p className="text-green-700 text-xs mt-1">Seu plano foi ativado com sucesso. Aproveite todos os recursos!</p>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium">✅ Pagamento confirmado com sucesso!</p>
+                <p className="text-xs opacity-90 mt-1">Sua assinatura está ativa. Vamos configurar sua conta agora.</p>
               </div>
               <button 
                 onClick={() => setShowSuccessToast(false)}
-                className="flex-shrink-0 text-green-600 hover:text-green-800"
+                className="ml-4 text-emerald-100 hover:text-white"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -441,29 +605,40 @@ export default function Dashboard(){
           </div>
         </div>
       )}
-
+      
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-slate-200/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {tenant?.logoUrl ? (
-                <img 
-                  src={tenant.logoUrl} 
-                  alt="Logo" 
-                  className="w-8 h-8 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
+              <Link to="/dashboard" className="flex items-center space-x-2">
+                {tenant?.logoUrl ? (
+                  <img 
+                    src={tenant.logoUrl} 
+                    alt="Logo" 
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    T
+                  </div>
+                )}
+                <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Turmail</span>
+              </Link>
+              
+              {/* Trial Badge */}
+              {trialInfo && (
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                  trialInfo.expired 
+                    ? 'bg-red-100 text-red-700 border border-red-200' 
+                    : 'bg-amber-100 text-amber-700 border border-amber-200'
+                }`}>
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                  {trialInfo.expired ? 'Trial Expirado' : `Trial ${trialInfo.days}d`}
                 </div>
               )}
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                  Dashboard
-                </h1>
-                <p className="text-sm text-slate-500">Visão geral da sua conta</p>
-              </div>
             </div>
 
             {/* User Menu */}
@@ -485,8 +660,8 @@ export default function Dashboard(){
                     </div>
                   )}
                   <div className="text-left hidden sm:block">
-                    <div className="text-sm font-medium text-slate-900">{user.email}</div>
-                    <div className="text-xs text-slate-500">Conta {trialInfo && `• ${trialInfo.expired ? 'Trial Expirado' : `Trial ${trialInfo.days}d`}`}</div>
+                    <div className="text-sm font-medium text-slate-900 truncate max-w-[150px]">{user.email}</div>
+                    <div className="text-xs text-slate-500">Conta {subscription?.planId && `• ${subscription.planId}`}</div>
                   </div>
                 </div>
                 <svg className={`w-4 h-4 text-slate-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -496,6 +671,10 @@ export default function Dashboard(){
 
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg rounded-xl shadow-lg border border-slate-200/60 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-slate-200/60">
+                    <div className="text-sm font-medium text-slate-900 truncate">{user.email}</div>
+                    <div className="text-xs text-slate-500">{subscription?.planId ? `Plano ${subscription.planId}` : 'Sem plano'}</div>
+                  </div>
                   <Link 
                     to="/settings" 
                     onClick={() => setMenuOpen(false)}
@@ -536,77 +715,158 @@ export default function Dashboard(){
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Onboarding Modal: guided checklist for new users */}
-        {onboardingOpen && subscription && (
+        {(onboardingOpen && isOnboardingReady) && (
           <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setOnboardingOpen(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 z-70">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Bem-vindo — Vamos configurar sua conta</h3>
-                  <p className="text-sm text-slate-600 mt-1">Siga estes passos rápidos para enviar sua primeira campanha com confiança.</p>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" onClick={() => setOnboardingOpen(false)} />
+            <div 
+              role="dialog" 
+              aria-modal="true" 
+              aria-label="Onboarding" 
+              className="relative bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 z-70 animate-scaleIn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!subscription && checkoutPending ? (
+                <div className="py-12 text-center">
+                  <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <h3 className="text-lg font-bold text-slate-900">Pagamento confirmado — Preparando sua conta</h3>
+                  <p className="text-sm text-slate-600 mt-2">Aguarde um momento enquanto sincronizamos sua assinatura. Em instantes você poderá continuar o onboarding.</p>
                 </div>
-                <button onClick={() => setOnboardingOpen(false)} className="text-slate-400 hover:text-slate-600">Fechar</button>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900">👋 Bem-vindo ao Turmail</h3>
+                      <p className="text-sm text-slate-600 mt-1">Complete estes passos rápidos para começar a enviar campanhas profissionais.</p>
+                    </div>
+                    <button 
+                      onClick={() => setOnboardingOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                      aria-label="Fechar onboarding"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
-              <div className="mt-4 space-y-3">
-                {onboardingStepsDef.map((s) => {
-                  const progress = subscription.onboardingProgress || {}
-                  const done = !!progress[s.key]
-                  return (
-                    <div key={s.key} className="flex items-start justify-between bg-slate-50 p-3 rounded-lg">
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${done ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                            {done ? '✓' : ''}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{s.label}</div>
-                            <a href={s.href} className="text-xs text-indigo-600 underline">Ir para</a>
+                  <div className="space-y-3 mb-6">
+                    {onboardingStepsDef.map((s) => {
+                      const progress = subscription?.onboardingProgress || {}
+                      const done = !!progress[s.key]
+                      const autoVerified = progress[s.key]?.autoVerified
+                      
+                      return (
+                        <div key={s.key} className={`p-4 rounded-xl border transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                {done ? (
+                                  autoVerified ? (
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                  ) : '✓'
+                                ) : (
+                                  <span className="text-xs font-medium">{onboardingStepsDef.indexOf(s) + 1}</span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-slate-900">{s.label}</div>
+                                <button
+                                  onClick={() => openOnboardingStep(s.key, s.targetStep)}
+                                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium mt-1"
+                                >
+                                  {done ? 'Ver detalhes' : 'Configurar agora →'}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {done ? (
+                                <span className="text-xs text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">
+                                  {autoVerified ? 'Verificado' : 'Concluído'}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const newProgress = { ...(subscription.onboardingProgress || {}), [s.key]: { completed: true, completedAt: new Date() } }
+                                      const allDone = onboardingStepsDef.every(st => newProgress[st.key])
+                                      await setDoc(doc(db, 'subscriptions', subscription.id), { 
+                                        onboardingProgress: newProgress, 
+                                        onboardingCompleted: allDone 
+                                      }, { merge: true })
+                                    } catch (e) {
+                                      console.error('failed to update onboarding progress', e)
+                                      alert('Erro ao salvar progresso de onboarding')
+                                    }
+                                  }}
+                                  className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                                >
+                                  Marcar feito
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={async () => {
-                            try {
-                              const newProgress = { ...(subscription.onboardingProgress || {}), [s.key]: !done }
-                              const allDone = onboardingStepsDef.every(st => newProgress[st.key])
-                              await setDoc(doc(db, 'subscriptions', subscription.id), { onboardingProgress: newProgress, onboardingCompleted: allDone }, { merge: true })
-                            } catch (e) {
-                              console.error('failed to update onboarding progress', e)
-                              alert('Erro ao salvar progresso de onboarding')
-                            }
-                          }}
-                          className={`px-3 py-1 rounded ${done ? 'bg-white border text-slate-700' : 'bg-indigo-600 text-white'}`}
-                        >
-                          {done ? 'Marcar não concluído' : 'Marcar concluído'}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                      )
+                    })}
+                  </div>
 
-              <div className="mt-4 flex items-center justify-end gap-2">
-                <button onClick={() => setOnboardingOpen(false)} className="px-4 py-2 rounded bg-white border">Fechar</button>
-                <button onClick={async () => {
-                  try {
-                    const newProgress = onboardingStepsDef.reduce((acc, st) => ({ ...acc, [st.key]: true }), {})
-                    await setDoc(doc(db, 'subscriptions', subscription.id), { onboardingProgress: newProgress, onboardingCompleted: true }, { merge: true })
-                    setOnboardingOpen(false)
-                  } catch (e) {
-                    console.error('failed to mark onboarding complete', e)
-                    alert('Erro ao marcar onboarding como completo')
-                  }
-                }} className="px-4 py-2 rounded bg-indigo-600 text-white">Concluir tudo</button>
-              </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                    <div className="text-xs text-slate-500">
+                      {subscription && subscription.onboardingProgress ? (
+                        <span>
+                          {Object.keys(subscription.onboardingProgress).length} de {onboardingStepsDef.length} passos completos
+                        </span>
+                      ) : 'Comece agora'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setOnboardingOpen(false)}
+                        className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
+                      >
+                        Fazer depois
+                      </button>
+                      <button onClick={async () => {
+                        try {
+                          const newProgress = onboardingStepsDef.reduce((acc, st) => ({ 
+                            ...acc, 
+                            [st.key]: { completed: true, completedAt: new Date(), skipped: true } 
+                          }), {})
+                          await setDoc(doc(db, 'subscriptions', subscription.id), { 
+                            onboardingProgress: newProgress, 
+                            onboardingCompleted: true 
+                          }, { merge: true })
+                        } catch (e) {
+                          console.error('failed to mark onboarding complete', e)
+                          alert('Erro ao marcar onboarding como completo')
+                        }
+                      }} 
+                      className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+                      >
+                        Pular tudo
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
+
+        {/* Loading overlay enquanto dados não estão prontos */}
+        {(!tenant || !subscription) && !loading && (
+          <div className="mb-6 bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-8 text-center">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600 font-medium">Finalizando configuração da sua conta...</p>
+            <p className="text-sm text-slate-500 mt-1">Isso deve levar apenas alguns segundos</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <aside className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6">
+            <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-sm border border-slate-200/60 p-6 sticky top-24">
               {/* User Card */}
               <div className="text-center mb-8">
                 {tenant?.logoUrl ? (
@@ -620,8 +880,8 @@ export default function Dashboard(){
                     {user && user.displayName ? user.displayName.split(' ').map(s=>s[0]).slice(0,2).join('') : (user && user.email ? user.email[0].toUpperCase() : 'U')}
                   </div>
                 )}
-                <h3 className="font-semibold text-slate-900 truncate">{user.email}</h3>
-                <p className="text-sm text-slate-500 mt-1">Membro</p>
+                <h3 className="font-semibold text-slate-900 truncate">{tenant?.name || user.email}</h3>
+                <p className="text-sm text-slate-500 mt-1">{tenant?.industry || 'Turismo'}</p>
                 {trialInfo && (
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2 ${
                     trialInfo.expired 
@@ -637,10 +897,18 @@ export default function Dashboard(){
               <nav className="space-y-1">
                 <Link 
                   to="/dashboard" 
-                  className="flex items-center space-x-3 p-3 rounded-xl bg-indigo-50 text-indigo-700 font-medium transition-all duration-200 group"
+                  className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-all duration-200 group ${
+                    location.pathname === '/dashboard' 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-700 hover:bg-slate-50/80'
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                    <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow ${
+                    location.pathname === '/dashboard' ? 'bg-white' : 'bg-slate-100'
+                  }`}>
+                    <svg className={`w-4 h-4 ${
+                      location.pathname === '/dashboard' ? 'text-indigo-600' : 'text-slate-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM13 3v6h8" />
                     </svg>
                   </div>
@@ -649,10 +917,18 @@ export default function Dashboard(){
                 
                 <Link 
                   to="/campaigns" 
-                  className="flex items-center space-x-3 p-3 rounded-xl text-slate-700 hover:bg-slate-50/80 font-medium transition-all duration-200 group"
+                  className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-all duration-200 group ${
+                    location.pathname.startsWith('/campaigns') 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-700 hover:bg-slate-50/80'
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow ${
+                    location.pathname.startsWith('/campaigns') ? 'bg-white' : 'bg-slate-100'
+                  }`}>
+                    <svg className={`w-4 h-4 ${
+                      location.pathname.startsWith('/campaigns') ? 'text-indigo-600' : 'text-slate-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M22 12v2a2 2 0 0 1-2 2h-3l-4 3v-8l4-3h3a2 2 0 0 1 2 2v2zM2 12h4" />
                     </svg>
                   </div>
@@ -661,10 +937,18 @@ export default function Dashboard(){
                 
                 <Link 
                   to="/contacts" 
-                  className="flex items-center space-x-3 p-3 rounded-xl text-slate-700 hover:bg-slate-50/80 font-medium transition-all duration-200 group"
+                  className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-all duration-200 group ${
+                    location.pathname.startsWith('/contacts') 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-700 hover:bg-slate-50/80'
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow ${
+                    location.pathname.startsWith('/contacts') ? 'bg-white' : 'bg-slate-100'
+                  }`}>
+                    <svg className={`w-4 h-4 ${
+                      location.pathname.startsWith('/contacts') ? 'text-indigo-600' : 'text-slate-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
@@ -674,10 +958,18 @@ export default function Dashboard(){
                 
                 <Link 
                   to="/reports" 
-                  className="flex items-center space-x-3 p-3 rounded-xl text-slate-700 hover:bg-slate-50/80 font-medium transition-all duration-200 group"
+                  className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-all duration-200 group ${
+                    location.pathname.startsWith('/reports') 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-700 hover:bg-slate-50/80'
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow ${
+                    location.pathname.startsWith('/reports') ? 'bg-white' : 'bg-slate-100'
+                  }`}>
+                    <svg className={`w-4 h-4 ${
+                      location.pathname.startsWith('/reports') ? 'text-indigo-600' : 'text-slate-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18" />
                       <path d="M7 13v5" />
                       <path d="M12 9v9" />
@@ -689,10 +981,18 @@ export default function Dashboard(){
                 
                 <Link 
                   to="/settings" 
-                  className="flex items-center space-x-3 p-3 rounded-xl text-slate-700 hover:bg-slate-50/80 font-medium transition-all duration-200 group"
+                  className={`flex items-center space-x-3 p-3 rounded-xl font-medium transition-all duration-200 group ${
+                    location.pathname.startsWith('/settings') 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-700 hover:bg-slate-50/80'
+                  }`}
                 >
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
-                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow ${
+                    location.pathname.startsWith('/settings') ? 'bg-white' : 'bg-slate-100'
+                  }`}>
+                    <svg className={`w-4 h-4 ${
+                      location.pathname.startsWith('/settings') ? 'text-indigo-600' : 'text-slate-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" />
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 0 1 2.3 17.3l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09c.7 0 1.29-.41 1.51-1a1.65 1.65 0 0 0-.33-1.82L4.3 6.7A2 2 0 0 1 7.13 3.87l.06.06a1.65 1.65 0 0 0 1.82.33c.45-.26.97-.4 1.51-.4H12c.54 0 1.06.14 1.51.4.63.36 1.38.36 2.01 0 .45-.26.97-.4 1.51-.4H20a2 2 0 0 1 0 4h-.09c-.7 0-1.29.41-1.51 1-.26.86.07 1.82.33 1.82l.06.06A2 2 0 0 1 19.4 15z" />
                     </svg>
@@ -1011,6 +1311,17 @@ export default function Dashboard(){
                           </div>
                           <p className="text-slate-500 font-medium">Nenhuma campanha encontrada</p>
                           <p className="text-slate-400 text-sm mt-1">Crie sua primeira campanha para começar</p>
+                          <div className="mt-4">
+                            <Link 
+                              to="/campaigns" 
+                              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                              </svg>
+                              Criar Primeira Campanha
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -1068,6 +1379,17 @@ export default function Dashboard(){
                     </div>
                     <p className="text-slate-500 font-medium">Nenhuma campanha encontrada</p>
                     <p className="text-slate-400 text-sm mt-1">Crie sua primeira campanha para começar</p>
+                    <div className="mt-4">
+                      <Link 
+                        to="/campaigns" 
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Criar Primeira Campanha
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1099,8 +1421,8 @@ export default function Dashboard(){
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2">
-                          <Link to="/campaigns" className="text-sm text-indigo-600 font-medium">Ver</Link>
-                          <button onClick={() => { /* trigger test send or navigate to edit */ }} className="text-sm text-gray-600">Enviar teste</button>
+                          <Link to={`/campaigns/${c.id}`} className="text-sm text-indigo-600 font-medium">Ver detalhes</Link>
+                          <Link to={`/campaigns/${c.id}/edit`} className="text-sm text-gray-600">Editar</Link>
                         </div>
                       </div>
                     ))}
@@ -1114,4 +1436,3 @@ export default function Dashboard(){
     </div>
   )
 }
-
