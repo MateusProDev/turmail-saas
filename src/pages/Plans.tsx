@@ -396,6 +396,11 @@ export default function Plans() {
                         <span>📧 Emails/dia</span>
                         <span className="font-semibold">{p.limits.emailsPerDay === -1 ? 'Ilimitado' : p.limits.emailsPerDay.toLocaleString()}</span>
                       </div>
+                      {p.limits.emailsPerDay === -1 && p.limits.emailsPerMonth && p.limits.emailsPerMonth > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          *Ilimitado na prática — limitado a <strong>{p.limits.emailsPerMonth.toLocaleString()}</strong> emails/mês (teto mensal).
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-sm text-gray-600">
                         <span className="ml-5">Emails/mês</span>
                         <span className="font-medium">{p.limits.emailsPerMonth === -1 ? 'Ilimitado' : p.limits.emailsPerMonth.toLocaleString()}</span>
