@@ -437,6 +437,12 @@ export default function Login() {
                     ? 'Após criar sua conta, você terá 7 dias grátis!' 
                     : `Após criar sua conta, você será direcionado para o pagamento.`}
                 </p>
+                {/* Nota sobre "Ilimitado" diário ter teto prático mensal */}
+                {selectedPlan.planId !== 'trial' && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    <strong>Nota:</strong> quando um plano exibe "Ilimitado" por dia, existe um teto prático equivalente ao limite mensal do plano — verifique a página <a href="/plans" className="text-indigo-600 underline">Planos</a> para detalhes.
+                  </p>
+                )}
               </div>
             </div>
           </div>
