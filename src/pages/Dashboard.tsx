@@ -51,10 +51,13 @@ export default function Dashboard(){
   
   // Open onboarding modal when user has subscription and hasn't completed onboarding
   useEffect(() => {
+    // show onboarding only when subscription and tenant are loaded and auth isn't loading
     if (!subscription) return
+    if (tenant === null) return
+    if (loading) return
     const completed = !!subscription.onboardingCompleted
     setOnboardingOpen(!completed)
-  }, [subscription])
+  }, [subscription, tenant, loading])
 
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {

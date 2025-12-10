@@ -124,8 +124,7 @@ export default function Login() {
       const pendingPlan = JSON.parse(pendingPlanStr)
       const { planId, priceIdEnvMonthly, priceIdEnvAnnual, billingInterval } = pendingPlan
 
-      // Limpar do localStorage
-      localStorage.removeItem('pendingPlan')
+      // Do not remove pendingPlan yet — remove only after successful checkout/trial creation
 
       // Se for trial, iniciar trial
       if (planId === 'trial') {
@@ -135,8 +134,16 @@ export default function Login() {
           body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
         if (resp.ok) {
+          // trial created successfully — remove pendingPlan and go to dashboard
+          localStorage.removeItem('pendingPlan')
           navigate('/dashboard')
           return true
+        } else {
+          // Keep pendingPlan so user can retry; surface error
+          const json = await resp.json().catch(() => ({}))
+          console.error('start-trial failed', json)
+          alert('Falha ao iniciar trial automático. Tente novamente.')
+          return false
         }
       }
 
@@ -146,8 +153,8 @@ export default function Login() {
 
       if (!priceId) {
         console.error('Price ID not found for pending plan')
-        navigate('/dashboard')
-        return true
+        alert('Plano selecionado não está configurado corretamente. Contate o suporte.')
+        return false
       }
 
       // Criar sessão de checkout
@@ -167,13 +174,20 @@ export default function Login() {
 
       const checkoutData = await checkoutResp.json()
       if (checkoutData?.url) {
+        // Remove pendingPlan only after we successfully created a session
+        localStorage.removeItem('pendingPlan')
         // Redirecionar para Stripe Checkout
         window.location.href = checkoutData.url
         return true
+      } else {
+        console.error('checkout session creation failed', checkoutData)
+        alert('Falha ao iniciar pagamento. Tente novamente.')
+        return false
       }
     } catch (err) {
       console.error('Error processing pending plan:', err)
-      localStorage.removeItem('pendingPlan')
+      // Keep pendingPlan so user can retry
+      alert('Erro ao processar o plano pendente. Verifique sua conexão e tente novamente.')
     }
 
     return false

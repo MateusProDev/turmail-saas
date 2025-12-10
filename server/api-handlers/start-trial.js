@@ -41,6 +41,7 @@ export default async function handler(req, res) {
       await tenantRef.set({ 
         createdAt: admin.firestore.FieldValue.serverTimestamp(), 
         ownerUid: uid, 
+        ownerEmail: userEmail || '',
         name: `Account ${uid}`,
         plan: 'trial',
       }, { merge: true })

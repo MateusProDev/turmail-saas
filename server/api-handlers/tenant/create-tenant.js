@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const tenantId = `tenant_${uid}`
 
     const tenantRef = db.collection('tenants').doc(tenantId)
-    await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, name }, { merge: true })
+    await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, ownerEmail: email || '', name }, { merge: true })
     const memberRef = tenantRef.collection('members').doc(uid)
     // include email and displayName for better UX/debugging
     let displayName = ''
