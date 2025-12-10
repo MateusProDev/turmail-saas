@@ -183,9 +183,21 @@ export async function checkDailyEmailLimit(tenantId, subscription, emailCount = 
   const planId = subscription?.planId || subscription?.plan || 'trial'
   const plan = PLANS[planId] || PLANS.trial
   const dailyLimit = plan.limits.emailsPerDay
+  const monthlyLimit = plan.limits.emailsPerMonth
 
-  // Se ilimitado (-1), sempre permitir
+  // Determine effective daily limit:
+  // - if plan has a numeric emailsPerDay, use it
+  // - if emailsPerDay is -1 (ilimitado) but there is a finite monthlyLimit, cap daily at monthlyLimit
+  // - if both are -1, treat as unlimited
+  let effectiveDailyLimit
   if (dailyLimit === -1) {
+    effectiveDailyLimit = (monthlyLimit === -1 || monthlyLimit === undefined) ? -1 : monthlyLimit
+  } else {
+    effectiveDailyLimit = dailyLimit
+  }
+
+  // If effectively unlimited, allow
+  if (effectiveDailyLimit === -1) {
     return { allowed: true, limit: -1, current: 0, message: 'Plano ilimitado' }
   }
 
@@ -195,17 +207,17 @@ export async function checkDailyEmailLimit(tenantId, subscription, emailCount = 
   const counterSnap = await counterRef.get()
   const currentCount = counterSnap.exists ? (counterSnap.data()?.count || 0) : 0
 
-  const allowed = (currentCount + emailCount) <= dailyLimit
-  const remaining = Math.max(0, dailyLimit - currentCount)
+  const allowed = (currentCount + emailCount) <= effectiveDailyLimit
+  const remaining = Math.max(0, effectiveDailyLimit - currentCount)
 
   return {
     allowed,
-    limit: dailyLimit,
+    limit: effectiveDailyLimit,
     current: currentCount,
     remaining,
     message: allowed 
       ? `${remaining} emails restantes hoje` 
-      : `Limite diário excedido (${dailyLimit} emails/dia)`,
+      : `Limite diário excedido (${effectiveDailyLimit} emails/dia)`,
   }
 }
 

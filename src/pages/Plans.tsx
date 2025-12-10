@@ -388,7 +388,7 @@ export default function Plans() {
                 </div>
 
                 {/* Limits display */}
-                {p.limits && (
+                {p.limits && ( 
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg w-full">
                     <div className="font-semibold text-gray-900 mb-3 text-center">Limites</div>
                     <div className="space-y-2 text-gray-700">
