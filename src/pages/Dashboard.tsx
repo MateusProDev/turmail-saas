@@ -3,7 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth'
 // Use Tailwind for all styles in this file
 import { auth, db } from '../lib/firebase'
 import { useEffect, useState, useMemo, useRef } from 'react'
-import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, setDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 import EmailUsageCard from '../components/EmailUsageCard'
@@ -22,6 +22,16 @@ export default function Dashboard(){
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
+  // Onboarding modal state
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const onboardingStepsDef = [
+    { key: 'profile', label: 'Completar perfil (nome, logo) ', href: '/settings' },
+    { key: 'sending', label: 'Configurar remetente / domain (From email)', href: '/settings' },
+    { key: 'contacts', label: 'Importar contatos', href: '/contacts' },
+    { key: 'campaign', label: 'Criar primeira campanha', href: '/campaigns' },
+    { key: 'test', label: 'Enviar email de teste', href: '/campaigns' },
+  ]
+
   // Check for checkout success in URL
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   
@@ -38,6 +48,13 @@ export default function Dashboard(){
       window.history.replaceState({}, '', '/dashboard')
     }
   }, [])
+  
+  // Open onboarding modal when user has subscription and hasn't completed onboarding
+  useEffect(() => {
+    if (!subscription) return
+    const completed = !!subscription.onboardingCompleted
+    setOnboardingOpen(!completed)
+  }, [subscription])
 
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {
@@ -515,6 +532,74 @@ export default function Dashboard(){
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Onboarding Modal: guided checklist for new users */}
+        {onboardingOpen && subscription && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setOnboardingOpen(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 z-70">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Bem-vindo — Vamos configurar sua conta</h3>
+                  <p className="text-sm text-slate-600 mt-1">Siga estes passos rápidos para enviar sua primeira campanha com confiança.</p>
+                </div>
+                <button onClick={() => setOnboardingOpen(false)} className="text-slate-400 hover:text-slate-600">Fechar</button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {onboardingStepsDef.map((s) => {
+                  const progress = subscription.onboardingProgress || {}
+                  const done = !!progress[s.key]
+                  return (
+                    <div key={s.key} className="flex items-start justify-between bg-slate-50 p-3 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${done ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                            {done ? '✓' : ''}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{s.label}</div>
+                            <a href={s.href} className="text-xs text-indigo-600 underline">Ir para</a>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const newProgress = { ...(subscription.onboardingProgress || {}), [s.key]: !done }
+                              const allDone = onboardingStepsDef.every(st => newProgress[st.key])
+                              await setDoc(doc(db, 'subscriptions', subscription.id), { onboardingProgress: newProgress, onboardingCompleted: allDone }, { merge: true })
+                            } catch (e) {
+                              console.error('failed to update onboarding progress', e)
+                              alert('Erro ao salvar progresso de onboarding')
+                            }
+                          }}
+                          className={`px-3 py-1 rounded ${done ? 'bg-white border text-slate-700' : 'bg-indigo-600 text-white'}`}
+                        >
+                          {done ? 'Marcar não concluído' : 'Marcar concluído'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button onClick={() => setOnboardingOpen(false)} className="px-4 py-2 rounded bg-white border">Fechar</button>
+                <button onClick={async () => {
+                  try {
+                    const newProgress = onboardingStepsDef.reduce((acc, st) => ({ ...acc, [st.key]: true }), {})
+                    await setDoc(doc(db, 'subscriptions', subscription.id), { onboardingProgress: newProgress, onboardingCompleted: true }, { merge: true })
+                    setOnboardingOpen(false)
+                  } catch (e) {
+                    console.error('failed to mark onboarding complete', e)
+                    alert('Erro ao marcar onboarding como completo')
+                  }
+                }} className="px-4 py-2 rounded bg-indigo-600 text-white">Concluir tudo</button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <aside className="lg:col-span-1">
