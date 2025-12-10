@@ -2,20 +2,24 @@ import Stripe from 'stripe'
 import { PLANS } from '../lib/plans.js'
 import { auth as firebaseAuth } from '../firebaseAdmin.js'
 
-// Mapeamento seguro de Price IDs para Plan IDs
-// Isso impede que usuário manipule localStorage para pagar menos
-const PRICE_TO_PLAN_MAP = {
+// Mapeamento seguro de Price IDs para items (planos ou addons)
+// Isso impede que usuário manipule localStorage para pagar menor preço
+const PRICE_TO_ITEM_MAP = {
   // Starter
-  [process.env.VITE_STRIPE_PRICE_STARTER]: 'starter',
-  [process.env.VITE_STRIPE_PRICE_STARTER_ANNUAL]: 'starter',
+  [process.env.VITE_STRIPE_PRICE_STARTER]: { type: 'plan', id: 'starter' },
+  [process.env.VITE_STRIPE_PRICE_STARTER_ANNUAL]: { type: 'plan', id: 'starter' },
   
   // Pro
-  [process.env.VITE_STRIPE_PRICE_PRO]: 'pro',
-  [process.env.VITE_STRIPE_PRICE_PRO_ANNUAL]: 'pro',
+  [process.env.VITE_STRIPE_PRICE_PRO]: { type: 'plan', id: 'pro' },
+  [process.env.VITE_STRIPE_PRICE_PRO_ANNUAL]: { type: 'plan', id: 'pro' },
   
   // Agency
-  [process.env.VITE_STRIPE_PRICE_AGENCY]: 'agency',
-  [process.env.VITE_STRIPE_PRICE_AGENCY_ANNUAL]: 'agency',
+  [process.env.VITE_STRIPE_PRICE_AGENCY]: { type: 'plan', id: 'agency' },
+  [process.env.VITE_STRIPE_PRICE_AGENCY_ANNUAL]: { type: 'plan', id: 'agency' },
+
+  // Addons / Pacotes Extras (configurar as Price IDs nas env vars)
+  [process.env.VITE_STRIPE_PRICE_ADDON_EMAILS_2000]: { type: 'addon', id: 'emails_boost_2000' },
+  [process.env.VITE_STRIPE_PRICE_ADDON_CONTACTS_10000]: { type: 'addon', id: 'contacts_boost_10000' },
 }
 
 export default async function handler(req, res) {
@@ -54,23 +58,30 @@ export default async function handler(req, res) {
     if (!secret) return res.status(500).json({ error: 'Stripe secret key not configured' })
 
     // SEGURANÇA: Validar priceId no servidor (não confiar no cliente)
-    const planId = PRICE_TO_PLAN_MAP[priceId]
-    if (!planId) {
+    const mapped = PRICE_TO_ITEM_MAP[priceId]
+    if (!mapped) {
       console.error('[stripe-checkout] Invalid priceId:', priceId)
       return res.status(400).json({ error: 'Invalid price ID' })
     }
 
-    // SEGURANÇA: Verificar se plano existe na nossa configuração
-    const planConfig = PLANS[planId]
-    if (!planConfig) {
-      console.error('[stripe-checkout] Plan not found:', planId)
-      return res.status(400).json({ error: 'Plan configuration not found' })
-    }
-
-    // SEGURANÇA: Se cliente enviou planId, validar se corresponde ao priceId
-    if (clientPlanId && clientPlanId !== planId) {
-      console.warn('[stripe-checkout] planId mismatch! client:', clientPlanId, 'expected:', planId)
-      // Ignorar planId do cliente e usar o validado pelo servidor
+    // Se for um plano, validaremos a configuração do plano
+    let planId = null
+    let addonId = null
+    if (mapped.type === 'plan') {
+      planId = mapped.id
+      const planConfig = PLANS[planId]
+      if (!planConfig) {
+        console.error('[stripe-checkout] Plan not found:', planId)
+        return res.status(400).json({ error: 'Plan configuration not found' })
+      }
+      // SEGURANÇA: Se cliente enviou planId, validar se corresponde ao priceId
+      if (clientPlanId && clientPlanId !== planId) {
+        console.warn('[stripe-checkout] planId mismatch! client:', clientPlanId, 'expected:', planId)
+        // Ignorar planId do cliente e usar o validado pelo servidor
+      }
+    } else if (mapped.type === 'addon') {
+      addonId = mapped.id
+      // não é necessário validar como plano; addons são tratados separadamente
     }
 
     // Log de auditoria
@@ -94,10 +105,16 @@ export default async function handler(req, res) {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { 
-        planId,  // planId VALIDADO pelo servidor, não do cliente
         priceId, // guardar priceId para double-check no webhook
         uid: decodedToken.uid, // Guardar UID do usuário autenticado
       },
+    }
+
+    // Incluir metadata específica dependendo do tipo (plano ou addon)
+    if (planId) sessionConfig.metadata.planId = planId
+    if (addonId) {
+      sessionConfig.metadata.itemType = 'addon'
+      sessionConfig.metadata.itemId = addonId
     }
 
     if (verifiedEmail) {

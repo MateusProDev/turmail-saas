@@ -51,21 +51,17 @@ const PLANS: {
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_STARTER',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_STARTER_ANNUAL',
     limits: {
-      emailsPerDay: 167,
-      emailsPerMonth: 5000,
+      emailsPerDay: -1,
+      emailsPerMonth: 2000,
       campaigns: -1,
       contacts: 25000,
     },
     features: [
-      '5.000 emails/mês',
-      '167 emails por dia',
-      '25.000 contatos incluídos 🔥',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Editor drag & drop',
-      'IA para criar conteúdo',
-      'Galeria de imagens',
-      'Relatórios e analytics',
+      'Automação de fluxos para recuperar e fidelizar clientes',
+      'Editor visual com templates otimizados por conversão',
+      'Prioridade em entregabilidade e qualidade de envio',
+      'Segmentação inteligente por comportamento',
+      'Relatórios acionáveis e recomendações de otimização',
       'Suporte em português',
     ]
   },
@@ -78,25 +74,18 @@ const PLANS: {
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_PRO_ANNUAL',
     recommended: true,
     limits: {
-      emailsPerDay: 667,
-      emailsPerMonth: 20000,
+      emailsPerDay: -1,
+      emailsPerMonth: 10000,
       campaigns: -1,
       contacts: 100000,
     },
     features: [
-      '20.000 emails/mês',
-      '667 emails por dia',
-      '100.000 contatos incluídos 🔥',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Tudo do Starter, mais:',
-      'Automação avançada',
-      'Testes A/B',
-      'Relatórios em tempo real',
-      'Mapas de calor de cliques',
-      'Webhooks personalizados',
-      'Suporte prioritário',
-      'Sem marca Turmail',
+      'Automação avançada com gatilhos e personalização por comportamento',
+      'Testes A/B de assunto e conteúdo para maximizar conversões',
+      'Relatórios em tempo real com sugestões práticas',
+      'Mapas de calor de cliques e análise de engajamento',
+      'Integrações para enriquecer dados do cliente',
+      'Suporte prioritário e onboarding para campanhas críticas',
     ]
   },
   { 
@@ -107,26 +96,18 @@ const PLANS: {
     priceIdEnvMonthly: 'VITE_STRIPE_PRICE_AGENCY',
     priceIdEnvAnnual: 'VITE_STRIPE_PRICE_AGENCY_ANNUAL',
     limits: {
-      emailsPerDay: 1667,
+      emailsPerDay: -1,
       emailsPerMonth: 50000,
       campaigns: -1,
       contacts: -1,
     },
     features: [
-      '50.000 emails/mês',
-      '1.667 emails por dia',
-      'Contatos ILIMITADOS 🚀',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Tudo do Professional, mais:',
-      'Multi-tenant (múltiplos clientes)',
-      'White-label completo',
-      'API ilimitada',
-      'Integração com CRM',
-      'Relatórios personalizados',
-      'Suporte VIP dedicado',
-      'Onboarding personalizado',
-      'SLA garantido',
+      'Foco em qualidade: entregabilidade e gerenciamento de reputação',
+      'White-label e multi-tenant para operar agências',
+      'APIs e integrações completas para automação de processos',
+      'Relatórios personalizados e consultoria para otimização',
+      'Suporte VIP e onboarding dedicado',
+      'SLA disponível para operações críticas',
     ]
   },
 ]
@@ -474,6 +455,66 @@ export default function Plans() {
           )
         })}
       </div>
+
+      {/* Pacotes Extras */}
+      <section className="mt-10">
+        <h3 className="text-xl font-semibold mb-4">Pacotes Extras</h3>
+        <p className="text-sm text-gray-600 mb-4">Adicione capacidade extra conforme a necessidade — cobramos separadamente por pacote.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {
+              id: 'emails_boost_2000',
+              title: '+2.000 emails',
+              desc: 'Aumente sua cota mensal com +2.000 emails para campanhas e automações.',
+              priceEnv: 'VITE_STRIPE_PRICE_ADDON_EMAILS_2000',
+            },
+            {
+              id: 'contacts_boost_10000',
+              title: '+10.000 contatos',
+              desc: 'Adicione 10.000 contatos adicionais ao seu tenant.',
+              priceEnv: 'VITE_STRIPE_PRICE_ADDON_CONTACTS_10000',
+            }
+          ].map((ex) => (
+            <div key={ex.id} className="p-4 bg-white rounded-lg shadow-md border border-gray-100 flex flex-col">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900">{ex.title}</h4>
+                <p className="text-sm text-gray-600 mt-2">{ex.desc}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                  onClick={async () => {
+                    if (!user) {
+                      localStorage.setItem('pendingPlan', JSON.stringify({ planId: ex.id, planName: ex.title, priceIdEnvMonthly: ex.priceEnv, billingInterval }))
+                      navigate('/login?signup=1')
+                      return
+                    }
+
+                    const envKey = ex.priceEnv
+                    const priceId = (import.meta.env as any)[envKey]
+                    if (!priceId) {
+                      alert('Price ID do pacote não configurado. Verifique as variáveis de ambiente.')
+                      return
+                    }
+
+                    try {
+                      setLoading(true)
+                      const json = await createCheckoutSession(priceId, null, user?.email || null)
+                      if (json?.url) window.location.href = json.url
+                      else alert('Falha ao iniciar checkout do pacote')
+                    } catch (err) {
+                      console.error(err)
+                      alert('Erro ao iniciar checkout')
+                    } finally { setLoading(false) }
+                  }}
+                >
+                  Comprar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Footer note removed per user request (env setup instructions were previously shown here) */}
     </div>

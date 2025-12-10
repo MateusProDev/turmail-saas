@@ -60,8 +60,8 @@ export default async function handler(req, res) {
         }
       }
 
-      // Import plans to get limits
-      const { PLANS } = await import('../lib/plans.js')
+      // Import plans and extras to get limits and addon definitions
+      const { PLANS, EXTRAS, applyAddonsToLimits } = await import('../lib/plans.js')
       const planConfig = planId && PLANS[planId] ? PLANS[planId] : null
 
       // SEGURANÇA: Log de auditoria
@@ -102,6 +102,38 @@ export default async function handler(req, res) {
         }
         if (planConfig && planConfig.limits) {
           subscriptionData.limits = planConfig.limits
+        }
+
+        // If this session represents an addon purchase, include it
+        if (session.metadata?.itemType === 'addon' && session.metadata?.itemId) {
+          const addonId = session.metadata.itemId
+          subscriptionData.addons = [{ id: addonId, priceId: metadataPriceId, purchasedAt: new Date() }]
+
+          // Try to attach addon effects to an existing active subscription (by email)
+          if (email) {
+            const subsRef = db.collection('subscriptions')
+            const existingQ = await subsRef.where('email', '==', email).where('status', 'in', ['active','trial']).limit(1).get()
+            if (!existingQ.empty) {
+              const subDoc = existingQ.docs[0]
+              const existing = subDoc.data() || {}
+              const existingLimits = existing.limits || {}
+              // Apply addon to limits
+              const newLimits = applyAddonsToLimits(existingLimits, [addonId])
+              await subDoc.ref.set({ addons: (existing.addons || []).concat([{ id: addonId, priceId: metadataPriceId, purchasedAt: new Date() }]), limits: newLimits }, { merge: true })
+              console.log('[webhook-stripe] Attached addon to existing subscription:', { subId: subDoc.id, addonId })
+
+              // Also try to update tenant limits if tenant exists
+              const tenantsRef = db.collection('tenants')
+              const tenantQuery = await tenantsRef.where('ownerEmail', '==', email).limit(1).get()
+              if (!tenantQuery.empty) {
+                const tenantDoc = tenantQuery.docs[0]
+                const tenantLimits = tenantDoc.data().limits || {}
+                const tenantNewLimits = applyAddonsToLimits(tenantLimits, [addonId])
+                await tenantDoc.ref.update({ limits: tenantNewLimits })
+                console.log('[webhook-stripe] Updated tenant limits with addon:', { tenantId: tenantDoc.id, addonId })
+              }
+            }
+          }
         }
 
         await db.collection('subscriptions').doc(stripeSubscriptionId).set(subscriptionData, { merge: true })

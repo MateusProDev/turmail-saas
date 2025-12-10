@@ -27,29 +27,25 @@ export const PLANS = {
       'Sem cartão de crédito',
     ],
   },
-  
+
   starter: {
     id: 'starter',
     name: 'Starter',
     price: 47,
-    priceAnnual: 42, // 10% desconto anual (R$ 504/ano)
+    priceAnnual: 42,
     limits: {
-      emailsPerDay: 167,
-      emailsPerMonth: 5000,
-      campaigns: -1, // ILIMITADO
-      contacts: 25000, // GENEROSO: 25mil contatos (vs 500k do Brevo mas mais emails)
-      templates: -1, // ILIMITADO
+      emailsPerDay: -1,
+      emailsPerMonth: 2000,
+      campaigns: -1,
+      contacts: 25000,
+      templates: -1,
     },
     features: [
-      '5.000 emails/mês',
-      '167 emails por dia',
-      '25.000 contatos incluídos',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Editor drag & drop',
-      'IA para criar conteúdo',
-      'Galeria de imagens',
-      'Relatórios e analytics',
+      'Automação de fluxos para recuperar e fidelizar clientes',
+      'Editor visual com templates otimizados por conversão',
+      'Prioridade em entregabilidade e qualidade de envio',
+      'Segmentação inteligente por comportamento',
+      'Relatórios acionáveis e recomendações de otimização',
       'Suporte em português',
     ],
   },
@@ -58,61 +54,44 @@ export const PLANS = {
     id: 'pro',
     name: 'Professional',
     price: 97,
-    priceAnnual: 87, // 10% desconto anual (R$ 1.044/ano)
+    priceAnnual: 87,
+    recommended: true,
     limits: {
-      emailsPerDay: 667,
-      emailsPerMonth: 20000,
-      campaigns: -1, // ILIMITADO
-      contacts: 100000, // GENEROSO: 100mil contatos
-      templates: -1, // ILIMITADO
+      emailsPerDay: -1,
+      emailsPerMonth: 10000,
+      campaigns: -1,
+      contacts: 100000,
+      templates: -1,
     },
     features: [
-      '20.000 emails/mês',
-      '667 emails por dia',
-      '100.000 contatos incluídos',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Tudo do Starter, mais:',
-      'Automação avançada',
-      'Testes A/B',
-      'Relatórios em tempo real',
-      'Mapas de calor de cliques',
-      'Webhooks personalizados',
-      'Suporte prioritário',
-      'Sem marca Turmail',
+      'Automação avançada com gatilhos e personalização por comportamento',
+      'Testes A/B de assunto e conteúdo para maximizar conversões',
+      'Relatórios em tempo real com sugestões práticas',
+      'Mapas de calor de cliques e análise de engajamento',
+      'Integrações para enriquecer dados do cliente',
+      'Suporte prioritário e onboarding para campanhas críticas',
     ],
-    recommended: true,
   },
 
   agency: {
     id: 'agency',
     name: 'Agency',
     price: 197,
-    priceAnnual: 177, // 10% desconto anual (R$ 2.124/ano)
+    priceAnnual: 177,
     limits: {
-      emailsPerDay: 1667,
+      emailsPerDay: -1,
       emailsPerMonth: 50000,
-      campaigns: -1, // ILIMITADO
-      contacts: -1, // ILIMITADO (diferencial KILLER!)
-      templates: -1, // ILIMITADO
+      campaigns: -1,
+      contacts: -1,
+      templates: -1,
     },
     features: [
-      '50.000 emails/mês',
-      '1.667 emails por dia',
-      'Contatos ILIMITADOS',
-      'Campanhas ilimitadas',
-      'Templates ilimitados',
-      'Tudo do Professional, mais:',
-      'Multi-tenant (múltiplos clientes)',
-      'White-label completo',
-      'API ilimitada',
-      'Integração com CRM',
-      'Relatórios personalizados',
-      'Suporte VIP dedicado',
-      'Onboarding personalizado',
-      'SLA garantido',
-      'API completa',
-      'White label',
+      'Foco em qualidade: entregabilidade e gerenciamento de reputação',
+      'White-label e multi-tenant para operar agências',
+      'APIs e integrações completas para automação de processos',
+      'Relatórios personalizados e consultoria para otimização',
+      'Suporte VIP e onboarding dedicado',
+      'SLA disponível para operações críticas',
     ],
   },
 
@@ -121,8 +100,8 @@ export const PLANS = {
     name: 'Enterprise',
     price: null, // customizado
     limits: {
-      emailsPerDay: -1, // ilimitado
-      emailsPerMonth: -1, // ilimitado
+      emailsPerDay: -1,
+      emailsPerMonth: -1,
       campaigns: -1,
       contacts: -1,
       templates: -1,
@@ -140,6 +119,54 @@ export const PLANS = {
       'Customizações sob medida',
     ],
   },
+}
+
+/**
+ * Pacotes Extras (addons) — itens que podem ser comprados separadamente para aumentar limites
+ * Cada addon pode ser mapeado para um Price ID no Stripe (gerenciado via env vars)
+ */
+export const EXTRAS = {
+  emails_boost_2000: {
+    id: 'emails_boost_2000',
+    name: 'Pacote +2.000 emails',
+    adds: {
+      emailsPerMonth: 2000,
+      emailsPerDay: Math.ceil(2000 / 30),
+    },
+    priceEnv: 'VITE_STRIPE_PRICE_ADDON_EMAILS_2000',
+  },
+  contacts_boost_10000: {
+    id: 'contacts_boost_10000',
+    name: 'Pacote +10.000 contatos',
+    adds: {
+      contacts: 10000,
+    },
+    priceEnv: 'VITE_STRIPE_PRICE_ADDON_CONTACTS_10000',
+  },
+}
+
+/**
+ * Aplica uma lista de addons sobre um objeto de limites, retornando novos limites calculados
+ */
+export function applyAddonsToLimits(baseLimits = {}, addons = []) {
+  const result = { ...baseLimits }
+  for (const a of addons || []) {
+    const def = EXTRAS[a]
+    if (!def) continue
+    const adds = def.adds || {}
+    for (const k of Object.keys(adds)) {
+      const addVal = adds[k]
+      if (typeof addVal === 'number') {
+        if (result[k] === -1 || result[k] === undefined) {
+          // if base is unlimited or missing, keep as unlimited or set numeric
+          result[k] = result[k] === -1 ? -1 : (addVal)
+        } else {
+          result[k] = (result[k] || 0) + addVal
+        }
+      }
+    }
+  }
+  return result
 }
 
 /**
@@ -241,4 +268,12 @@ export function getPlanInfo(subscription) {
   }
 }
 
-export default { PLANS, checkDailyEmailLimit, incrementDailyEmailCount, checkTrialStatus, getPlanInfo }
+export default {
+  PLANS,
+  EXTRAS,
+  applyAddonsToLimits,
+  checkDailyEmailLimit,
+  incrementDailyEmailCount,
+  checkTrialStatus,
+  getPlanInfo
+}
