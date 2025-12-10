@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { PLANS } from '../lib/plans.js'
-import { auth as firebaseAuth } from '../firebaseAdmin.js'
+import admin from '../firebaseAdmin.js'
+const firebaseAuth = admin.auth()
 
 // Mapeamento seguro de Price IDs para items (planos ou addons)
 // Isso impede que usuário manipule localStorage para pagar menor preço
