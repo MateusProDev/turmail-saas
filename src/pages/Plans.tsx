@@ -4,7 +4,7 @@ import './Plans.css'
 import { createCheckoutSession } from '../lib/stripe'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
-import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 const PLANS: { 
@@ -127,7 +127,7 @@ export default function Plans() {
     }
     const subsRef = collection(db, 'subscriptions')
     // Listen by ownerUid, then fallback to email if not found
-    const qByUid = query(subsRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(1))
+    const qByUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
     let unsubUid: any = null
     let unsubEmail: any = null
 
@@ -144,7 +144,7 @@ export default function Plans() {
       const found = handleSnap(snap)
       if (!found && user.email) {
         if (unsubEmail) unsubEmail()
-        const qByEmail = query(subsRef, where('email', '==', user.email), orderBy('createdAt', 'desc'), limit(1))
+        const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
         unsubEmail = onSnapshot(qByEmail, (snap2) => {
           if (!snap2.empty) {
             const doc = snap2.docs[0]

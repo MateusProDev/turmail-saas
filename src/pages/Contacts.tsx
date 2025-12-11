@@ -134,7 +134,7 @@ export default function Contacts() {
     if (!user) return
     
     const subsRef = collection(db, 'subscriptions')
-    const q = query(subsRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(1))
+    const q = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
     
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
