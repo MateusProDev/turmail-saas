@@ -216,7 +216,9 @@ export default function Dashboard(){
 
     // Não fazer nada enquanto loading
     if (loading) {
-      setIsOnboardingReady(false)
+      if (isOnboardingReady) {
+        setIsOnboardingReady(false)
+      }
       return
     }
 
@@ -225,20 +227,21 @@ export default function Dashboard(){
     const tenantLoaded = tenant !== undefined && tenant !== null
 
     if (!subscriptionLoaded || !tenantLoaded) {
-      setIsOnboardingReady(false)
+      if (isOnboardingReady) {
+        setIsOnboardingReady(false)
+      }
       return
     }
 
-    // ✅ LÓGICA DEFINITIVA PARA PRODUÇÃO:
-    // Onboarding deve abrir se:
-    // 1. É uma nova conta (checkoutPending = true) OU
-    // 2. Onboarding não foi completado (onboardingCompleted = false/undefined)
-    const isNewAccount = checkoutPending
-    const onboardingNotCompleted = subscription?.onboardingCompleted !== true
+    // ✅ Dados prontos - marcar como ready apenas se não estiver
+    if (!isOnboardingReady) {
+      setIsOnboardingReady(true)
+    }
 
-    const shouldOpenOnboarding = isNewAccount || onboardingNotCompleted
-
-    setIsOnboardingReady(true)
+    // Calcular variáveis de decisão de onboarding
+    const isNewAccount = !subscription?.onboardingCompleted && subscription?.planId
+    const onboardingNotCompleted = !subscription?.onboardingCompleted
+    const shouldOpenOnboarding = isNewAccount || checkoutPending
 
     console.log('[Dashboard] Onboarding decision:', {
       isNewAccount,
@@ -566,6 +569,29 @@ export default function Dashboard(){
     return metrics
   }, [brevoStats])
 
+  // Redirecionamento inteligente - só após inicialização completa
+  useEffect(() => {
+    if (loading || !initialLoadComplete) return
+
+    // Não redirecionar se:
+    // 1. Ainda está processando checkout
+    // 2. Tem erro mas pode recuperar
+    if (checkoutPending) {
+      console.log('[Dashboard] Not redirecting - checkout pending')
+      return
+    }
+
+    // Aguardar mais tempo para subscription carregar completamente
+    const redirectTimer = setTimeout(() => {
+      if (!subscription) {
+        console.log('[Dashboard] No subscription found after full initialization, redirecting to plans')
+        navigate('/plans', { replace: true })
+      }
+    }, 8000) // Aumentado para 8 segundos
+
+    return () => clearTimeout(redirectTimer)
+  }, [user, loading, subscription, checkoutPending, initialLoadComplete, navigate])
+
   // ✅ ORDEM CORRETA DE RENDERIZAÇÃO - PREVINE TELA BRANCA
 
   // 1. Ainda carregando autenticação
@@ -680,29 +706,6 @@ export default function Dashboard(){
       </div>
     )
   }
-
-  // Redirecionamento inteligente - só após inicialização completa
-  useEffect(() => {
-    if (loading || !initialLoadComplete) return
-
-    // Não redirecionar se:
-    // 1. Ainda está processando checkout
-    // 2. Tem erro mas pode recuperar
-    if (checkoutPending) {
-      console.log('[Dashboard] Not redirecting - checkout pending')
-      return
-    }
-
-    // Aguardar mais tempo para subscription carregar completamente
-    const redirectTimer = setTimeout(() => {
-      if (!subscription) {
-        console.log('[Dashboard] No subscription found after full initialization, redirecting to plans')
-        navigate('/plans', { replace: true })
-      }
-    }, 8000) // Aumentado para 8 segundos
-
-    return () => clearTimeout(redirectTimer)
-  }, [user, loading, subscription, checkoutPending, initialLoadComplete, navigate])
 
   const handleLogout = async () => {
     await signOut(auth)
