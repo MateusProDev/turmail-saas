@@ -210,3 +210,5 @@ export async function getBrevoStats(req, res) {
     })
   }
 }
+
+export default getBrevoStats

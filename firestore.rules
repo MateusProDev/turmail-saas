@@ -144,6 +144,12 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
 
+    // Tenant counters: allow tenant members to read usage counters
+    match /tenants/{tenantId}/counters/{counterId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+      allow write: if false; // Only server can write counters
+    }
+
     // Fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
