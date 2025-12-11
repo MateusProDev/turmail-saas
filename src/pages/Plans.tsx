@@ -215,7 +215,7 @@ export default function Plans() {
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
           alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
-          // Do not navigate to /dashboard, stay on plans page
+          navigate('/onboarding')
         }
       } catch (err) {
         console.error('failed to start trial', err)
