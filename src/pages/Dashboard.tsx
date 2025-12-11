@@ -1057,7 +1057,7 @@ export default function Dashboard(){
               role="dialog" 
               aria-modal="true" 
               aria-label="Onboarding" 
-              className="relative bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 z-50 animate-scaleIn"
+              className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 z-50 animate-scaleIn border border-slate-200/50"
               onClick={(e) => e.stopPropagation()}
             >
               {!subscription && checkoutPending ? (
@@ -1068,36 +1068,36 @@ export default function Dashboard(){
                 </div>
               ) : (
                 <>
+                  {/* Botão fechar */}
+                  <button 
+                    onClick={() => setOnboardingOpen(false)}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-10"
+                    aria-label="Fechar onboarding"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+
                   {/* Header com progresso */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900">👋 Bem-vindo ao Turmail</h3>
-                      <p className="text-sm text-slate-600 mt-1">Vamos configurar sua conta passo a passo</p>
-                    </div>
-                    <button 
-                      onClick={() => setOnboardingOpen(false)}
-                      className="text-slate-400 hover:text-slate-600 transition-colors"
-                      aria-label="Fechar onboarding"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                  <div className="text-center mb-5">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">👋 Bem-vindo ao Turmail</h3>
+                    <p className="text-sm text-slate-600">Vamos configurar sua conta</p>
                   </div>
 
                   {/* Indicador de progresso */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-slate-700">
                         Passo {currentStep + 1} de {onboardingStepsDef.length}
                       </span>
                       <span className="text-xs text-slate-500">
-                        {Math.round(((currentStep + 1) / onboardingStepsDef.length) * 100)}% completo
+                        {Math.round(((currentStep + 1) / onboardingStepsDef.length) * 100)}%
                       </span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200 rounded-full h-1.5">
                       <div 
-                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${((currentStep + 1) / onboardingStepsDef.length) * 100}%` }}
                       ></div>
                     </div>
@@ -1110,19 +1110,19 @@ export default function Dashboard(){
                     const done = !!progress[step.key]
                     
                     return (
-                      <div className="mb-8">
-                        <div className={`p-6 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="mb-6">
+                        <div className={`p-5 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
                           <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
                               {done ? '✓' : currentStep + 1}
                             </div>
-                            <div className="flex-1">
-                              <h4 className="text-lg font-semibold text-slate-900 mb-2">{step.label}</h4>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-base font-semibold text-slate-900 mb-2">{step.label}</h4>
                               
                               {/* Formulários específicos por passo */}
                               {step.key === 'profile' && (
                                 <div className="space-y-4">
-                                  <p className="text-sm text-slate-600">
+                                  <p className="text-sm text-slate-600 leading-relaxed">
                                     Configure o nome e logo da sua empresa para personalizar seus emails.
                                   </p>
                                   
@@ -1136,7 +1136,7 @@ export default function Dashboard(){
                                       value={companyName}
                                       onChange={(e) => setCompanyName(e.target.value)}
                                       placeholder="Digite o nome da sua empresa"
-                                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                                     />
                                   </div>
                                   
@@ -1145,7 +1145,7 @@ export default function Dashboard(){
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
                                       Logo da Empresa (opcional)
                                     </label>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-3">
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -1165,7 +1165,7 @@ export default function Dashboard(){
                                       />
                                       <label
                                         htmlFor="logo-upload"
-                                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors text-sm"
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1173,7 +1173,7 @@ export default function Dashboard(){
                                         Escolher imagem
                                       </label>
                                       {logoPreview && (
-                                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-300">
+                                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-300">
                                           <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
                                         </div>
                                       )}
@@ -1188,11 +1188,11 @@ export default function Dashboard(){
                               
                               {step.key === 'contacts' && (
                                 <div className="space-y-4">
-                                  <p className="text-sm text-slate-600">
+                                  <p className="text-sm text-slate-600 leading-relaxed">
                                     Adicione seu primeiro contato para começar a enviar emails.
                                   </p>
                                   
-                                  <div className="grid grid-cols-1 gap-4">
+                                  <div className="grid grid-cols-1 gap-3">
                                     <div>
                                       <label className="block text-sm font-medium text-slate-700 mb-1">
                                         Nome (opcional)
@@ -1202,7 +1202,7 @@ export default function Dashboard(){
                                         value={contactName}
                                         onChange={(e) => setContactName(e.target.value)}
                                         placeholder="Nome do contato"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                                       />
                                     </div>
                                     
@@ -1215,7 +1215,7 @@ export default function Dashboard(){
                                         value={contactEmail}
                                         onChange={(e) => setContactEmail(e.target.value)}
                                         placeholder="email@exemplo.com"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                                       />
                                     </div>
                                     
@@ -1228,7 +1228,7 @@ export default function Dashboard(){
                                         value={contactPhone}
                                         onChange={(e) => setContactPhone(e.target.value)}
                                         placeholder="(11) 99999-9999"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
                                       />
                                     </div>
                                   </div>
@@ -1292,11 +1292,11 @@ export default function Dashboard(){
                   })()}
 
                   {/* Navegação */}
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <button 
                       onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                       disabled={currentStep === 0}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -1307,9 +1307,9 @@ export default function Dashboard(){
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => setOnboardingOpen(false)}
-                        className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
+                        className="px-3 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
                       >
-                        Fazer depois
+                        Depois
                       </button>
                       
                       {(() => {
@@ -1356,7 +1356,7 @@ export default function Dashboard(){
                               (step.key === 'test' && sendingTestEmail) ||
                               uploadingLogo
                             }
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
                               done 
                                 ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' 
                                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
@@ -1397,7 +1397,7 @@ export default function Dashboard(){
                               alert('Erro ao marcar onboarding como completo')
                             }
                           }} 
-                          className="px-6 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
+                          className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
                         >
                           Finalizar
                         </button>
