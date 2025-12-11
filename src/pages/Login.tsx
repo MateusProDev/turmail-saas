@@ -572,9 +572,9 @@ const Login: React.FC = () => {
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ name: companyName || `Account ${userCred.user.uid}` }),
             })
-            console.log('[submit] Tenant creation requested')
+            console.log('[submit] Tenant creation completed')
           } catch (tenantErr) {
-            console.error('[submit] Failed to request tenant creation:', tenantErr)
+            console.warn('[submit] Tenant creation failed, but continuing:', tenantErr instanceof Error ? tenantErr.message : String(tenantErr))
           }
         } catch (setErr) {
           console.error('[submit] Failed to create user doc:', setErr)

@@ -333,12 +333,20 @@ export default function Dashboard(){
       console.log('[Dashboard] No user, skipping subscription query')
       return
     }
+  // subscription listener (ownerUid preferred, fallback to email)
+  useEffect(() => {
+    if (!user || !user.uid || !user.email) {
+      console.log('[Dashboard] User not fully loaded yet:', { user: !!user, uid: user?.uid, email: user?.email })
+      return
+    }
     console.log('[Dashboard] Setting up subscription listener for user:', user.uid, user.email)
     const subsRef = collection(db, 'subscriptions')
     
     // Try ownerUid first
+    console.log('[Dashboard] Creating query for ownerUid:', user.uid)
     const qByOwnerUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
     // Fallback to uid field
+    console.log('[Dashboard] Creating query for uid:', user.uid)
     const qByUid = query(subsRef, where('uid', '==', user.uid), limit(1))
     
     let unsubOwnerUid: (() => void) | null = null
@@ -363,55 +371,72 @@ export default function Dashboard(){
       return false
     }
 
+    console.log('[Dashboard] Starting ownerUid listener...')
     // Listen to ownerUid query
     unsubOwnerUid = onSnapshot(qByOwnerUid, (snap) => {
+      console.log('[Dashboard] ownerUid snapshot received, processing...')
       const found = handleSnap(snap, 'ownerUid')
       if (found) {
+        console.log('[Dashboard] Found subscription via ownerUid, setting checkoutPending=false')
         setCheckoutPending(false)
         return
       }
       
+      console.log('[Dashboard] No subscription found via ownerUid, trying uid field...')
       // If not found by ownerUid, try uid field
       if (unsubUid) unsubUid()
+      console.log('[Dashboard] Starting uid listener...')
       unsubUid = onSnapshot(qByUid, (snap2) => {
+        console.log('[Dashboard] uid snapshot received, processing...')
         const found2 = handleSnap(snap2, 'uid')
         if (found2) {
+          console.log('[Dashboard] Found subscription via uid, setting checkoutPending=false')
           setCheckoutPending(false)
           return
         }
         
+        console.log('[Dashboard] No subscription found via uid, trying email...')
         // If still not found, try email
         if (!found2 && user.email) {
           if (unsubEmail) unsubEmail()
+          console.log('[Dashboard] Creating email query for:', user.email)
           const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
+          console.log('[Dashboard] Starting email listener...')
           unsubEmail = onSnapshot(qByEmail, (snap3) => {
+            console.log('[Dashboard] email snapshot received, processing...')
             const found3 = handleSnap(snap3, 'email')
             if (found3) {
+              console.log('[Dashboard] Found subscription via email, setting checkoutPending=false')
               setCheckoutPending(false)
             } else {
+              console.log('[Dashboard] No subscription found via any method, setting subscription=null')
               setSubscription(null)
             }
           }, (err) => {
-            console.error('subscription-by-email snapshot error', err)
+            console.error('[Dashboard] subscription-by-email snapshot error', err)
             setSubscription(null)
           })
         } else {
+          console.log('[Dashboard] No email available or already found, setting subscription=null')
           setSubscription(null)
         }
       }, (err) => {
-        console.error('subscription-by-uid snapshot error', err)
+        console.error('[Dashboard] subscription-by-uid snapshot error', err)
         setSubscription(null)
       })
     }, (err) => {
-      console.error('subscription-by-ownerUid snapshot error', err)
+      console.error('[Dashboard] subscription-by-ownerUid snapshot error', err)
       setSubscription(null)
     })
 
+    console.log('[Dashboard] Subscription listeners setup complete')
     return () => {
+      console.log('[Dashboard] Cleaning up subscription listeners')
       if (unsubOwnerUid) unsubOwnerUid()
       if (unsubUid) unsubUid()
       if (unsubEmail) unsubEmail()
     }
+  }, [user])
   }, [user])
 
 // recent campaigns listener
@@ -603,11 +628,19 @@ export default function Dashboard(){
 
   // Se não há subscription e não está carregando, redireciona para planos
   // Mas não redirecionar se acabou de haver um checkout (aguardar webhook)
-  if (user && !loading && !subscription && !checkoutPending) {
-    console.log('[Dashboard] No subscription found and not checkout pending, redirecting to plans')
-    navigate('/plans', { replace: true })
-    return null
-  }
+  // Também aguardar um pouco para os listeners serem configurados
+  useEffect(() => {
+    if (!user || loading) return
+
+    const timer = setTimeout(() => {
+      if (user && !loading && !subscription && !checkoutPending) {
+        console.log('[Dashboard] Timeout reached, no subscription found, redirecting to plans')
+        navigate('/plans', { replace: true })
+      }
+    }, 3000) // Aguardar 3 segundos para os listeners serem configurados
+
+    return () => clearTimeout(timer)
+  }, [user, loading, subscription, checkoutPending, navigate])
 
   if(!user) {
     return (
