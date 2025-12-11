@@ -100,6 +100,11 @@ export default function Dashboard(){
   const [contactPhone, setContactPhone] = useState('')
   
   // Test email states
+  const [testEmailAdditional, setTestEmailAdditional] = useState('')
+  const [testEmailSent, setTestEmailSent] = useState(false)
+  const [sendingTestEmail, setSendingTestEmail] = useState(false)
+  
+  // Test email states
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
   const [testEmailSent, setTestEmailSent] = useState(false)
   
@@ -863,9 +868,16 @@ export default function Dashboard(){
       setSendingTestEmail(true)
       
       const userEmail = user.email || 'test@example.com'
+      const recipients = [{ email: userEmail }]
+      
+      // Adicionar email adicional se fornecido
+      if (testEmailAdditional.trim()) {
+        recipients.push({ email: testEmailAdditional.trim() })
+      }
+      
       const payload = {
         tenantId,
-        to: [{ email: userEmail }],
+        to: recipients,
         subject: '🎉 Bem-vindo ao Turmail!',
         htmlContent: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1261,10 +1273,27 @@ export default function Dashboard(){
                               )}
                               
                               {step.key === 'test' && (
-                                <div className="space-y-3">
-                                  <p className="text-sm text-slate-600">
+                                <div className="space-y-4">
+                                  <p className="text-sm text-slate-600 leading-relaxed">
                                     Envie um email de teste para verificar se tudo está funcionando.
                                   </p>
+                                  
+                                  {/* Campo para email adicional */}
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                      Email adicional (opcional)
+                                    </label>
+                                    <input
+                                      type="email"
+                                      value={testEmailAdditional}
+                                      onChange={(e) => setTestEmailAdditional(e.target.value)}
+                                      placeholder="exemplo@empresa.com"
+                                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      Adicione um email extra para receber o teste junto com {user?.email}
+                                    </p>
+                                  </div>
                                   
                                   {testEmailSent ? (
                                     <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
@@ -1275,13 +1304,13 @@ export default function Dashboard(){
                                         <span className="text-sm font-medium text-emerald-800">Email de teste enviado com sucesso!</span>
                                       </div>
                                       <p className="text-sm text-emerald-700 mt-1">
-                                        Verifique sua caixa de entrada ({user?.email})
+                                        Verifique sua caixa de entrada {user?.email && `(${user.email}`}{testEmailAdditional.trim() && ` e ${testEmailAdditional.trim()}`}{user?.email && `)`}
                                       </p>
                                     </div>
                                   ) : (
                                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                       <p className="text-sm text-blue-800">
-                                        Um email de boas-vindas será enviado para <strong>{user?.email}</strong>
+                                        Um email de boas-vindas será enviado para <strong>{user?.email}</strong>{testEmailAdditional.trim() && ` e <strong>${testEmailAdditional.trim()}</strong>`}
                                       </p>
                                     </div>
                                   )}
