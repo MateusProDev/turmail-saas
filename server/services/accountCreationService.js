@@ -13,6 +13,7 @@ class AccountCreationService {
     const db = admin.firestore();
     const timestamp = admin.firestore.FieldValue.serverTimestamp();
     
+    console.log('[AccountCreationService] Iniciando criação de conta:', { uid, email, name, planId, companyName, source });
     return await db.runTransaction(async (transaction) => {
       // 1. Verificação robusta de existência
       const [userDoc, activeSubDoc] = await Promise.all([

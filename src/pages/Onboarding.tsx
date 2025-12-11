@@ -21,21 +21,23 @@ export default function Onboarding() {
   // Buscar subscription do usuário
   useEffect(() => {
     if (!user) {
+      console.log('[Onboarding] Usuário não autenticado, redirecionando para login')
       navigate('/login')
       return
     }
 
     const fetchSubscription = async () => {
       try {
-        // Buscar tenant primeiro
+        console.log('[Onboarding] Buscando tenant e subscription para usuário:', user.uid)
         const token = await (user as any).getIdToken()
         const tenantResp = await fetch('/api/my-tenants', {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const tenantData = await tenantResp.json()
+        console.log('[Onboarding] tenantData:', tenantData)
 
         if (!tenantData.tenants || tenantData.tenants.length === 0) {
-          // Ainda não tem tenant, aguardar
+          console.log('[Onboarding] Nenhum tenant encontrado, aguardando...')
           setTimeout(fetchSubscription, 2000)
           return
         }
@@ -47,12 +49,16 @@ export default function Onboarding() {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const subData = await subResp.json()
+        console.log('[Onboarding] subData:', subData)
 
         if (subData.subscription) {
           setSubscription(subData.subscription)
+        } else {
+          console.log('[Onboarding] Subscription não encontrada, tentando novamente...')
+          setTimeout(fetchSubscription, 2000)
         }
       } catch (error) {
-        console.error('Error fetching subscription:', error)
+        console.error('[Onboarding] Error fetching subscription:', error)
       } finally {
         setLoading(false)
       }
@@ -112,12 +118,13 @@ export default function Onboarding() {
   }
 
   if (loading) {
+    console.log('[Onboarding] loading subscription:', subscription)
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-slate-900">Preparando seu onboarding</h2>
-          <p className="text-slate-600 mt-2">Aguarde um momento...</p>
+          <h2 className="text-xl font-bold text-slate-900">Preparando sua conta...</h2>
+          <p className="text-slate-600 mt-2">Aguarde, estamos finalizando a ativação do seu plano.</p>
         </div>
       </div>
     )

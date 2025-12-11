@@ -217,8 +217,25 @@ export default function Plans() {
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
           alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
-          console.log('[Plans] Redirecionando para onboarding após trial')
-          navigate('/onboarding')
+          console.log('[Plans] Trial ativado, iniciando polling para subscription...')
+          let attempts = 0;
+          const checkSubscription = async () => {
+            attempts++;
+            console.log(`[Plans] Polling subscription, tentativa ${attempts}`);
+            const subsRef = collection(db, 'subscriptions');
+            const q = query(subsRef, where('ownerUid', '==', user.uid), limit(1));
+            const snap = await (await import('firebase/firestore')).getDocs(q);
+            if (!snap.empty) {
+              console.log('[Plans] Subscription encontrada, redirecionando para onboarding');
+              navigate('/onboarding');
+            } else if (attempts < 10) {
+              setTimeout(checkSubscription, 1000);
+            } else {
+              alert('Não foi possível ativar o trial. Tente novamente ou contate o suporte.');
+              console.error('[Plans] Subscription não encontrada após 10 tentativas.');
+            }
+          };
+          checkSubscription();
         }
       } catch (err) {
         console.error('[Plans] failed to start trial', err)
