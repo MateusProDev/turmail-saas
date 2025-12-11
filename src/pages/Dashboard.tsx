@@ -86,9 +86,8 @@ export default function Dashboard(){
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [isOnboardingReady, setIsOnboardingReady] = useState(false)
   
-  // Estado para controlar carregamento inicial
+  // Estado simplificado de carregamento
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
-  const [dataLoading, setDataLoading] = useState(true)
   
   const onboardingStepsDef = useMemo<OnboardingStep[]>(() => [
     { key: 'profile', label: 'Completar perfil (nome, logo)', href: '/settings' },
@@ -98,14 +97,13 @@ export default function Dashboard(){
     { key: 'test', label: 'Enviar email de teste', href: '/campaigns' },
   ], [])
 
-  // Controle de carregamento inicial
+  // Controle de carregamento inicial - REDUZIDO PARA 500ms
   useEffect(() => {
     if (!loading && user !== undefined) {
       // Aguardar um pouco para garantir que os listeners sejam configurados
       const timer = setTimeout(() => {
         setInitialLoadComplete(true)
-        setDataLoading(false)
-      }, 1000) // 1 segundo para estabilizar
+      }, 500) // Reduzido de 1000ms para 500ms
 
       return () => clearTimeout(timer)
     }
@@ -245,21 +243,26 @@ export default function Dashboard(){
     console.log('[Dashboard] Onboarding decision:', {
       isNewAccount,
       onboardingNotCompleted,
-      shouldOpenOnboarding
+      shouldOpenOnboarding,
+      onboardingOpen
     })
 
-    if (shouldOpenOnboarding) {
+    if (shouldOpenOnboarding && !onboardingOpen) {
       console.log('[Dashboard] Opening onboarding modal')
       // Pequeno delay para garantir que tudo está carregado
       const timer = setTimeout(() => {
         setOnboardingOpen(true)
       }, 500)
       return () => clearTimeout(timer)
-    } else {
-      console.log('[Dashboard] Onboarding already completed, keeping modal closed')
+    } else if (!shouldOpenOnboarding && onboardingOpen) {
+      console.log('[Dashboard] Closing onboarding modal')
       setOnboardingOpen(false)
+      return () => {}
+    } else {
+      // No change needed
+      return () => {}
     }
-  }, [subscription, tenant, loading, checkoutPending])
+  }, [subscription, tenant, loading, checkoutPending, onboardingOpen])
   
 
   // Fechar modal quando onboarding for completado
@@ -359,110 +362,109 @@ export default function Dashboard(){
     return () => unsubscribe()
   }, [tenantId])
 
-  // subscription listener (ownerUid preferred, fallback to email)
+  // subscription listener - VERSÃO SIMPLIFICADA E ESTÁVEL
   useEffect(() => {
     if (!user || !user.uid || !user.email) {
-      console.log('[Dashboard] User not fully loaded yet:', { user: !!user, uid: user?.uid, email: user?.email })
+      console.log('[Dashboard] User not ready for subscription listener')
+      setSubscription(null)
       return
     }
-    console.log('[Dashboard] Setting up subscription listener for user:', user.uid, user.email)
+
+    console.log('[Dashboard] Setting up SINGLE subscription listener for user:', user.uid)
     const subsRef = collection(db, 'subscriptions')
-    
-    // Try ownerUid first
-    console.log('[Dashboard] Creating query for ownerUid:', user.uid)
-    const qByOwnerUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
-    // Fallback to uid field
-    console.log('[Dashboard] Creating query for uid:', user.uid)
-    const qByUid = query(subsRef, where('uid', '==', user.uid), limit(1))
-    
-    let unsubOwnerUid: (() => void) | null = null
-    let unsubUid: (() => void) | null = null
-    let unsubEmail: (() => void) | null = null
 
-    const handleSnap = (snap: { empty: boolean; docs: { id: string; data: () => Record<string, unknown> }[] }, queryType: string) => {
-      console.log(`[Dashboard] Subscription query result (${queryType}):`, {
-        empty: snap.empty,
-        docsCount: snap.docs.length,
-        userUid: user.uid,
-        queryType
-      })
-      if (!snap.empty) {
-        const doc = snap.docs[0]
-        const data = doc.data()
-        console.log(`[Dashboard] Found subscription by ${queryType}:`, { id: doc.id, status: data.status, planId: data.planId, uid: data.uid, ownerUid: data.ownerUid })
-        setSubscription({ id: doc.id, ...doc.data() } as Subscription)
-        return true
-      }
-      console.log(`[Dashboard] No subscription found by ${queryType}`)
-      return false
-    }
+    let unsubscribe: (() => void) | null = null
+    let isActive = true
 
-    console.log('[Dashboard] Starting ownerUid listener...')
-    // Listen to ownerUid query
-    unsubOwnerUid = onSnapshot(qByOwnerUid, (snap) => {
-      console.log('[Dashboard] ownerUid snapshot received, processing...')
-      const found = handleSnap(snap, 'ownerUid')
-      if (found) {
-        console.log('[Dashboard] Found subscription via ownerUid, setting checkoutPending=false')
-        setCheckoutPending(false)
-        return
-      }
-      
-      console.log('[Dashboard] No subscription found via ownerUid, trying uid field...')
-      // If not found by ownerUid, try uid field
-      if (unsubUid) unsubUid()
-      console.log('[Dashboard] Starting uid listener...')
-      unsubUid = onSnapshot(qByUid, (snap2) => {
-        console.log('[Dashboard] uid snapshot received, processing...')
-        const found2 = handleSnap(snap2, 'uid')
-        if (found2) {
-          console.log('[Dashboard] Found subscription via uid, setting checkoutPending=false')
-          setCheckoutPending(false)
-          return
-        }
-        
-        console.log('[Dashboard] No subscription found via uid, trying email...')
-        // If still not found, try email
-        if (!found2 && user.email) {
-          if (unsubEmail) unsubEmail()
-          console.log('[Dashboard] Creating email query for:', user.email)
-          const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
-          console.log('[Dashboard] Starting email listener...')
-          unsubEmail = onSnapshot(qByEmail, (snap3) => {
-            console.log('[Dashboard] email snapshot received, processing...')
-            const found3 = handleSnap(snap3, 'email')
-            if (found3) {
-              console.log('[Dashboard] Found subscription via email, setting checkoutPending=false')
-              setCheckoutPending(false)
-            } else {
-              console.log('[Dashboard] No subscription found via any method, setting subscription=null')
-              setSubscription(null)
+    // ✅ ÚNICA estratégia: buscar por uid primeiro, depois email como fallback
+    const setupListener = async () => {
+      try {
+        // Primeiro tenta buscar por uid
+        console.log('[Dashboard] Creating uid query for:', user.uid)
+        const qByUid = query(subsRef, where('uid', '==', user.uid), limit(1))
+
+        unsubscribe = onSnapshot(qByUid,
+          (snapshot) => {
+            if (!isActive) return
+
+            console.log('[Dashboard] Uid query snapshot received:', {
+              empty: snapshot.empty,
+              docsCount: snapshot.docs.length
+            })
+
+            if (!snapshot.empty) {
+              const doc = snapshot.docs[0]
+              const data = { id: doc.id, ...doc.data() } as Subscription
+
+              console.log('[Dashboard] Found subscription by uid:', {
+                id: doc.id,
+                status: data.status,
+                planId: data.planId
+              })
+
+              setSubscription(data)
+              setCheckoutPending(false) // Se encontrou, não está mais em checkout pending
+              return
             }
-          }, (err) => {
-            console.error('[Dashboard] subscription-by-email snapshot error', err)
-            setSubscription(null)
-          })
-        } else {
-          console.log('[Dashboard] No email available or already found, setting subscription=null')
-          setSubscription(null)
-        }
-      }, (err) => {
-        console.error('[Dashboard] subscription-by-uid snapshot error', err)
-        setSubscription(null)
-      })
-    }, (err) => {
-      console.error('[Dashboard] subscription-by-ownerUid snapshot error', err)
-      setSubscription(null)
-    })
 
-    console.log('[Dashboard] Subscription listeners setup complete')
-    return () => {
-      console.log('[Dashboard] Cleaning up subscription listeners')
-      if (unsubOwnerUid) unsubOwnerUid()
-      if (unsubUid) unsubUid()
-      if (unsubEmail) unsubEmail()
+            // Se não encontrou por uid, tenta por email
+            console.log('[Dashboard] No subscription found by uid, trying email fallback')
+            if (unsubscribe) unsubscribe()
+
+            const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
+            unsubscribe = onSnapshot(qByEmail,
+              (emailSnapshot) => {
+                if (!isActive) return
+
+                console.log('[Dashboard] Email query snapshot received:', {
+                  empty: emailSnapshot.empty,
+                  docsCount: emailSnapshot.docs.length
+                })
+
+                if (!emailSnapshot.empty) {
+                  const doc = emailSnapshot.docs[0]
+                  const data = { id: doc.id, ...doc.data() } as Subscription
+
+                  console.log('[Dashboard] Found subscription by email:', {
+                    id: doc.id,
+                    email: data.email
+                  })
+
+                  setSubscription(data)
+                  setCheckoutPending(false)
+                } else {
+                  console.log('[Dashboard] No subscription found by any method')
+                  setSubscription(null)
+                }
+              },
+              (err) => {
+                if (!isActive) return
+                console.error('[Dashboard] Email query error:', err)
+                setSubscription(null)
+              }
+            )
+          },
+          (err) => {
+            if (!isActive) return
+            console.error('[Dashboard] Uid query error:', err)
+            setSubscription(null)
+          }
+        )
+      } catch (err) {
+        if (!isActive) return
+        console.error('[Dashboard] Error setting up subscription listener:', err)
+        setSubscription(null)
+      }
     }
-  }, [user])
+
+    setupListener()
+
+    return () => {
+      console.log('[Dashboard] Cleaning up subscription listener')
+      isActive = false
+      if (unsubscribe) unsubscribe()
+    }
+  }, [user?.uid, user?.email]) // ✅ Dependências mais estáveis
 
 // recent campaigns listener
   const [campaigns, setCampaigns] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -621,85 +623,54 @@ export default function Dashboard(){
     return metrics
   }, [brevoStats])
 
-  if(loading || dataLoading || !initialLoadComplete) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-700 font-medium">Carregando seu dashboard...</p>
-        <p className="text-slate-500 text-sm mt-2">Preparando dados da sua conta</p>
-      </div>
-    </div>
-  )
-  
-  if(error) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 max-w-md w-full mx-4 border border-slate-200">
-        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Erro ao carregar dashboard</h2>
-        <p className="text-slate-600 text-center mb-6">Erro: {String(error)}</p>
-        <div className="flex gap-3">
-          <button 
-            onClick={() => window.location.reload()}
-            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow"
-          >
-            Tentar Novamente
-          </button>
-          <button 
-            onClick={() => navigate('/login')}
-            className="flex-1 bg-slate-200 text-slate-700 py-3 px-4 rounded-xl font-semibold hover:bg-slate-300 transition-all"
-          >
-            Fazer Login
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  // ✅ ORDEM CORRETA DE RENDERIZAÇÃO - PREVINE TELA BRANCA
 
-  // Verificação adicional: se não há dados essenciais após carregamento, mostrar erro
-  if (initialLoadComplete && !subscription && !checkoutPending) {
+  // 1. Ainda carregando autenticação
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 max-w-md w-full mx-4 border border-slate-200">
-          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Conta não encontrada</h2>
-          <p className="text-slate-600 text-center mb-6">Parece que você não tem uma assinatura ativa. Vamos criar uma conta para você!</p>
-          <button 
-            onClick={() => navigate('/plans')}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow"
-          >
-            Escolher Plano
-          </button>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-700 font-medium">Verificando autenticação...</p>
+          <p className="text-slate-500 text-sm mt-2">Conectando com sua conta</p>
         </div>
       </div>
     )
   }
-  
 
-  // Se não há subscription e não está carregando, redireciona para planos
-  // Mas não redirecionar se acabou de haver um checkout (aguardar webhook)
-  // Também aguardar um pouco para os listeners serem configurados
-  useEffect(() => {
-    if (!user || loading) return
+  // 2. Erro de autenticação
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 max-w-md w-full mx-4 border border-slate-200">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Erro de autenticação</h2>
+          <p className="text-slate-600 text-center mb-6">Erro: {String(error)}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow"
+            >
+              Tentar Novamente
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="flex-1 bg-slate-200 text-slate-700 py-3 px-4 rounded-xl font-semibold hover:bg-slate-300 transition-all"
+            >
+              Fazer Login
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-    const timer = setTimeout(() => {
-      if (user && !loading && !subscription && !checkoutPending) {
-        console.log('[Dashboard] Timeout reached, no subscription found, redirecting to plans')
-        navigate('/plans', { replace: true })
-      }
-    }, 3000) // Aguardar 3 segundos para os listeners serem configurados
-
-    return () => clearTimeout(timer)
-  }, [user, loading, subscription, checkoutPending, navigate])
-
-  if(!user) {
+  // 3. Usuário não autenticado
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 max-w-md w-full mx-4 border border-slate-200">
@@ -710,16 +681,85 @@ export default function Dashboard(){
           </div>
           <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Acesso necessário</h2>
           <p className="text-slate-600 text-center mb-6">Você precisa entrar para acessar o dashboard.</p>
-          <Link 
-            to="/login" 
+          <Link
+            to="/login"
             className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-center py-3 px-4 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow"
           >
-            Ir para Login
+            Fazer Login
           </Link>
         </div>
       </div>
     )
   }
+
+  // 4. Ainda inicializando dados (listeners configurando)
+  if (!initialLoadComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-700 font-medium">Carregando seu dashboard...</p>
+          <p className="text-slate-500 text-sm mt-2">Configurando conexões em tempo real</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 5. Estado intermediário: aguardando subscription
+  if (!subscription && !checkoutPending) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-700 font-medium">Buscando sua assinatura...</p>
+          <p className="text-slate-500 text-sm mt-2">Verificando status da conta</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 6. Estado especial: processamento de checkout
+  if (checkoutPending && !subscription) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-8 max-w-md w-full mx-4 border border-slate-200">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 text-center mb-2">Pagamento confirmado!</h2>
+          <p className="text-slate-600 text-center mb-6">Estamos finalizando a configuração da sua conta. Isso pode levar alguns segundos...</p>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Redirecionamento inteligente - só após inicialização completa
+  useEffect(() => {
+    if (loading || !initialLoadComplete) return
+
+    // Não redirecionar se:
+    // 1. Ainda está processando checkout
+    // 2. Tem erro mas pode recuperar
+    if (checkoutPending) {
+      console.log('[Dashboard] Not redirecting - checkout pending')
+      return
+    }
+
+    // Aguardar mais tempo para subscription carregar completamente
+    const redirectTimer = setTimeout(() => {
+      if (!subscription) {
+        console.log('[Dashboard] No subscription found after full initialization, redirecting to plans')
+        navigate('/plans', { replace: true })
+      }
+    }, 8000) // Aumentado para 8 segundos
+
+    return () => clearTimeout(redirectTimer)
+  }, [user, loading, subscription, checkoutPending, initialLoadComplete, navigate])
 
   const handleLogout = async () => {
     await signOut(auth)
