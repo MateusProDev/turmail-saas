@@ -117,6 +117,7 @@ export default function Plans() {
   const [user] = useAuthState(auth)
   const [subscription, setSubscription] = useState<any>(null)
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly')
+  const [trialStarted, setTrialStarted] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -164,14 +165,17 @@ export default function Plans() {
   // Check for cancel parameter to auto-start trial
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const isCancel = params.get('cancel') === '1'
-    if (isCancel && user && !subscription) {
+    const isCancel = params.get('cancel') === '1' || localStorage.getItem('paymentCancel') === '1'
+    if (isCancel && user && subscription === null) {
       // Automatically start trial after payment cancel
+      setTrialStarted(true)
+      localStorage.setItem('paymentCancel', '1') // Persist in case of reload
       handleCheckout(PLANS.find(p => p.id === 'trial')!)
-      // Clean URL
+      // Clean URL and localStorage after attempt
       window.history.replaceState({}, '', '/plans')
+      localStorage.removeItem('paymentCancel')
     }
-  }, [user, subscription])
+  }, [user, subscription, trialStarted])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
     // Se usuário não estiver logado, salvar plano e redirecionar para signup

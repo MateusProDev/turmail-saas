@@ -12,9 +12,40 @@ import {
   sendEmailVerification
 } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
-import makeInitialUserData from '../lib/initUser'
+import { SignupStateManager, SIGNUP_PHASES } from '../utils/signupStateMachine';
+import { handleAccountCreationError, getAuthErrorMessage } from '../lib/accountRollback';
+import { createCheckoutSession } from '../lib/stripe';
+import makeInitialUserData from '../lib/initUser';
 
 const Login: React.FC = () => {
+  // Funções auxiliares
+  const getPendingPlan = () => {
+    const pendingPlanStr = localStorage.getItem('pendingPlan');
+    if (!pendingPlanStr) return null;
+    try {
+      return JSON.parse(pendingPlanStr);
+    } catch (e) {
+      console.error('Error parsing pending plan:', e);
+      return null;
+    }
+  };
+
+  const clearPendingPlan = () => {
+    localStorage.removeItem('pendingPlan');
+  };
+
+  const createCompleteAccount = async (params: any) => {
+    const response = await fetch('/api/create-complete-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create account');
+    }
+    return response.json();
+  };
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -71,7 +102,7 @@ const Login: React.FC = () => {
             init.displayName = user.displayName || ''
             await setDoc(doc(db, 'users', user.uid), init, { merge: true })
 
-            // Iniciar trial
+            // Iniciar trial (já cria tenant)
             try {
               await fetch('/api/start-trial', {
                 method: 'POST',
@@ -82,17 +113,7 @@ const Login: React.FC = () => {
               console.error('failed to start trial', trialErr)
             }
 
-            // Criar tenant
-            try {
-              const token = await user.getIdToken()
-              await fetch('/api/tenant/create-tenant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ name: user.displayName || `Account ${user.uid}` }),
-              })
-            } catch (tenantErr) {
-              console.error('failed to create tenant', tenantErr)
-            }
+            // Tenant já criado pelo start-trial, não precisa chamar create-tenant novamente
           } catch (setErr) {
             console.error('failed to create user doc', setErr)
           }
@@ -209,84 +230,122 @@ const Login: React.FC = () => {
 
   // Login com Google
   const handleGoogleSignIn = async () => {
-    setLoading(true)
-    setError('')
     try {
-      const provider = new GoogleAuthProvider()
+      setLoading(true);
+      setError('');
+      
+      // Limpar estados expirados
+      const signupManager = new SignupStateManager();
+      signupManager.cleanupExpired();
+      
+      // Registrar início do processo
+      signupManager.setState(SIGNUP_PHASES.AUTH_PROCESSING, {
+        authProvider: 'google',
+        timestamp: Date.now()
+      });
+      
+      const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: 'select_account'
-      })
+      });
       
-      try {
-        const result = await signInWithPopup(auth, provider)
-        const user = result.user
-
-        // Criar documento do usuário se não existir
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Verificar se é novo usuário
+      const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+      
+      if (isNewUser) {
+        const pendingPlan = getPendingPlan();
+        const planId = pendingPlan ? pendingPlan.planId : 'trial';
+        const companyName = pendingPlan?.companyName || '';
+        
+        // Registrar seleção de plano
+        signupManager.setState(SIGNUP_PHASES.PLAN_SELECTED, {
+          planId,
+          planName: pendingPlan?.planName || 'Trial Gratuito',
+          source: 'google'
+        });
+        
+        // Criar conta completa com transação
+        signupManager.setState(SIGNUP_PHASES.CREATING_ACCOUNT, {
+          userId: user.uid,
+          email: user.email
+        });
+        
         try {
-          const init = makeInitialUserData(user.uid, user.email)
-          if (!init.company) init.company = { name: '', website: '' }
-          init.company.name = user.displayName || ''
-          init.photoURL = user.photoURL || ''
-          init.displayName = user.displayName || ''
-          await setDoc(doc(db, 'users', user.uid), init, { merge: true })
-
-          // Iniciar trial
-          try {
-            await fetch('/api/start-trial', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
-            })
-          } catch (trialErr) {
-            console.error('failed to start trial', trialErr)
+          const { requiresPayment } = 
+            await createCompleteAccount({
+              uid: user.uid,
+              email: user.email,
+              name: user.displayName,
+              planId,
+              companyName
+            });
+          
+          // Limpar plano pendente
+          clearPendingPlan();
+          
+          if (requiresPayment) {
+            // Processar pagamento
+            signupManager.setState(SIGNUP_PHASES.PAYMENT_PROCESSING);
+            
+            const priceId = pendingPlan ? 
+              (pendingPlan.billingInterval === 'annual' ? 
+                pendingPlan.priceIdEnvAnnual : 
+                pendingPlan.priceIdEnvMonthly) :
+              'VITE_STRIPE_PRICE_STARTER';
+            
+            const checkout = await createCheckoutSession(
+              priceId, 
+              planId, 
+              user.email
+            );
+            
+            // Redirecionar para Stripe
+            window.location.href = checkout.url;
+            return; // Não continuar aqui, o Stripe redirecionará de volta
+          } else {
+            // Trial: ir direto para dashboard
+            signupManager.setState(SIGNUP_PHASES.COMPLETE);
+            navigate('/dashboard');
           }
-
-          // Criar tenant
-          try {
-            const token = await user.getIdToken()
-            await fetch('/api/tenant/create-tenant', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ name: user.displayName || `Account ${user.uid}` }),
-            })
-          } catch (tenantErr) {
-            console.error('failed to create tenant', tenantErr)
-          }
-        } catch (setErr) {
-          console.error('failed to create user doc', setErr)
+        } catch (creationError: any) {
+          // Rollback automático
+          await handleAccountCreationError(user.uid, creationError);
+          
+          // Registrar erro
+          signupManager.setState(SIGNUP_PHASES.IDLE, {
+            error: creationError.message,
+            phase: 'creating_account'
+          });
+          
+          throw creationError;
         }
-
-        // Verificar se há plano pendente
-        const hasPendingPlan = await processPendingPlan(user)
-        if (hasPendingPlan) {
-          // processPendingPlan já faz o redirecionamento
-          return
-        }
-
-        navigate('/dashboard')
-      } catch (err: any) {
-        console.error('Google sign-in error:', err)
-        if (err.code === 'auth/popup-closed-by-user') {
-          setError('Login cancelado')
-        } else if (err.code === 'auth/popup-blocked') {
-          setError('Pop-up bloqueado. Permita pop-ups para este site.')
-        } else {
-          setError('Erro ao fazer login com Google: ' + err.message)
-        }
-      }
-    } catch (err: any) {
-      console.error('Google login error:', err)
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Login cancelado')
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('Pop-up bloqueado. Permita pop-ups para este site.')
       } else {
-        setError('Erro ao fazer login com Google')
+        // Usuário existente
+        const pendingPlan = getPendingPlan();
+        if (pendingPlan) {
+          // Processar plano pendente
+          await processPendingPlan(user);
+        } else {
+          navigate('/dashboard');
+        }
       }
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      setError(getAuthErrorMessage(error));
+      
+      // Registrar falha
+      const signupManager = new SignupStateManager();
+      signupManager.setState(SIGNUP_PHASES.IDLE, {
+        error: error.message,
+        phase: 'auth_processing'
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Reset de senha
   const handlePasswordReset = async (e: React.FormEvent) => {

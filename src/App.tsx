@@ -19,9 +19,12 @@ import Demo from './pages/Demo'
 import DnsCheck from './pages/DnsCheck'
 import './App.css'
 
+import AccountCreationProgress from './components/AccountCreationProgress';
+
 export default function App() {
   return (
     <BrowserRouter>
+      <AccountCreationProgress />
       <main className="w-full">
         <div className="app-container">
           <Routes> 
