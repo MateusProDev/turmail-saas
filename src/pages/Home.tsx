@@ -91,15 +91,15 @@ export default function Home() {
               <div className="text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
                   <FaShip className="w-4 h-4" />
-                  Email marketing que aumenta reservas para agências de turismo
+                  Aumente suas reservas em até 3x
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
                   Triplique suas reservas com automação de e-mails para turismo
                   <span className="bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent"> comprovada</span>
                 </h1>
 
-                <p className="mt-6 text-xl text-gray-600 max-w-2xl leading-relaxed">
+                <p className="mt-6 text-lg text-gray-600 max-w-2xl leading-relaxed">
                   Envie campanhas automáticas para captar, reter e vender mais viagens. Teste grátis por 14 dias — sem cartão de crédito. Resultados já no primeiro mês.
                 </p>
 
