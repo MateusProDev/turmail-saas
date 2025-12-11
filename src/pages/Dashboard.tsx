@@ -2,21 +2,80 @@
 import { useAuthState } from 'react-firebase-hooks/auth'
 // Use Tailwind for all styles in this file
 import { auth, db } from '../lib/firebase'
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, setDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 import EmailUsageCard from '../components/EmailUsageCard'
 
+// Type definitions
+interface Subscription {
+  id?: string
+  uid: string
+  email: string
+  planId: string
+  status: string
+  limits?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  onboardingCompleted?: boolean
+  onboardingProgress?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  stripeSubscriptionId?: string
+  stripeCustomerId?: string
+  paymentStatus?: string
+  lastPaymentDate?: Date
+  currentPeriodStart?: Date
+  currentPeriodEnd?: Date
+  createdAt?: Date | { seconds: number }
+  updatedAt?: Date
+  trialEndsAt?: Date | { seconds: number }
+  [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+interface Tenant {
+  id?: string
+  ownerUid: string
+  ownerEmail: string
+  name: string
+  plan: string
+  status: string
+  limits?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  onboardingCompleted?: boolean
+  onboardingProgress?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  stripeSubscriptionId?: string
+  createdAt?: Date
+  updatedAt?: Date
+  logoUrl?: string
+  industry?: string
+  [key: string]: any // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+interface OnboardingStep {
+  key: string
+  label: string
+  href: string
+}
+
+interface BrevoStats {
+  sent?: number
+  delivered?: number
+  opened?: number
+  clicked?: number
+  bounced?: number
+  unsubscribed?: number
+  emailStats?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  errors?: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  campaigns?: any[] // eslint-disable-line @typescript-eslint/no-explicit-any
+  [key: string]: unknown
+}
+
 // Helper function to compute open rate
 
 export default function Dashboard(){
   const [user, loading, error] = useAuthState(auth)
-  const [subscription, setSubscription] = useState<any>(null)
-  const [brevoStats, setBrevoStats] = useState<any>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [brevoStats, setBrevoStats] = useState<BrevoStats | null>(null)
   const [loadingBrevo, setLoadingBrevo] = useState(false)
   const [tenantId, setTenantId] = useState<string | null>(null)
-  const [tenant, setTenant] = useState<any>(null)
+  const [tenant, setTenant] = useState<Tenant | null>(null)
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -27,13 +86,13 @@ export default function Dashboard(){
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [isOnboardingReady, setIsOnboardingReady] = useState(false)
   
-  const onboardingStepsDef = [
+  const onboardingStepsDef = useMemo<OnboardingStep[]>(() => [
     { key: 'profile', label: 'Completar perfil (nome, logo)', href: '/settings' },
     { key: 'sending', label: 'Configurar remetente (From email)', href: '/settings' },
     { key: 'contacts', label: 'Importar contatos', href: '/contacts' },
     { key: 'campaign', label: 'Criar primeira campanha', href: '/campaigns' },
     { key: 'test', label: 'Enviar email de teste', href: '/campaigns' },
-  ]
+  ], [])
 
   // Check for checkout success in URL
   const [showSuccessToast, setShowSuccessToast] = useState(false)
@@ -41,16 +100,25 @@ export default function Dashboard(){
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const checkoutSuccess = params.get('checkout')
+    const sessionId = params.get('session_id')
+    const planId = params.get('plan')
+    const uid = params.get('uid')
     
     if (checkoutSuccess === 'success') {
+      console.log('🔄 Processando redirecionamento pós-pagamento...', { sessionId, planId, uid })
+      
       // Show success toast
       setShowSuccessToast(true)
       setTimeout(() => setShowSuccessToast(false), 5000)
+      
       // Mark that checkout just completed so we can show onboarding even if subscription hasn't synced yet
       setCheckoutPending(true)
       
-      // Clean URL
+      // Clean URL immediately to avoid multiple executions
       window.history.replaceState({}, '', '/dashboard')
+      
+      // Optional: Show loading state while webhook processes
+      // This gives time for the webhook to update the database
     }
   }, [])
   
@@ -102,6 +170,7 @@ export default function Dashboard(){
     if (lastStep && subscription && subscription.onboardingProgress && !subscription.onboardingProgress[lastStep]) {
       (async () => {
         try {
+          if (!subscription?.id) return
           const newProgress = { ...(subscription.onboardingProgress || {}), [lastStep]: { completed: true, completedAt: new Date(), autoCompleted: true } }
           const allDone = onboardingStepsDef.every(st => newProgress[st.key])
           await setDoc(doc(db, 'subscriptions', subscription.id), {
@@ -109,12 +178,12 @@ export default function Dashboard(){
             onboardingCompleted: allDone
           }, { merge: true })
           window.sessionStorage.removeItem('onboardingStep')
-        } catch (e) {
+        } catch {
           // Silenciar erro
         }
       })()
     }
-  }, [subscription])
+  }, [subscription, onboardingStepsDef])
 
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {
@@ -153,7 +222,7 @@ export default function Dashboard(){
           const tenantRef = doc(db, 'tenants', firstTenant.tenantId)
           const tenantSnap = await getDoc(tenantRef)
           if (tenantSnap.exists()) {
-            setTenant({ id: tenantSnap.id, ...tenantSnap.data() })
+            setTenant({ id: tenantSnap.id, ...tenantSnap.data() } as Tenant)
           }
         } else {
           console.log('[Dashboard] No tenant found for user')
@@ -176,7 +245,7 @@ export default function Dashboard(){
     const tenantRef = doc(db, 'tenants', tenantId)
     const unsubscribe = onSnapshot(tenantRef, (snap) => {
       if (snap.exists()) {
-        setTenant({ id: snap.id, ...snap.data() })
+        setTenant({ id: snap.id, ...snap.data() } as Tenant)
         console.log('[Dashboard] Tenant data updated:', snap.data())
       }
     })
@@ -189,13 +258,13 @@ export default function Dashboard(){
     if (!user) return
     const subsRef = collection(db, 'subscriptions')
     const qByUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
-    let unsubUid: any = null
-    let unsubEmail: any = null
+    let unsubUid: (() => void) | null = null
+    let unsubEmail: (() => void) | null = null
 
-    const handleSnap = (snap: any) => {
+    const handleSnap = (snap: { empty: boolean; docs: { id: string; data: () => Record<string, unknown> }[] }) => {
       if (!snap.empty) {
         const doc = snap.docs[0]
-        setSubscription({ id: doc.id, ...doc.data() })
+        setSubscription({ id: doc.id, ...doc.data() } as Subscription)
         return true
       }
       return false
@@ -210,7 +279,7 @@ export default function Dashboard(){
         unsubEmail = onSnapshot(qByEmail, (snap2) => {
           if (!snap2.empty) {
             const doc = snap2.docs[0]
-            setSubscription({ id: doc.id, ...doc.data() })
+            setSubscription({ id: doc.id, ...doc.data() } as Subscription)
             setCheckoutPending(false)
           } else {
             setSubscription(null)
@@ -231,8 +300,8 @@ export default function Dashboard(){
     }
   }, [user])
 
-  // recent campaigns listener
-  const [campaigns, setCampaigns] = useState<any[]>([])
+// recent campaigns listener
+  const [campaigns, setCampaigns] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
   useEffect(() => {
     if (!user) return
     try {
@@ -326,13 +395,13 @@ export default function Dashboard(){
   }, [user, tenantId])
 
   // delivery rate (successful deliveries / sent)
-  const getDeliveredCount = (c: any) => {
+  const getDeliveredCount = useCallback((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     return c?.metrics?.delivered ?? c?.delivered ?? c?.stats?.delivered ?? null
-  }
+  }, [])
   
-  const getSentCount = (c: any) => {
+  const getSentCount = useCallback((c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
     return c?.metrics?.sent ?? c?.sent ?? c?.sentCount ?? (c?.to || []).length ?? 0
-  }
+  }, [])
 
   const deliverRate = useMemo(() => {
     // Usar estatísticas isoladas por tenant da Brevo
@@ -346,7 +415,8 @@ export default function Dashboard(){
     }
     
     // Fallback para estatísticas locais das campanhas
-    const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => {
+    const campaigns = brevoStats?.campaigns || []
+    const totals = campaigns.reduce((acc: { sent: number; delivered: number }, c: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       const sent = Number(getSentCount(c) || 0)
       const delivered = Number(getDeliveredCount(c) || 0)
       return { sent: acc.sent + sent, delivered: acc.delivered + delivered }
@@ -356,7 +426,7 @@ export default function Dashboard(){
     // If there were sent emails but no delivered metric recorded, show 100% per user preference
     if (totals.delivered === 0) return 100
     return Math.round((totals.delivered / totals.sent) * 10000) / 100
-  }, [campaigns, brevoStats])
+  }, [campaigns, brevoStats, getDeliveredCount, getSentCount])
 
   // Estatísticas isoladas por tenant
   const brevoMetrics = useMemo(() => {
@@ -450,11 +520,11 @@ export default function Dashboard(){
     navigate('/login')
   }
 
-  const toDate = (t: any) => {
+  const toDate = (t: unknown) => {
     if (!t) return null
-    if (typeof t.toDate === 'function') return t.toDate()
-    if (t.seconds) return new Date(t.seconds * 1000)
-    return new Date(t)
+    if (typeof t === 'object' && t !== null && typeof (t as { toDate?: () => Date }).toDate === 'function') return (t as { toDate: () => Date }).toDate()
+    if (typeof t === 'object' && t !== null && 'seconds' in t) return new Date((t as { seconds: number }).seconds * 1000)
+    return new Date(t as string | number | Date)
   }
 
   // compute trial badge info
@@ -466,7 +536,7 @@ export default function Dashboard(){
       const diff = end.getTime() - Date.now()
       const days = Math.floor(diff / (1000 * 60 * 60 * 24))
       return { days, expired: diff <= 0 }
-    } catch (e) { return null }
+    } catch { return null }
   })()
 
   return (
@@ -666,6 +736,7 @@ export default function Dashboard(){
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={async () => {
+                                  if (!subscription?.id) return
                                   try {
                                     const newProgress = { ...(subscription.onboardingProgress || {}), [s.key]: !done }
                                     const allDone = onboardingStepsDef.every(st => newProgress[st.key])
@@ -706,6 +777,7 @@ export default function Dashboard(){
                       </button>
                       <button 
                         onClick={async () => {
+                          if (!subscription?.id) return
                           try {
                             const newProgress = onboardingStepsDef.reduce((acc, st) => ({ 
                               ...acc, 

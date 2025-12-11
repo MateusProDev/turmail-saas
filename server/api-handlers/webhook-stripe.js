@@ -178,8 +178,10 @@ export default async function handler(req, res) {
       const stripeSubscriptionId = session.subscription || null
       const planId = session.metadata?.planId || null
       const metadataPriceId = session.metadata?.priceId || null
+      const uid = session.metadata?.uid || null
+      const requiresOnboarding = session.metadata?.requiresOnboarding === 'true'
 
-      if (debug) console.log('[webhook-stripe] session', { email, stripeCustomerId, stripeSubscriptionId, planId, metadataPriceId })
+      if (debug) console.log('[webhook-stripe] session', { email, stripeCustomerId, stripeSubscriptionId, planId, metadataPriceId, uid, requiresOnboarding })
 
       // SEGURANÇA: Verificar se o priceId pago corresponde ao planId nos metadados
       if (metadataPriceId) {
@@ -273,6 +275,9 @@ export default async function handler(req, res) {
           ownerUid: ownerUid || null
         }
 
+        // ✅ DETERMINAR SE É TRIAL OU PLANO PAGO
+        const isTrial = planId === 'trial'
+        
         // Adicionar planId e limites se disponíveis
         if (planId) {
           subscriptionData.planId = planId
@@ -281,9 +286,9 @@ export default async function handler(req, res) {
           subscriptionData.limits = planConfig.limits
         }
 
-        // ✅ NOVO: Inicializar onboardingProgress automaticamente
-        subscriptionData.onboardingProgress = getInitialOnboardingProgress(true)
-        subscriptionData.onboardingCompleted = false // Mantém modal visível para próximos passos
+        // ✅ CRÍTICO: Trial NÃO precisa de onboarding, Pagos SIM
+        subscriptionData.onboardingProgress = getInitialOnboardingProgress(!isTrial)
+        subscriptionData.onboardingCompleted = isTrial // false para planos pagos, true para trial
 
         // Se esta sessão representa uma compra de addon
         if (session.metadata?.itemType === 'addon' && session.metadata?.itemId) {
@@ -345,15 +350,25 @@ export default async function handler(req, res) {
         const subRef = db.collection('subscriptions').doc(stripeSubscriptionId)
         const existingSub = await subRef.get()
         
+        // Adicionar campos adicionais para planos pagos
+        if (!isTrial) {
+          subscriptionData.paymentStatus = 'paid'
+          subscriptionData.lastPaymentDate = new Date()
+          subscriptionData.currentPeriodStart = new Date()
+          subscriptionData.currentPeriodEnd = new Date(session.subscription_details?.current_period_end * 1000 || Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 dias padrão
+          subscriptionData.stripeSubscriptionId = stripeSubscriptionId
+          subscriptionData.updatedAt = admin.firestore.FieldValue.serverTimestamp()
+        }
+        
         if (existingSub.exists) {
           console.log('[webhook-stripe] Subscription existe, atualizando:', stripeSubscriptionId)
           await subRef.set(Object.assign({}, subscriptionData, { 
-            updatedAt: new Date() 
+            updatedAt: admin.firestore.FieldValue.serverTimestamp() 
           }), { merge: true })
         } else {
           console.log('[webhook-stripe] Criando subscription document:', stripeSubscriptionId)
           await subRef.set(Object.assign({}, subscriptionData, { 
-            createdAt: new Date() 
+            createdAt: admin.firestore.FieldValue.serverTimestamp() 
           }))
         }
         
@@ -376,8 +391,11 @@ export default async function handler(req, res) {
           
           tenantUpdateData.onboardingProgress = {
             ...currentProgress,
-            ...getInitialOnboardingProgress(true)
+            ...getInitialOnboardingProgress(!isTrial)
           }
+          
+          // ✅ CRÍTICO: Se for plano pago, garantir que onboardingCompleted = false
+          tenantUpdateData.onboardingCompleted = isTrial
           
           // Se tenant estava em trial, marcar como completo
           if (currentData.status === 'trial') {

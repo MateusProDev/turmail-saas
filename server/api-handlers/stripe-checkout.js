@@ -96,8 +96,8 @@ export default async function handler(req, res) {
     const stripe = new Stripe(secret)
 
     const host = process.env.DEFAULT_HOST ? (process.env.DEFAULT_HOST.startsWith('http') ? process.env.DEFAULT_HOST : `https://${process.env.DEFAULT_HOST}`) : `https://` + (req.headers.host || 'localhost')
-    const successUrl = `${host}/success`
-    const cancelUrl = `${host}/plans?cancel=1`
+    const successUrl = `${host}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}&plan=${planId}&uid=${decodedToken.uid}`
+    const cancelUrl = `${host}/plans?cancel=1&plan=${planId}`
 
     const sessionConfig = {
       mode: 'subscription',
@@ -108,18 +108,16 @@ export default async function handler(req, res) {
       metadata: { 
         priceId, // guardar priceId para double-check no webhook
         uid: decodedToken.uid, // Guardar UID do usuário autenticado
+        email: verifiedEmail, // Email verificado
+        planId: planId, // ID do plano
+        planName: planConfig?.name || planId, // Nome do plano
+        timestamp: Date.now().toString(), // Timestamp para idempotência
+        requiresOnboarding: planId !== 'trial' ? 'true' : 'false', // Planos pagos precisam de onboarding
+        source: 'stripe_checkout' // Origem da transação
       },
-    }
-
-    // Incluir metadata específica dependendo do tipo (plano ou addon)
-    if (planId) sessionConfig.metadata.planId = planId
-    if (addonId) {
-      sessionConfig.metadata.itemType = 'addon'
-      sessionConfig.metadata.itemId = addonId
-    }
-
-    if (verifiedEmail) {
-      sessionConfig.customer_email = verifiedEmail
+      customer_email: verifiedEmail,
+      client_reference_id: decodedToken.uid,
+      redirect_on_completion: 'always'
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig)
