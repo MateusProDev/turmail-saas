@@ -329,12 +329,6 @@ export default function Dashboard(){
 
   // subscription listener (ownerUid preferred, fallback to email)
   useEffect(() => {
-    if (!user) {
-      console.log('[Dashboard] No user, skipping subscription query')
-      return
-    }
-  // subscription listener (ownerUid preferred, fallback to email)
-  useEffect(() => {
     if (!user || !user.uid || !user.email) {
       console.log('[Dashboard] User not fully loaded yet:', { user: !!user, uid: user?.uid, email: user?.email })
       return
@@ -436,7 +430,6 @@ export default function Dashboard(){
       if (unsubUid) unsubUid()
       if (unsubEmail) unsubEmail()
     }
-  }, [user])
   }, [user])
 
 // recent campaigns listener
