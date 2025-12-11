@@ -104,9 +104,13 @@ const Login: React.FC = () => {
 
             // Iniciar trial (já cria tenant)
             try {
+              const token = await user.getIdToken()
               await fetch('/api/start-trial', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
               })
             } catch (trialErr) {
@@ -153,9 +157,13 @@ const Login: React.FC = () => {
 
       // Se for trial, iniciar trial
       if (planId === 'trial') {
+        const token = await user.getIdToken()
         const resp = await fetch('/api/start-trial', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
         if (resp.ok) {
@@ -426,9 +434,13 @@ const Login: React.FC = () => {
           await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
           // Start trial
           try {
+            const token = await userCred.user.getIdToken()
             await fetch('/api/start-trial', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ uid: userCred.user.uid, email: userCred.user.email, planId: 'free' }),
             })
           } catch (trialErr) {

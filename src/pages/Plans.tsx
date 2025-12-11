@@ -199,10 +199,14 @@ export default function Plans() {
     if (plan.id === 'trial' || plan.price === 0) {
       try {
         setLoading(true)
+        const token = await user.getIdToken()
         // Call server endpoint to start a 7-day trial
         const resp = await fetch('/api/start-trial', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
         const json = await resp.json()
