@@ -1057,7 +1057,7 @@ export default function Dashboard(){
               role="dialog" 
               aria-modal="true" 
               aria-label="Onboarding" 
-              className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-4 z-50 animate-scaleIn border border-slate-200/50 max-h-[90vh] overflow-y-auto"
+              className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 z-50 animate-scaleIn border border-slate-200/50"
               onClick={(e) => e.stopPropagation()}
             >
               {!subscription && checkoutPending ? (
@@ -1110,8 +1110,8 @@ export default function Dashboard(){
                     const done = !!progress[step.key]
                     
                     return (
-                      <div className="mb-4">
-                        <div className={`p-4 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="mb-5">
+                        <div className={`p-5 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
                           <div className="flex items-start gap-4">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
                               {done ? '✓' : currentStep + 1}
@@ -1121,67 +1121,69 @@ export default function Dashboard(){
                               
                               {/* Formulários específicos por passo */}
                               {step.key === 'profile' && (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                   <p className="text-sm text-slate-600 leading-relaxed">
                                     Configure o nome e logo da sua empresa para personalizar seus emails.
                                   </p>
                                   
-                                  {/* Nome da empresa */}
-                                  <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                      Nome da Empresa *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      value={companyName}
-                                      onChange={(e) => setCompanyName(e.target.value)}
-                                      placeholder="Digite o nome da sua empresa"
-                                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
-                                    />
-                                  </div>
-                                  
-                                  {/* Upload de logo */}
-                                  <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                      Logo da Empresa (opcional)
-                                    </label>
-                                    <div className="flex items-center gap-3">
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0]
-                                          if (file) {
-                                            setLogoFile(file)
-                                            const reader = new FileReader()
-                                            reader.onloadend = () => {
-                                              setLogoPreview(reader.result as string)
-                                            }
-                                            reader.readAsDataURL(file)
-                                          }
-                                        }}
-                                        className="hidden"
-                                        id="logo-upload"
-                                      />
-                                      <label
-                                        htmlFor="logo-upload"
-                                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors text-sm"
-                                      >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        Escolher imagem
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Nome da empresa */}
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Nome da Empresa *
                                       </label>
-                                      {logoPreview && (
-                                        <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-300">
-                                          <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
-                                        </div>
-                                      )}
-                                      {uploadingLogo && (
-                                        <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
-                                      )}
+                                      <input
+                                        type="text"
+                                        value={companyName}
+                                        onChange={(e) => setCompanyName(e.target.value)}
+                                        placeholder="Digite o nome da sua empresa"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-sm"
+                                      />
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-1">Máximo 2MB, formatos: JPG, PNG, GIF</p>
+                                    
+                                    {/* Upload de logo */}
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Logo da Empresa (opcional)
+                                      </label>
+                                      <div className="flex items-center gap-3">
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) {
+                                              setLogoFile(file)
+                                              const reader = new FileReader()
+                                              reader.onloadend = () => {
+                                                setLogoPreview(reader.result as string)
+                                              }
+                                              reader.readAsDataURL(file)
+                                            }
+                                          }}
+                                          className="hidden"
+                                          id="logo-upload"
+                                        />
+                                        <label
+                                          htmlFor="logo-upload"
+                                          className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors text-sm"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                          </svg>
+                                          Escolher imagem
+                                        </label>
+                                        {logoPreview && (
+                                          <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-300">
+                                            <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                          </div>
+                                        )}
+                                        {uploadingLogo && (
+                                          <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-slate-500 mt-1">Máximo 2MB, formatos: JPG, PNG, GIF</p>
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -1192,7 +1194,7 @@ export default function Dashboard(){
                                     Adicione seu primeiro contato para começar a enviar emails.
                                   </p>
                                   
-                                  <div className="grid grid-cols-1 gap-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                       <label className="block text-sm font-medium text-slate-700 mb-1">
                                         Nome (opcional)
@@ -1277,7 +1279,7 @@ export default function Dashboard(){
                               {/* Link para página completa (sempre disponível) */}
                               <a 
                                 href={step.href} 
-                                className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
+                                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
                               >
                                 Ir para {step.key === 'profile' ? 'Configurações' : step.key === 'contacts' ? 'Contatos' : step.key === 'campaign' ? 'Campanhas' : 'Campanhas'}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1292,11 +1294,11 @@ export default function Dashboard(){
                   })()}
 
                   {/* Navegação */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <button 
                       onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                       disabled={currentStep === 0}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -1307,7 +1309,7 @@ export default function Dashboard(){
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => setOnboardingOpen(false)}
-                        className="px-3 py-1.5 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
+                        className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
                       >
                         Depois
                       </button>
@@ -1356,7 +1358,7 @@ export default function Dashboard(){
                               (step.key === 'test' && sendingTestEmail) ||
                               uploadingLogo
                             }
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all shadow-sm ${
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
                               done 
                                 ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' 
                                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
@@ -1397,7 +1399,7 @@ export default function Dashboard(){
                               alert('Erro ao marcar onboarding como completo')
                             }
                           }} 
-                          className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
+                          className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
                         >
                           Finalizar
                         </button>
