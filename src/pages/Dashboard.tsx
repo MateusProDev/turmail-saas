@@ -362,109 +362,52 @@ export default function Dashboard(){
     return () => unsubscribe()
   }, [tenantId])
 
-  // subscription listener - VERSÃO SIMPLIFICADA E ESTÁVEL
+  // subscription via API - MAIS SEGURO E CONSISTENTE
   useEffect(() => {
-    if (!user || !user.uid || !user.email) {
-      console.log('[Dashboard] User not ready for subscription listener')
+    if (!user || !user.uid || !tenantId) {
+      console.log('[Dashboard] User or tenant not ready for subscription fetch')
       setSubscription(null)
       return
     }
 
-    console.log('[Dashboard] Setting up SINGLE subscription listener for user:', user.uid)
-    const subsRef = collection(db, 'subscriptions')
-
-    let unsubscribe: (() => void) | null = null
-    let isActive = true
-
-    // ✅ ÚNICA estratégia: buscar por uid primeiro, depois email como fallback
-    const setupListener = async () => {
+    const fetchSubscription = async () => {
       try {
-        // Primeiro tenta buscar por uid
-        console.log('[Dashboard] Creating uid query for:', user.uid)
-        const qByUid = query(subsRef, where('uid', '==', user.uid), limit(1))
+        console.log('[Dashboard] Fetching subscription via API for tenant:', tenantId)
+        const token = await user.getIdToken()
+        const response = await fetch(`/api/subscription?tenantId=${tenantId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
 
-        unsubscribe = onSnapshot(qByUid,
-          (snapshot) => {
-            if (!isActive) return
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`)
+        }
 
-            console.log('[Dashboard] Uid query snapshot received:', {
-              empty: snapshot.empty,
-              docsCount: snapshot.docs.length
-            })
+        const data = await response.json()
+        console.log('[Dashboard] Subscription API response:', data)
 
-            if (!snapshot.empty) {
-              const doc = snapshot.docs[0]
-              const data = { id: doc.id, ...doc.data() } as Subscription
-
-              console.log('[Dashboard] Found subscription by uid:', {
-                id: doc.id,
-                status: data.status,
-                planId: data.planId
-              })
-
-              setSubscription(data)
-              setCheckoutPending(false) // Se encontrou, não está mais em checkout pending
-              return
-            }
-
-            // Se não encontrou por uid, tenta por email
-            console.log('[Dashboard] No subscription found by uid, trying email fallback')
-            if (unsubscribe) unsubscribe()
-
-            const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
-            unsubscribe = onSnapshot(qByEmail,
-              (emailSnapshot) => {
-                if (!isActive) return
-
-                console.log('[Dashboard] Email query snapshot received:', {
-                  empty: emailSnapshot.empty,
-                  docsCount: emailSnapshot.docs.length
-                })
-
-                if (!emailSnapshot.empty) {
-                  const doc = emailSnapshot.docs[0]
-                  const data = { id: doc.id, ...doc.data() } as Subscription
-
-                  console.log('[Dashboard] Found subscription by email:', {
-                    id: doc.id,
-                    email: data.email
-                  })
-
-                  setSubscription(data)
-                  setCheckoutPending(false)
-                } else {
-                  console.log('[Dashboard] No subscription found by any method')
-                  setSubscription(null)
-                }
-              },
-              (err) => {
-                if (!isActive) return
-                console.error('[Dashboard] Email query error:', err)
-                setSubscription(null)
-              }
-            )
-          },
-          (err) => {
-            if (!isActive) return
-            console.error('[Dashboard] Uid query error:', err)
-            setSubscription(null)
+        if (data.subscription) {
+          console.log('[Dashboard] Subscription loaded via API:', {
+            id: data.subscription.id,
+            status: data.subscription.status,
+            planId: data.subscription.planId
+          })
+          setSubscription(data.subscription)
+          // Se carregou subscription com sucesso, não está mais em checkout pending
+          if (checkoutPending) {
+            setCheckoutPending(false)
           }
-        )
-      } catch (err) {
-        if (!isActive) return
-        console.error('[Dashboard] Error setting up subscription listener:', err)
+        } else {
+          console.log('[Dashboard] No subscription found via API')
+          setSubscription(null)
+        }
+      } catch (error) {
+        console.error('[Dashboard] Error fetching subscription via API:', error)
         setSubscription(null)
       }
     }
 
-    setupListener()
-
-    return () => {
-      console.log('[Dashboard] Cleaning up subscription listener')
-      isActive = false
-      if (unsubscribe) unsubscribe()
-    }
-  }, [user?.uid, user?.email]) // ✅ Dependências mais estáveis
+    fetchSubscription()
+  }, [user?.uid, tenantId]) // ✅ Dependências corretas
 
 // recent campaigns listener
   const [campaigns, setCampaigns] = useState<any[]>([]) // eslint-disable-line @typescript-eslint/no-explicit-any
