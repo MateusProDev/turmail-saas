@@ -104,10 +104,6 @@ export default function Dashboard(){
   const [testEmailSent, setTestEmailSent] = useState(false)
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
   
-  // Test email states
-  const [sendingTestEmail, setSendingTestEmail] = useState(false)
-  const [testEmailSent, setTestEmailSent] = useState(false)
-  
   // Estado simplificado de carregamento
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   
@@ -1105,23 +1101,46 @@ export default function Dashboard(){
 
                   {/* Header com progresso */}
                   <div className="text-center mb-4">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-1">👋 Bem-vindo ao Turmail</h3>
-                    <p className="text-sm text-slate-600">Vamos configurar sua conta</p>
+                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-2 rounded-full mb-3">
+                      <span className="text-2xl">👋</span>
+                      <span className="text-sm font-medium text-indigo-700">Bem-vindo ao Turmail</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-1">Vamos configurar sua conta</h3>
+                    <p className="text-sm text-slate-600">Siga os passos abaixo para começar a enviar emails incríveis</p>
                   </div>
 
                   {/* Indicador de progresso */}
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          currentStep >= 0 ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {currentStep > 0 ? '✓' : '1'}
+                        </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          currentStep >= 1 ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {currentStep > 1 ? '✓' : '2'}
+                        </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          currentStep >= 2 ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {currentStep > 2 ? '✓' : '3'}
+                        </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          currentStep >= 3 ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {currentStep > 3 ? '✓' : '4'}
+                        </div>
+                      </div>
                       <span className="text-sm font-medium text-slate-700">
-                        Passo {currentStep + 1} de {onboardingStepsDef.length}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {Math.round(((currentStep + 1) / onboardingStepsDef.length) * 100)}%
+                        {Math.round(((currentStep + 1) / onboardingStepsDef.length) * 100)}% concluído
                       </span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                    <div className="w-full bg-slate-200 rounded-full h-2">
                       <div 
-                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-300"
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${((currentStep + 1) / onboardingStepsDef.length) * 100}%` }}
                       ></div>
                     </div>
@@ -1135,13 +1154,21 @@ export default function Dashboard(){
                     
                     return (
                       <div className="mb-5">
-                        <div className={`p-5 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className={`p-6 rounded-2xl border-2 transition-all duration-300 shadow-sm ${
+                          done 
+                            ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200 shadow-emerald-100' 
+                            : 'bg-gradient-to-br from-slate-50 to-indigo-50/30 border-slate-200 shadow-slate-100'
+                        }`}>
                           <div className="flex items-start gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0 transition-all duration-300 ${
+                              done 
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' 
+                                : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-200'
+                            }`}>
                               {done ? '✓' : currentStep + 1}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-base font-semibold text-slate-900 mb-1">{step.label}</h4>
+                              <h4 className="text-lg font-semibold text-slate-900 mb-2">{step.label}</h4>
                               
                               {/* Formulários específicos por passo */}
                               {step.key === 'profile' && (
@@ -1320,7 +1347,7 @@ export default function Dashboard(){
                               {/* Link para página completa (sempre disponível) */}
                               <a 
                                 href={step.href} 
-                                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
+                                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-sm"
                               >
                                 Ir para {step.key === 'profile' ? 'Configurações' : step.key === 'contacts' ? 'Contatos' : step.key === 'campaign' ? 'Campanhas' : 'Campanhas'}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1339,7 +1366,7 @@ export default function Dashboard(){
                     <button 
                       onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                       disabled={currentStep === 0}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:text-slate-800 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 rounded-lg"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -1347,7 +1374,7 @@ export default function Dashboard(){
                       Anterior
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <button 
                         onClick={() => {
                           setOnboardingOpen(false)
@@ -1356,9 +1383,9 @@ export default function Dashboard(){
                             setCheckoutPending(false)
                           }
                         }}
-                        className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
+                        className="px-4 py-2.5 text-sm text-slate-600 hover:text-slate-800 font-medium transition-all duration-200 hover:bg-slate-50 rounded-lg"
                       >
-                        Depois
+                        Fazer depois
                       </button>
                       
                       {(() => {
@@ -1405,10 +1432,10 @@ export default function Dashboard(){
                               (step.key === 'test' && sendingTestEmail) ||
                               uploadingLogo
                             }
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
+                            className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg ${
                               done 
-                                ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' 
-                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                                ? 'bg-white border-2 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400' 
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white hover:shadow-xl hover:scale-105'
                             }`}
                           >
                             {uploadingLogo || sendingTestEmail ? (
@@ -1447,7 +1474,7 @@ export default function Dashboard(){
                               alert('Erro ao marcar onboarding como completo')
                             }
                           }} 
-                          className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
+                          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                         >
                           Finalizar
                         </button>
