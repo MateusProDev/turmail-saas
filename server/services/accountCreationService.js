@@ -81,7 +81,7 @@ class AccountCreationService {
         createdAt: timestamp,
         subscriptionId,
         onboardingProgress: this.getInitialOnboardingProgress(planId === 'trial'),
-        onboardingCompleted: planId === 'trial'
+        onboardingCompleted: false
       };
       
       const subscriptionData = {
@@ -97,7 +97,7 @@ class AccountCreationService {
         tenantId,
         source,
         onboardingProgress: this.getInitialOnboardingProgress(planId === 'trial'),
-        onboardingCompleted: planId === 'trial'
+        onboardingCompleted: false
       };
       
       const memberData = {
