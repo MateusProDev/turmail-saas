@@ -140,7 +140,7 @@ export default function Contacts() {
       if (!snap.empty) {
         setSubscription({ id: snap.docs[0].id, ...snap.docs[0].data() })
       }
-    })
+    }) 
     
     return () => unsub()
   }, [user])
