@@ -68,9 +68,10 @@ export default async function handler(req, res) {
     // Se for um plano, validaremos a configuração do plano
     let planId = null
     let addonId = null
+    let planConfig = null
     if (mapped.type === 'plan') {
       planId = mapped.id
-      const planConfig = PLANS[planId]
+      planConfig = PLANS[planId]
       if (!planConfig) {
         console.error('[stripe-checkout] Plan not found:', planId)
         return res.status(400).json({ error: 'Plan configuration not found' })
