@@ -63,10 +63,15 @@ const Login: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   
   useEffect(() => {
+    console.log('[Login] useEffect: Checking URL params and pending plan')
     const params = new URLSearchParams(window.location.search)
     const pendingPlanStr = localStorage.getItem('pendingPlan')
+    console.log('[Login] URL params:', Object.fromEntries(params.entries()))
+    console.log('[Login] pendingPlanStr from localStorage:', pendingPlanStr)
     if (params.get('signup') === '1') {
+      console.log('[Login] signup=1 detected, setting isSignup to true')
       if (!pendingPlanStr) {
+        console.log('[Login] No pending plan, redirecting to /plans')
         navigate('/plans', { replace: true })
         return
       }
@@ -76,36 +81,44 @@ const Login: React.FC = () => {
     if (pendingPlanStr) {
       try {
         const pendingPlan = JSON.parse(pendingPlanStr)
+        console.log('[Login] Parsed pending plan:', pendingPlan)
         setSelectedPlan(pendingPlan)
       } catch (e) {
-        console.error('Error parsing pending plan:', e)
+        console.error('[Login] Error parsing pending plan:', e)
       }
     }
   }, [navigate])
 
   // Verificar resultado do redirect do Google OAuth
   useEffect(() => {
+    console.log('[Login] useEffect: Checking Google redirect result')
     const checkRedirectResult = async () => {
       try {
+        console.log('[Login] Calling getRedirectResult')
         const result = await getRedirectResult(auth)
+        console.log('[Login] getRedirectResult result:', result)
         
         if (result && result.user) {
+          console.log('[Login] Google signin successful, user:', result.user.uid, result.user.email)
           setLoading(true)
           const user = result.user
 
           // Criar documento do usuário se não existir
           try {
+            console.log('[Login] Creating user document in Firestore')
             const init = makeInitialUserData(user.uid, user.email)
             if (!init.company) init.company = { name: '', website: '' }
             init.company.name = user.displayName || ''
             init.photoURL = user.photoURL || ''
             init.displayName = user.displayName || ''
             await setDoc(doc(db, 'users', user.uid), init, { merge: true })
+            console.log('[Login] User document created successfully')
 
             // Iniciar trial (já cria tenant)
             try {
+              console.log('[Login] Starting trial via /api/start-trial')
               const token = await user.getIdToken()
-              await fetch('/api/start-trial', {
+              const resp = await fetch('/api/start-trial', {
                 method: 'POST',
                 headers: { 
                   'Content-Type': 'application/json',
@@ -113,26 +126,38 @@ const Login: React.FC = () => {
                 },
                 body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'free' }),
               })
+              console.log('[Login] /api/start-trial response status:', resp.status)
+              if (!resp.ok) {
+                console.error('[Login] /api/start-trial failed:', await resp.text())
+              } else {
+                console.log('[Login] Trial started successfully')
+              }
             } catch (trialErr) {
-              console.error('failed to start trial', trialErr)
+              console.error('[Login] Failed to start trial:', trialErr)
             }
 
             // Tenant já criado pelo start-trial, não precisa chamar create-tenant novamente
           } catch (setErr) {
-            console.error('failed to create user doc', setErr)
+            console.error('[Login] Failed to create user doc:', setErr)
           }
 
           // Verificar se há plano pendente
+          console.log('[Login] Checking for pending plan after Google signin')
           const hasPendingPlan = await processPendingPlan(user)
+          console.log('[Login] Google signin - hasPendingPlan:', hasPendingPlan)
           if (hasPendingPlan) {
+            console.log('[Login] Pending plan processed, redirection handled by processPendingPlan')
             // processPendingPlan já faz o redirecionamento
             return
           }
 
+          console.log('[Login] No pending plan, navigating to /dashboard')
           navigate('/dashboard')
+        } else {
+          console.log('[Login] No redirect result, user not signed in via redirect')
         }
       } catch (err: any) {
-        console.error('Redirect result error:', err)
+        console.error('[Login] Redirect result error:', err)
         if (err.code && err.code !== 'auth/popup-closed-by-user') {
           setError('Erro ao fazer login com Google')
         }
@@ -146,18 +171,63 @@ const Login: React.FC = () => {
 
   // Processar checkout de plano pendente
   const processPendingPlan = async (user: any) => {
+    console.log('[processPendingPlan] Called with user:', user.uid, user.email)
     const pendingPlanStr = localStorage.getItem('pendingPlan')
-    if (!pendingPlanStr) return false
+    console.log('[processPendingPlan] pendingPlanStr:', pendingPlanStr)
+    if (!pendingPlanStr) {
+      console.log('[processPendingPlan] No pending plan found, returning false')
+      return false
+    }
 
     try {
       const pendingPlan = JSON.parse(pendingPlanStr)
       const { planId, priceIdEnvMonthly, priceIdEnvAnnual, billingInterval } = pendingPlan
+      console.log('[processPendingPlan] Processing pending plan:', { planId, billingInterval, priceIdEnvMonthly, priceIdEnvAnnual })
 
       // Do not remove pendingPlan yet — remove only after successful checkout/trial creation
 
       // Se for trial, iniciar trial
       if (planId === 'trial') {
+        console.log('[processPendingPlan] Plan is trial, starting trial process')
         const token = await user.getIdToken()
+        console.log('[processPendingPlan] Got user token')
+
+        // Primeiro verificar se já existe subscription
+        console.log('[processPendingPlan] Checking existing tenants and subscriptions')
+        const checkResp = await fetch('/api/my-tenants', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        console.log('[processPendingPlan] /api/my-tenants response status:', checkResp.status)
+        if (checkResp.ok) {
+          const tenantsData = await checkResp.json()
+          console.log('[processPendingPlan] Tenants data:', tenantsData)
+          if (tenantsData.tenants && tenantsData.tenants.length > 0) {
+            const tenantId = tenantsData.tenants[0].tenantId
+            console.log('[processPendingPlan] Found tenant:', tenantId)
+            const subResp = await fetch(`/api/subscription?tenantId=${tenantId}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            console.log('[processPendingPlan] /api/subscription response status:', subResp.status)
+            if (subResp.ok) {
+              const subData = await subResp.json()
+              console.log('[processPendingPlan] Subscription data:', subData)
+              if (subData.subscription) {
+                console.log('[processPendingPlan] User already has subscription, skipping trial creation')
+                localStorage.removeItem('pendingPlan')
+                navigate('/dashboard')
+                return true
+              }
+            } else {
+              console.error('[processPendingPlan] Failed to fetch subscription:', await subResp.text())
+            }
+          } else {
+            console.log('[processPendingPlan] No tenants found')
+          }
+        } else {
+          console.error('[processPendingPlan] Failed to fetch tenants:', await checkResp.text())
+        }
+        
+        console.log('[processPendingPlan] Starting trial via /api/start-trial')
         const resp = await fetch('/api/start-trial', {
           method: 'POST',
           headers: { 
@@ -166,31 +236,38 @@ const Login: React.FC = () => {
           },
           body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
+        console.log('[processPendingPlan] /api/start-trial response status:', resp.status)
         if (resp.ok) {
+          const json = await resp.json()
+          console.log('[processPendingPlan] Trial created successfully:', json)
           // trial created successfully — remove pendingPlan and go to dashboard
           localStorage.removeItem('pendingPlan')
+          console.log('[processPendingPlan] Removed pending plan, navigating to /dashboard')
           navigate('/dashboard')
           return true
         } else {
           // Keep pendingPlan so user can retry; surface error
           const json = await resp.json().catch(() => ({}))
-          console.error('start-trial failed', json)
+          console.error('[processPendingPlan] start-trial failed:', json)
           alert('Falha ao iniciar trial automático. Tente novamente.')
           return false
         }
       }
 
       // Obter Price ID do plano
+      console.log('[processPendingPlan] Plan is not trial, getting price ID')
       const envKey = billingInterval === 'annual' ? priceIdEnvAnnual : priceIdEnvMonthly
       const priceId = envKey ? (import.meta as any).env[envKey] : null
+      console.log('[processPendingPlan] Price ID:', priceId)
 
       if (!priceId) {
-        console.error('Price ID not found for pending plan')
+        console.error('[processPendingPlan] Price ID not found for pending plan')
         alert('Plano selecionado não está configurado corretamente. Contate o suporte.')
         return false
       }
 
       // Criar sessão de checkout
+      console.log('[processPendingPlan] Creating Stripe checkout session')
       const token = await user.getIdToken()
       const checkoutResp = await fetch('/api/stripe-checkout', {
         method: 'POST',
@@ -204,21 +281,24 @@ const Login: React.FC = () => {
           email: user.email 
         }),
       })
+      console.log('[processPendingPlan] /api/stripe-checkout response status:', checkoutResp.status)
 
       const checkoutData = await checkoutResp.json()
+      console.log('[processPendingPlan] Checkout data:', checkoutData)
       if (checkoutData?.url) {
         // Remove pendingPlan only after we successfully created a session
         localStorage.removeItem('pendingPlan')
+        console.log('[processPendingPlan] Removed pending plan, redirecting to Stripe checkout:', checkoutData.url)
         // Redirecionar para Stripe Checkout
         window.location.href = checkoutData.url
         return true
       } else {
-        console.error('checkout session creation failed', checkoutData)
+        console.error('[processPendingPlan] Checkout session creation failed', checkoutData)
         alert('Falha ao iniciar pagamento. Tente novamente.')
         return false
       }
     } catch (err) {
-      console.error('Error processing pending plan:', err)
+      console.error('[processPendingPlan] Error processing pending plan:', err)
       // Keep pendingPlan so user can retry
       alert('Erro ao processar o plano pendente. Verifique sua conexão e tente novamente.')
     }
@@ -238,15 +318,18 @@ const Login: React.FC = () => {
 
   // Login com Google
   const handleGoogleSignIn = async () => {
+    console.log('[handleGoogleSignIn] Starting Google sign-in process')
     try {
       setLoading(true);
       setError('');
       
       // Limpar estados expirados
+      console.log('[handleGoogleSignIn] Cleaning up expired states')
       const signupManager = new SignupStateManager();
       signupManager.cleanupExpired();
       
       // Registrar início do processo
+      console.log('[handleGoogleSignIn] Setting signup state to AUTH_PROCESSING')
       signupManager.setState(SIGNUP_PHASES.AUTH_PROCESSING, {
         authProvider: 'google',
         timestamp: Date.now()
@@ -257,18 +340,24 @@ const Login: React.FC = () => {
         prompt: 'select_account'
       });
       
+      console.log('[handleGoogleSignIn] Calling signInWithPopup')
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      console.log('[handleGoogleSignIn] Sign-in successful, user:', user.uid, user.email)
       
       // Verificar se é novo usuário
       const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+      console.log('[handleGoogleSignIn] Is new user:', isNewUser)
       
       if (isNewUser) {
+        console.log('[handleGoogleSignIn] New user detected, processing signup')
         const pendingPlan = getPendingPlan();
         const planId = pendingPlan ? pendingPlan.planId : 'trial';
         const companyName = pendingPlan?.companyName || '';
+        console.log('[handleGoogleSignIn] Pending plan:', pendingPlan, 'planId:', planId)
         
         // Registrar seleção de plano
+        console.log('[handleGoogleSignIn] Setting signup state to PLAN_SELECTED')
         signupManager.setState(SIGNUP_PHASES.PLAN_SELECTED, {
           planId,
           planName: pendingPlan?.planName || 'Trial Gratuito',
@@ -276,12 +365,14 @@ const Login: React.FC = () => {
         });
         
         // Criar conta completa com transação
+        console.log('[handleGoogleSignIn] Setting signup state to CREATING_ACCOUNT')
         signupManager.setState(SIGNUP_PHASES.CREATING_ACCOUNT, {
           userId: user.uid,
           email: user.email
         });
         
         try {
+          console.log('[handleGoogleSignIn] Calling createCompleteAccount')
           const { requiresPayment } = 
             await createCompleteAccount({
               uid: user.uid,
@@ -290,11 +381,13 @@ const Login: React.FC = () => {
               planId,
               companyName
             });
+          console.log('[handleGoogleSignIn] createCompleteAccount result:', { requiresPayment })
           
           // Limpar plano pendente
           clearPendingPlan();
           
           if (requiresPayment) {
+            console.log('[handleGoogleSignIn] Payment required, setting state to PAYMENT_PROCESSING')
             // Processar pagamento
             signupManager.setState(SIGNUP_PHASES.PAYMENT_PROCESSING);
             
@@ -303,22 +396,26 @@ const Login: React.FC = () => {
                 pendingPlan.priceIdEnvAnnual : 
                 pendingPlan.priceIdEnvMonthly) :
               'VITE_STRIPE_PRICE_STARTER';
+            console.log('[handleGoogleSignIn] Price ID for checkout:', priceId)
             
             const checkout = await createCheckoutSession(
               priceId, 
               planId, 
               user.email
             );
+            console.log('[handleGoogleSignIn] Checkout session created:', checkout.url)
             
             // Redirecionar para Stripe
             window.location.href = checkout.url;
             return; // Não continuar aqui, o Stripe redirecionará de volta
           } else {
+            console.log('[handleGoogleSignIn] No payment required, setting state to COMPLETE and navigating to dashboard')
             // Trial: ir direto para dashboard
             signupManager.setState(SIGNUP_PHASES.COMPLETE);
             navigate('/dashboard');
           }
         } catch (creationError: any) {
+          console.error('[handleGoogleSignIn] Account creation error:', creationError)
           // Rollback automático
           await handleAccountCreationError(user.uid, creationError);
           
@@ -331,17 +428,20 @@ const Login: React.FC = () => {
           throw creationError;
         }
       } else {
+        console.log('[handleGoogleSignIn] Existing user, checking for pending plan')
         // Usuário existente
         const pendingPlan = getPendingPlan();
         if (pendingPlan) {
+          console.log('[handleGoogleSignIn] Processing pending plan for existing user')
           // Processar plano pendente
           await processPendingPlan(user);
         } else {
+          console.log('[handleGoogleSignIn] No pending plan, navigating to dashboard')
           navigate('/dashboard');
         }
       }
     } catch (error: any) {
-      console.error('Google sign-in error:', error);
+      console.error('[handleGoogleSignIn] Error:', error);
       setError(getAuthErrorMessage(error));
       
       // Registrar falha
@@ -394,11 +494,15 @@ const Login: React.FC = () => {
     setSuccess('')
     setLoading(true)
 
+    console.log('[submit] Form submitted, isSignup:', isSignup, 'email:', email)
+
     try {
       // Validações de signup
       if (isSignup) {
+        console.log('[submit] Validating signup password')
         const passwordError = validatePassword(password)
         if (passwordError) {
+          console.log('[submit] Password validation failed:', passwordError)
           setError(passwordError)
           setLoading(false)
           setPassword('')
@@ -408,6 +512,7 @@ const Login: React.FC = () => {
         }
 
         if (password !== confirmPassword) {
+          console.log('[submit] Passwords do not match')
           setError('As senhas não coincidem')
           setLoading(false)
           setPassword('')
@@ -418,24 +523,30 @@ const Login: React.FC = () => {
       }
 
       if (isSignup) {
+        console.log('[submit] Creating user with email and password')
         const userCred = await createUserWithEmailAndPassword(auth, email, password)
+        console.log('[submit] User created:', userCred.user.uid, userCred.user.email)
         // Enviar verificação de email
         try {
+          console.log('[submit] Sending email verification')
           await sendEmailVerification(userCred.user)
           setSuccess('Conta criada! Verifique seu e-mail para ativá-la.')
         } catch (verifyErr) {
-          console.warn('Failed to send verification email', verifyErr)
+          console.warn('[submit] Failed to send verification email:', verifyErr)
         }
         // create user doc in Firestore
         try {
+          console.log('[submit] Creating user document in Firestore')
           const init = makeInitialUserData(userCred.user.uid, userCred.user.email)
           if (!init.company) init.company = { name: '', website: '' }
           init.company.name = companyName || ''
           await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
+          console.log('[submit] User document created')
           // Start trial
           try {
+            console.log('[submit] Starting trial via /api/start-trial')
             const token = await userCred.user.getIdToken()
-            await fetch('/api/start-trial', {
+            const resp = await fetch('/api/start-trial', {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -443,42 +554,58 @@ const Login: React.FC = () => {
               },
               body: JSON.stringify({ uid: userCred.user.uid, email: userCred.user.email, planId: 'free' }),
             })
+            console.log('[submit] /api/start-trial response status:', resp.status)
+            if (!resp.ok) {
+              console.error('[submit] /api/start-trial failed:', await resp.text())
+            } else {
+              console.log('[submit] Trial started successfully')
+            }
           } catch (trialErr) {
-            console.error('failed to start trial on signup', trialErr)
+            console.error('[submit] Failed to start trial:', trialErr)
           }
           // Create tenant
           try {
+            console.log('[submit] Creating tenant via /api/tenant/create-complete-account')
             const token = await userCred.user.getIdToken()
             await fetch('/api/tenant/create-complete-account', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ name: companyName || `Account ${userCred.user.uid}` }),
             })
-            console.log('[signup] requested server-side tenant creation for', userCred.user.uid)
+            console.log('[submit] Tenant creation requested')
           } catch (tenantErr) {
-            console.error('failed to request tenant creation on signup', tenantErr)
+            console.error('[submit] Failed to request tenant creation:', tenantErr)
           }
         } catch (setErr) {
-          console.error('failed to create user doc', setErr)
+          console.error('[submit] Failed to create user doc:', setErr)
         }
         // Verificar se há plano pendente para processar checkout
+        console.log('[submit] Checking for pending plan after signup')
         const hasPendingPlan = await processPendingPlan(userCred.user)
+        console.log('[submit] Email signup - hasPendingPlan:', hasPendingPlan)
         if (hasPendingPlan) {
+          console.log('[submit] Pending plan processed, redirection handled')
           // processPendingPlan já faz o redirecionamento
           return
         }
       } else {
+        console.log('[submit] Signing in with email and password')
         await signInWithEmailAndPassword(auth, email, password)
+        console.log('[submit] Sign-in successful')
         // Verificar se há plano pendente após login
+        console.log('[submit] Checking for pending plan after login')
         const hasPendingPlan = await processPendingPlan(auth.currentUser)
+        console.log('[submit] Email login - hasPendingPlan:', hasPendingPlan)
         if (hasPendingPlan) {
+          console.log('[submit] Pending plan processed, redirection handled')
           // processPendingPlan já faz o redirecionamento
           return
         }
       }
+      console.log('[submit] No pending plan, navigating to /dashboard')
       navigate('/dashboard')
     } catch (err: any) {
-      console.error(err)
+      console.error('[submit] Error:', err)
       const code = err?.code || ''
       
       // Mensagens de erro mais amigáveis

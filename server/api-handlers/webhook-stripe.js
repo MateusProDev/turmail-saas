@@ -172,6 +172,16 @@ export default async function handler(req, res) {
 
     // ================ checkout.session.completed ================
     if (event.type === 'checkout.session.completed') {
+      console.log('[webhook-stripe] 🎉 checkout.session.completed received:', {
+        sessionId: session.id,
+        email,
+        stripeCustomerId,
+        stripeSubscriptionId,
+        planId,
+        paymentStatus: session.payment_status,
+        amount: session.amount_total
+      })
+
       const session = event.data.object
       const email = session.customer_details?.email || null
       const stripeCustomerId = session.customer
@@ -265,6 +275,14 @@ export default async function handler(req, res) {
 
       // 3. Criar/atualizar subscription com dados completos
       if (stripeSubscriptionId) {
+        console.log('[webhook-stripe] Creating/updating subscription:', {
+          stripeSubscriptionId,
+          tenantId: tenantDoc?.id,
+          planId,
+          isTrial,
+          onboardingCompleted: subscriptionData.onboardingCompleted
+        })
+
         const subscriptionData = {
           stripeSubscriptionId,
           stripeCustomerId,

@@ -100,6 +100,14 @@ export default async function handler(req, res) {
     const successUrl = `${host}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}&plan=${planId}&uid=${decodedToken.uid}`
     const cancelUrl = `${host}/plans?cancel=1&plan=${planId}`
 
+    console.log('[stripe-checkout] URLs configured:', {
+      host,
+      successUrl,
+      cancelUrl,
+      planId,
+      uid: decodedToken.uid
+    })
+
     const sessionConfig = {
       mode: 'subscription',
       payment_method_types: ['card'],

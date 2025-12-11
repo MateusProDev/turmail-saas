@@ -96,6 +96,7 @@ export default function Dashboard(){
 
   // Check for checkout success in URL
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [checkoutSessionId, setCheckoutSessionId] = useState<string | null>(null)
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -105,7 +106,12 @@ export default function Dashboard(){
     const uid = params.get('uid')
     
     if (checkoutSuccess === 'success') {
-      console.log('🔄 Processando redirecionamento pós-pagamento...', { sessionId, planId, uid })
+      console.log('[Dashboard] 🔄 Processando redirecionamento pós-pagamento...', { sessionId, planId, uid })
+      
+      // Store session ID for fallback verification
+      if (sessionId) {
+        setCheckoutSessionId(sessionId)
+      }
       
       // Show success toast
       setShowSuccessToast(true)
@@ -119,11 +125,79 @@ export default function Dashboard(){
       
       // Optional: Show loading state while webhook processes
       // This gives time for the webhook to update the database
+      console.log('[Dashboard] Checkout success detected, setCheckoutPending=true')
     }
   }, [])
-  
+
+  // Fallback: Check subscription status if we have a checkout session ID
+  useEffect(() => {
+    if (!checkoutSessionId || subscription || loading) return
+
+    console.log('[Dashboard] Checking subscription status for session:', checkoutSessionId)
+    
+    const checkSubscriptionStatus = async () => {
+      try {
+        const token = await user?.getIdToken()
+        if (!token) return
+
+        const response = await fetch(`/api/get-session?session_id=${checkoutSessionId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (response.ok) {
+          const sessionData = await response.json()
+          console.log('[Dashboard] Session data retrieved:', {
+            id: sessionData.id,
+            payment_status: sessionData.payment_status,
+            subscription: sessionData.subscription?.id,
+            status: sessionData.status
+          })
+          
+          if (sessionData.subscription) {
+            console.log('[Dashboard] Subscription found via session check, reloading...')
+            // Force reload to get updated subscription data
+            window.location.reload()
+          } else if (sessionData.payment_status === 'paid') {
+            console.log('[Dashboard] Payment was successful but no subscription found, webhook may have failed')
+            // Show message to user that payment was processed but subscription setup failed
+            alert('Pagamento processado com sucesso! Estamos configurando sua conta. Se o problema persistir, contate o suporte.')
+          }
+        } else {
+          console.error('[Dashboard] Failed to get session data:', response.status, await response.text())
+        }
+      } catch (error) {
+        console.error('[Dashboard] Error checking subscription status:', error)
+      }
+    }
+
+    // Check immediately and then every 5 seconds for up to 2 minutes
+    checkSubscriptionStatus()
+    const interval = setInterval(checkSubscriptionStatus, 5000)
+    const timeout = setTimeout(() => {
+      clearInterval(interval)
+      console.log('[Dashboard] Stopped checking subscription status after 2 minutes')
+      if (!subscription) {
+        console.log('[Dashboard] No subscription found after 2 minutes, user may need manual intervention')
+        alert('Não conseguimos verificar sua subscription. Tente recarregar a página ou contate o suporte.')
+      }
+    }, 120000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [checkoutSessionId, subscription, loading, user])
+
   // 🚨 CORREÇÃO CRÍTICA: Timing do modal de onboarding
   useEffect(() => {
+    console.log('[Dashboard] useEffect onboarding check:', {
+      loading,
+      subscription: !!subscription,
+      tenant: !!tenant,
+      onboardingCompleted: subscription?.onboardingCompleted,
+      checkoutPending
+    })
+    
     // Não fazer nada enquanto loading
     if (loading) {
       setIsOnboardingReady(false)
@@ -488,7 +562,9 @@ export default function Dashboard(){
   
 
   // Se não há subscription e não está carregando, redireciona para planos
-  if (user && !loading && !subscription) {
+  // Mas não redirecionar se acabou de haver um checkout (aguardar webhook)
+  if (user && !loading && !subscription && !checkoutPending) {
+    console.log('[Dashboard] No subscription found and not checkout pending, redirecting to plans')
     navigate('/plans', { replace: true })
     return null
   }

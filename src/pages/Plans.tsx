@@ -168,9 +168,11 @@ export default function Plans() {
     const isSuccess = params.get('success') === '1'
     const isCancel = params.get('cancel') === '1' || localStorage.getItem('paymentCancel') === '1'
 
+    console.log('[Plans] Checking URL params on load:', { isSuccess, isCancel, search: window.location.search })
+
     if (isSuccess && user) {
       // Payment successful - check for subscription and redirect to onboarding
-      console.log('[Plans] Payment successful, checking subscription...')
+      console.log('[Plans] Payment successful detected, checking subscription...')
       let attempts = 0;
       const checkSubscriptionAfterPayment = async () => {
         attempts++;
@@ -193,6 +195,7 @@ export default function Plans() {
     }
 
     if (isCancel && user && subscription === null) {
+      console.log('[Plans] Payment cancelled detected, auto-starting trial')
       // Automatically start trial after payment cancel
       setTrialStarted(true)
       localStorage.setItem('paymentCancel', '1') // Persist in case of reload
