@@ -165,7 +165,33 @@ export default function Plans() {
   // Check for cancel parameter to auto-start trial
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const isSuccess = params.get('success') === '1'
     const isCancel = params.get('cancel') === '1' || localStorage.getItem('paymentCancel') === '1'
+
+    if (isSuccess && user) {
+      // Payment successful - check for subscription and redirect to onboarding
+      console.log('[Plans] Payment successful, checking subscription...')
+      let attempts = 0;
+      const checkSubscriptionAfterPayment = async () => {
+        attempts++;
+        console.log(`[Plans] Checking subscription after payment, attempt ${attempts}`);
+        if (subscription) {
+          console.log('[Plans] Subscription found, redirecting to onboarding')
+          navigate('/onboarding')
+          return
+        }
+        if (attempts < 15) { // Check for up to 15 seconds
+          setTimeout(checkSubscriptionAfterPayment, 1000);
+        } else {
+          console.log('[Plans] No subscription found after payment, staying on plans page')
+          alert('Pagamento processado, mas subscription ainda não foi ativada. Verifique seu email ou contate o suporte.')
+        }
+      }
+      checkSubscriptionAfterPayment()
+      // Clean URL
+      window.history.replaceState({}, '', '/plans')
+    }
+
     if (isCancel && user && subscription === null) {
       // Automatically start trial after payment cancel
       setTrialStarted(true)
@@ -175,7 +201,7 @@ export default function Plans() {
       window.history.replaceState({}, '', '/plans')
       localStorage.removeItem('paymentCancel')
     }
-  }, [user, subscription, trialStarted])
+  }, [user, subscription, trialStarted, navigate])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
     // Se usuário não estiver logado, salvar plano e redirecionar para signup
@@ -217,25 +243,8 @@ export default function Plans() {
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
           alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
-          console.log('[Plans] Trial ativado, iniciando polling para subscription...')
-          let attempts = 0;
-          const checkSubscription = async () => {
-            attempts++;
-            console.log(`[Plans] Polling subscription, tentativa ${attempts}`);
-            const subsRef = collection(db, 'subscriptions');
-            const q = query(subsRef, where('ownerUid', '==', user.uid), limit(1));
-            const snap = await (await import('firebase/firestore')).getDocs(q);
-            if (!snap.empty) {
-              console.log('[Plans] Subscription encontrada, redirecionando para onboarding');
-              navigate('/onboarding');
-            } else if (attempts < 10) {
-              setTimeout(checkSubscription, 1000);
-            } else {
-              alert('Não foi possível ativar o trial. Tente novamente ou contate o suporte.');
-              console.error('[Plans] Subscription não encontrada após 10 tentativas.');
-            }
-          };
-          checkSubscription();
+          console.log('[Plans] Trial ativado, redirecionando para dashboard')
+          navigate('/dashboard')
         }
       } catch (err) {
         console.error('[Plans] failed to start trial', err)
