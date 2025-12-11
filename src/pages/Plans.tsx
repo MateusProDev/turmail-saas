@@ -180,7 +180,7 @@ export default function Plans() {
   const handleCheckout = async (plan: typeof PLANS[number]) => {
     // Se usuário não estiver logado, salvar plano e redirecionar para signup
     if (!user) {
-      // Salvar dados do plano escolhido no localStorage com nome do plano
+      console.log('[Plans] Usuário não logado, salvando plano pendente:', plan.id)
       localStorage.setItem('pendingPlan', JSON.stringify({
         planId: plan.id,
         planName: plan.name,
@@ -189,8 +189,7 @@ export default function Plans() {
         priceIdEnvAnnual: (plan as any).priceIdEnvAnnual,
         billingInterval,
       }))
-      
-      // Redirecionar para login com flag de signup
+      console.log('[Plans] Redirecionando para login/signup')
       navigate('/login?signup=1')
       return
     }
@@ -199,8 +198,9 @@ export default function Plans() {
     if (plan.id === 'trial' || plan.price === 0) {
       try {
         setLoading(true)
+        console.log('[Plans] Iniciando trial para usuário:', user.uid)
         const token = await user.getIdToken()
-        // Call server endpoint to start a 7-day trial
+        console.log('[Plans] Token obtido:', token)
         const resp = await fetch('/api/start-trial', {
           method: 'POST',
           headers: { 
@@ -209,16 +209,19 @@ export default function Plans() {
           },
           body: JSON.stringify({ uid: user.uid, email: user.email, planId: 'trial' }),
         })
+        console.log('[Plans] Resposta da API /api/start-trial:', resp)
         const json = await resp.json()
+        console.log('[Plans] JSON da resposta /api/start-trial:', json)
         if (!resp.ok) {
-          console.error('start-trial failed', json)
+          console.error('[Plans] start-trial failed', json)
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
           alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
+          console.log('[Plans] Redirecionando para onboarding após trial')
           navigate('/onboarding')
         }
       } catch (err) {
-        console.error('failed to start trial', err)
+        console.error('[Plans] failed to start trial', err)
         alert('Falha ao iniciar trial gratuito')
       } finally {
         setLoading(false)
@@ -239,14 +242,18 @@ export default function Plans() {
 
     try {
       setLoading(true)
+      console.log('[Plans] Iniciando checkout para plano:', plan.id, 'com priceId:', priceId)
       const json = await createCheckoutSession(priceId, plan.id, user?.email || null)
+      console.log('[Plans] Resposta da função createCheckoutSession:', json)
       if (json?.url) {
+        console.log('[Plans] Redirecionando para checkout Stripe:', json.url)
         window.location.href = json.url
       } else {
         alert('Falha ao iniciar checkout')
+        console.error('[Plans] Falha ao iniciar checkout, resposta:', json)
       }
     } catch (err) {
-      console.error(err)
+      console.error('[Plans] Erro no checkout', err)
       alert('Erro no checkout')
     } finally {
       setLoading(false)
