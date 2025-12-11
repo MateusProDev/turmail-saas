@@ -234,7 +234,7 @@ export default function Settings(){
           try {
             if (!autoCreateAttempted) {
               setAutoCreateAttempted(true)
-              const createResp = await fetch('/api/tenant/create-tenant', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: `Tenant ${user.uid}` }) })
+              const createResp = await fetch('/api/tenant/create-complete-account', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ name: `Tenant ${user.uid}` }) })
               const createJson = await createResp.json()
               if (createResp.ok && createJson && createJson.tenantId) {
                 // reload tenants after create

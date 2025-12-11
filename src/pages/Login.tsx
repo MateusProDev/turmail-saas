@@ -449,7 +449,7 @@ const Login: React.FC = () => {
           // Create tenant
           try {
             const token = await userCred.user.getIdToken()
-            await fetch('/api/tenant/create-tenant', {
+            await fetch('/api/tenant/create-complete-account', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
               body: JSON.stringify({ name: companyName || `Account ${userCred.user.uid}` }),
