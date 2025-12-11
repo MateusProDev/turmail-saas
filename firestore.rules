@@ -56,15 +56,18 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Subscriptions: only server (Admin SDK) can write.
-    // Clients may read if they are the owner (ownerUid) OR if the subscription
-    // document's email matches the authenticated user's email.
+    // Subscriptions: allow owner to update onboarding progress, server can write all.
     match /subscriptions/{subId} {
-      allow create, update, delete: if false;
+      // Permite update apenas se for o owner e só para onboardingProgress/onboardingCompleted
+      allow update: if request.auth != null && resource.data.ownerUid == request.auth.uid &&
+        (request.resource.data.keys().hasOnly(['onboardingProgress', 'onboardingCompleted']) ||
+         request.resource.data.onboardingProgress != null ||
+         request.resource.data.onboardingCompleted != null);
       allow read: if request.auth != null && (
         (resource.data.ownerUid == request.auth.uid) ||
         (resource.data.email != null && request.auth.token != null && resource.data.email == request.auth.token.email)
       );
+      allow create, delete: if false;
     }
 
     // Invoices: server writes only. Clients read only if ownerUid matches.

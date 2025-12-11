@@ -87,6 +87,7 @@ export default function Dashboard(){
     }
   }, [subscription, tenant, loading, checkoutPending])
   
+
   // Fechar modal quando onboarding for completado
   useEffect(() => {
     if (subscription?.onboardingCompleted === true) {
@@ -94,6 +95,26 @@ export default function Dashboard(){
       setCheckoutPending(false)
     }
   }, [subscription?.onboardingCompleted])
+
+  // Auto-concluir passo de onboarding ao voltar do local configurado
+  useEffect(() => {
+    const lastStep = window.sessionStorage.getItem('onboardingStep')
+    if (lastStep && subscription && subscription.onboardingProgress && !subscription.onboardingProgress[lastStep]) {
+      (async () => {
+        try {
+          const newProgress = { ...(subscription.onboardingProgress || {}), [lastStep]: { completed: true, completedAt: new Date(), autoCompleted: true } }
+          const allDone = onboardingStepsDef.every(st => newProgress[st.key])
+          await setDoc(doc(db, 'subscriptions', subscription.id), {
+            onboardingProgress: newProgress,
+            onboardingCompleted: allDone
+          }, { merge: true })
+          window.sessionStorage.removeItem('onboardingStep')
+        } catch (e) {
+          // Silenciar erro
+        }
+      })()
+    }
+  }, [subscription])
 
   useEffect(() => {
     function handleDocClick(e: MouseEvent) {
