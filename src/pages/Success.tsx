@@ -37,7 +37,7 @@ export default function Success() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer)
-          navigate('/dashboard?checkout=success')
+          navigate('/onboarding')
           return 0
         }
         return prev - 1
@@ -125,10 +125,10 @@ export default function Success() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => navigate('/dashboard?checkout=success')}
+              onClick={() => navigate('/onboarding')}
               className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Ir para Dashboard Agora
+              Começar Onboarding
             </button>
             <button
               onClick={() => navigate('/campaigns')}

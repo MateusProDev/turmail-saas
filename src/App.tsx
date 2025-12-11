@@ -3,6 +3,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Plans from './pages/Plans'
 import Success from './pages/Success'
+import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
 import Campaigns from './pages/Campaigns'
 import Contacts from './pages/Contacts'
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           </Routes>
         </div>
       </main>
