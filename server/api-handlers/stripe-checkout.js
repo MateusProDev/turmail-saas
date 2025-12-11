@@ -126,7 +126,7 @@ export default async function handler(req, res) {
       },
       customer_email: verifiedEmail,
       client_reference_id: decodedToken.uid,
-      redirect_on_completion: 'always'
+      // redirect_on_completion: 'always' // REMOVIDO: só funciona com ui_mode: embedded
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig)

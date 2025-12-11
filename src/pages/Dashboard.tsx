@@ -336,11 +336,20 @@ export default function Dashboard(){
     let unsubEmail: (() => void) | null = null
 
     const handleSnap = (snap: { empty: boolean; docs: { id: string; data: () => Record<string, unknown> }[] }) => {
+      console.log('[Dashboard] Subscription query result:', {
+        empty: snap.empty,
+        docsCount: snap.docs.length,
+        userUid: user.uid,
+        queryType: 'ownerUid'
+      })
       if (!snap.empty) {
         const doc = snap.docs[0]
+        const data = doc.data()
+        console.log('[Dashboard] Found subscription by ownerUid:', { id: doc.id, status: data.status, planId: data.planId })
         setSubscription({ id: doc.id, ...doc.data() } as Subscription)
         return true
       }
+      console.log('[Dashboard] No subscription found by ownerUid')
       return false
     }
 
@@ -351,11 +360,20 @@ export default function Dashboard(){
         if (unsubEmail) unsubEmail()
         const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
         unsubEmail = onSnapshot(qByEmail, (snap2) => {
+          console.log('[Dashboard] Subscription query by email result:', {
+            empty: snap2.empty,
+            docsCount: snap2.docs.length,
+            userEmail: user.email,
+            queryType: 'email'
+          })
           if (!snap2.empty) {
             const doc = snap2.docs[0]
+            const data = doc.data()
+            console.log('[Dashboard] Found subscription by email:', { id: doc.id, status: data.status, planId: data.planId })
             setSubscription({ id: doc.id, ...doc.data() } as Subscription)
             setCheckoutPending(false)
           } else {
+            console.log('[Dashboard] No subscription found by email either')
             setSubscription(null)
           }
         }, (err) => {
