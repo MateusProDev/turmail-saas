@@ -23,14 +23,13 @@ export default function Home() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center">
               <img
                 src="/logoturmailsemfundo.png"
                 alt="Turmail Logo"
-                className="w-8 h-8 object-contain mr-2"
+                className="w-30 h-12 object-contain"
                 style={{ borderRadius: '0.5rem' }}
               />
-              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent">Turmail</span>
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
@@ -92,16 +91,16 @@ export default function Home() {
               <div className="text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
                   <FaShip className="w-4 h-4" />
-                  Feito para agências de turismo modernas
+                  Email marketing que aumenta reservas para agências de turismo
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-                  Transforme o marketing da sua agência com automação 
-                  <span className="bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent"> inteligente</span>
+                  Triplique suas reservas com automação de e-mails para turismo
+                  <span className="bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent"> comprovada</span>
                 </h1>
 
                 <p className="mt-6 text-xl text-gray-600 max-w-2xl leading-relaxed">
-                  Automatize e personalize e-mails para cada etapa da jornada do viajante. Teste grátis por 14 dias — sem cartão de crédito.
+                  Envie campanhas automáticas para captar, reter e vender mais viagens. Teste grátis por 14 dias — sem cartão de crédito. Resultados já no primeiro mês.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
