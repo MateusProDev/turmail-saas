@@ -97,7 +97,7 @@ export default async function handler(req, res) {
 
     const host = process.env.DEFAULT_HOST ? (process.env.DEFAULT_HOST.startsWith('http') ? process.env.DEFAULT_HOST : `https://${process.env.DEFAULT_HOST}`) : `https://` + (req.headers.host || 'localhost')
     const successUrl = `${host}/dashboard?checkout=success`
-    const cancelUrl = `${host}/plans`
+    const cancelUrl = `${host}/plans?cancel=1`
 
     const sessionConfig = {
       mode: 'subscription',

@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       company: { name: '', website: '' },
       phone: '',
       locale: 'pt-BR',
-      onboardingCompleted: false,
+      onboardingCompleted: true, // Set to true to avoid onboarding modal
       metadata: {},
       ownerUid: uid,
       status: 'trial',

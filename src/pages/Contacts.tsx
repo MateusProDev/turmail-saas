@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, where, orderBy } from 'firebase/firestore'
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, where, orderBy, limit } from 'firebase/firestore'
 import { db, auth } from '../lib/firebase'
 import { useAuthState } from 'react-firebase-hooks/auth'
 
@@ -134,7 +134,7 @@ export default function Contacts() {
     if (!user) return
     
     const subsRef = collection(db, 'subscriptions')
-    const q = query(subsRef, where('ownerUid', '==', user.uid))
+    const q = query(subsRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(1))
     
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {

@@ -4,7 +4,7 @@ import './Plans.css'
 import { createCheckoutSession } from '../lib/stripe'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth, db } from '../lib/firebase'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 
 const PLANS: { 
@@ -126,7 +126,7 @@ export default function Plans() {
     }
     const subsRef = collection(db, 'subscriptions')
     // Listen by ownerUid, then fallback to email if not found
-    const qByUid = query(subsRef, where('ownerUid', '==', user.uid))
+    const qByUid = query(subsRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(1))
     let unsubUid: any = null
     let unsubEmail: any = null
 
@@ -143,7 +143,7 @@ export default function Plans() {
       const found = handleSnap(snap)
       if (!found && user.email) {
         if (unsubEmail) unsubEmail()
-        const qByEmail = query(subsRef, where('email', '==', user.email))
+        const qByEmail = query(subsRef, where('email', '==', user.email), orderBy('createdAt', 'desc'), limit(1))
         unsubEmail = onSnapshot(qByEmail, (snap2) => {
           if (!snap2.empty) {
             const doc = snap2.docs[0]
@@ -160,6 +160,18 @@ export default function Plans() {
       if (unsubEmail) unsubEmail()
     }
   }, [user])
+
+  // Check for cancel parameter to auto-start trial
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const isCancel = params.get('cancel') === '1'
+    if (isCancel && user && !subscription) {
+      // Automatically start trial after payment cancel
+      handleCheckout(PLANS.find(p => p.id === 'trial')!)
+      // Clean URL
+      window.history.replaceState({}, '', '/plans')
+    }
+  }, [user, subscription])
 
   const handleCheckout = async (plan: typeof PLANS[number]) => {
     // Se usuário não estiver logado, salvar plano e redirecionar para signup
@@ -195,7 +207,7 @@ export default function Plans() {
           alert('Falha ao iniciar trial gratuito: ' + (json.error || 'erro desconhecido'))
         } else {
           alert('🎉 Trial gratuito iniciado! Você tem 14 dias com 50 emails/dia e 1.000 contatos.')
-          navigate('/dashboard')
+          // Do not navigate to /dashboard, stay on plans page
         }
       } catch (err) {
         console.error('failed to start trial', err)

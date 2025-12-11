@@ -188,7 +188,7 @@ export default function Dashboard(){
   useEffect(() => {
     if (!user) return
     const subsRef = collection(db, 'subscriptions')
-    const qByUid = query(subsRef, where('ownerUid', '==', user.uid))
+    const qByUid = query(subsRef, where('ownerUid', '==', user.uid), orderBy('createdAt', 'desc'), limit(1))
     let unsubUid: any = null
     let unsubEmail: any = null
 
@@ -206,7 +206,7 @@ export default function Dashboard(){
       if (found) setCheckoutPending(false)
       if (!found && user.email) {
         if (unsubEmail) unsubEmail()
-        const qByEmail = query(subsRef, where('email', '==', user.email))
+        const qByEmail = query(subsRef, where('email', '==', user.email), orderBy('createdAt', 'desc'), limit(1))
         unsubEmail = onSnapshot(qByEmail, (snap2) => {
           if (!snap2.empty) {
             const doc = snap2.docs[0]
