@@ -3,10 +3,11 @@ import { useAuthState } from 'react-firebase-hooks/auth'
 // Use Tailwind for all styles in this file
 import { auth, db } from '../lib/firebase'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, setDoc, addDoc, updateDoc } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { Link, useNavigate } from 'react-router-dom'
 import EmailUsageCard from '../components/EmailUsageCard'
+import { uploadImage } from '../lib/cloudinary'
 
 // Type definitions
 interface Subscription {
@@ -87,13 +88,27 @@ export default function Dashboard(){
   const [isOnboardingReady, setIsOnboardingReady] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   
+  // Form states for onboarding steps
+  const [companyName, setCompanyName] = useState('')
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  
+  // Contact form states
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  
+  // Test email states
+  const [sendingTestEmail, setSendingTestEmail] = useState(false)
+  const [testEmailSent, setTestEmailSent] = useState(false)
+  
   // Estado simplificado de carregamento
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   
   const onboardingStepsDef = useMemo<OnboardingStep[]>(() => [
     { key: 'profile', label: 'Completar perfil (nome, logo)', href: '/settings' },
-    { key: 'sending', label: 'Configurar remetente (From email)', href: '/settings' },
-    { key: 'contacts', label: 'Importar contatos', href: '/contacts' },
+    { key: 'contacts', label: 'Adicionar contatos', href: '/contacts' },
     { key: 'campaign', label: 'Criar primeira campanha', href: '/campaigns' },
     { key: 'test', label: 'Enviar email de teste', href: '/campaigns' },
   ], [])
@@ -733,6 +748,170 @@ export default function Dashboard(){
     } catch { return null }
   })()
 
+  // Onboarding helper functions
+  const handleLogoUpload = async (file: File) => {
+    if (!tenantId || !user) return
+    
+    try {
+      setUploadingLogo(true)
+      
+      // Preview local
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      
+      // Upload para Cloudinary
+      const response = await uploadImage(file)
+      const imageUrl = response.secure_url || response.url
+      
+      // Atualizar tenant
+      const tenantRef = doc(db, 'tenants', tenantId)
+      await updateDoc(tenantRef, {
+        logoUrl: imageUrl,
+        updatedAt: new Date()
+      })
+      
+      console.log('[Onboarding] Logo uploaded successfully:', imageUrl)
+      return imageUrl
+    } catch (error) {
+      console.error('[Onboarding] Error uploading logo:', error)
+      alert('Erro ao fazer upload da logo. Tente novamente.')
+      return null
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const saveCompanyProfile = async () => {
+    if (!tenantId || !user) return false
+    
+    try {
+      const tenantRef = doc(db, 'tenants', tenantId)
+      const updates: any = { updatedAt: new Date() }
+      
+      if (companyName.trim()) {
+        updates.name = companyName.trim()
+      }
+      
+      if (logoFile) {
+        const logoUrl = await handleLogoUpload(logoFile)
+        if (logoUrl) {
+          updates.logoUrl = logoUrl
+        }
+      }
+      
+      await updateDoc(tenantRef, updates)
+      console.log('[Onboarding] Company profile saved successfully')
+      return true
+    } catch (error) {
+      console.error('[Onboarding] Error saving company profile:', error)
+      alert('Erro ao salvar perfil da empresa. Tente novamente.')
+      return false
+    }
+  }
+
+  const addContact = async () => {
+    if (!user || !contactEmail.trim()) return false
+    
+    try {
+      const payload: any = {
+        ownerUid: user.uid,
+        email: contactEmail.trim(),
+        name: contactName.trim() || contactEmail.split('@')[0],
+        createdAt: new Date(),
+        metadata: {
+          temperature: 'warm',
+          tags: ['onboarding'],
+          totalInteractions: 0,
+          emailsOpened: 0,
+          emailsClicked: 0,
+          bookingsCompleted: 0,
+          leadScore: 50
+        }
+      }
+      
+      if (contactPhone.trim()) {
+        payload.phone = contactPhone.trim()
+      }
+      
+      if (tenantId) {
+        payload.tenantId = tenantId
+      }
+      
+      await addDoc(collection(db, 'contacts'), payload)
+      console.log('[Onboarding] Contact added successfully')
+      
+      // Reset form
+      setContactName('')
+      setContactEmail('')
+      setContactPhone('')
+      
+      return true
+    } catch (error) {
+      console.error('[Onboarding] Error adding contact:', error)
+      alert('Erro ao adicionar contato. Tente novamente.')
+      return false
+    }
+  }
+
+  const sendTestEmail = async () => {
+    if (!user || !tenantId) return false
+    
+    try {
+      setSendingTestEmail(true)
+      
+      const userEmail = user.email || 'test@example.com'
+      const payload = {
+        tenantId,
+        to: [{ email: userEmail }],
+        subject: '🎉 Bem-vindo ao Turmail!',
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #1f2937; text-align: center;">🎉 Bem-vindo ao Turmail!</h1>
+            <p style="color: #6b7280; line-height: 1.6;">
+              Parabéns! Sua conta foi configurada com sucesso. Você já pode começar a enviar campanhas de email marketing incríveis.
+            </p>
+            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #1f2937; margin-top: 0;">🚀 Próximos passos:</h3>
+              <ul style="color: #6b7280; padding-left: 20px;">
+                <li>Configure seu remetente de email</li>
+                <li>Importe mais contatos</li>
+                <li>Crie sua primeira campanha</li>
+                <li>Envie emails personalizados</li>
+              </ul>
+            </div>
+            <p style="color: #6b7280; text-align: center;">
+              Se tiver dúvidas, nossa equipe está aqui para ajudar!
+            </p>
+          </div>
+        `,
+      }
+      
+      const response = await fetch('/api/send-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao enviar email de teste')
+      }
+      
+      const data = await response.json()
+      console.log('[Onboarding] Test email sent successfully:', data)
+      setTestEmailSent(true)
+      return true
+    } catch (error) {
+      console.error('[Onboarding] Error sending test email:', error)
+      alert('Erro ao enviar email de teste. Tente novamente.')
+      return false
+    } finally {
+      setSendingTestEmail(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10">
       {/* Success Toast */}
@@ -939,18 +1118,168 @@ export default function Dashboard(){
                             </div>
                             <div className="flex-1">
                               <h4 className="text-lg font-semibold text-slate-900 mb-2">{step.label}</h4>
-                              <p className="text-sm text-slate-600 mb-4">
-                                {step.key === 'profile' && 'Configure o nome e logo da sua empresa para personalizar seus emails.'}
-                                {step.key === 'sending' && 'Configure o endereço de email que será usado como remetente.'}
-                                {step.key === 'contacts' && 'Importe ou adicione contatos para enviar suas campanhas.'}
-                                {step.key === 'campaign' && 'Crie sua primeira campanha de email marketing.'}
-                                {step.key === 'test' && 'Envie um email de teste para verificar se tudo está funcionando.'}
-                              </p>
+                              
+                              {/* Formulários específicos por passo */}
+                              {step.key === 'profile' && (
+                                <div className="space-y-4">
+                                  <p className="text-sm text-slate-600">
+                                    Configure o nome e logo da sua empresa para personalizar seus emails.
+                                  </p>
+                                  
+                                  {/* Nome da empresa */}
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                      Nome da Empresa *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={companyName}
+                                      onChange={(e) => setCompanyName(e.target.value)}
+                                      placeholder="Digite o nome da sua empresa"
+                                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                  </div>
+                                  
+                                  {/* Upload de logo */}
+                                  <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                      Logo da Empresa (opcional)
+                                    </label>
+                                    <div className="flex items-center gap-4">
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0]
+                                          if (file) {
+                                            setLogoFile(file)
+                                            const reader = new FileReader()
+                                            reader.onloadend = () => {
+                                              setLogoPreview(reader.result as string)
+                                            }
+                                            reader.readAsDataURL(file)
+                                          }
+                                        }}
+                                        className="hidden"
+                                        id="logo-upload"
+                                      />
+                                      <label
+                                        htmlFor="logo-upload"
+                                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Escolher imagem
+                                      </label>
+                                      {logoPreview && (
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-300">
+                                          <img src={logoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                      )}
+                                      {uploadingLogo && (
+                                        <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full"></div>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Máximo 2MB, formatos: JPG, PNG, GIF</p>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {step.key === 'contacts' && (
+                                <div className="space-y-4">
+                                  <p className="text-sm text-slate-600">
+                                    Adicione seu primeiro contato para começar a enviar emails.
+                                  </p>
+                                  
+                                  <div className="grid grid-cols-1 gap-4">
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Nome (opcional)
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={contactName}
+                                        onChange={(e) => setContactName(e.target.value)}
+                                        placeholder="Nome do contato"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Email *
+                                      </label>
+                                      <input
+                                        type="email"
+                                        value={contactEmail}
+                                        onChange={(e) => setContactEmail(e.target.value)}
+                                        placeholder="email@exemplo.com"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        Telefone (opcional)
+                                      </label>
+                                      <input
+                                        type="tel"
+                                        value={contactPhone}
+                                        onChange={(e) => setContactPhone(e.target.value)}
+                                        placeholder="(11) 99999-9999"
+                                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {step.key === 'campaign' && (
+                                <div className="space-y-4">
+                                  <p className="text-sm text-slate-600">
+                                    Crie sua primeira campanha de email marketing.
+                                  </p>
+                                  <p className="text-sm text-slate-500">
+                                    Você será redirecionado para a página de campanhas onde poderá criar sua primeira campanha.
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {step.key === 'test' && (
+                                <div className="space-y-4">
+                                  <p className="text-sm text-slate-600">
+                                    Envie um email de teste para verificar se tudo está funcionando.
+                                  </p>
+                                  
+                                  {testEmailSent ? (
+                                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                                      <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span className="text-sm font-medium text-emerald-800">Email de teste enviado com sucesso!</span>
+                                      </div>
+                                      <p className="text-sm text-emerald-700 mt-1">
+                                        Verifique sua caixa de entrada ({user?.email})
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                      <p className="text-sm text-blue-800">
+                                        Um email de boas-vindas será enviado para <strong>{user?.email}</strong>
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Link para página completa (sempre disponível) */}
                               <a 
                                 href={step.href} 
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
+                                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
                               >
-                                Ir para {step.key === 'profile' ? 'Configurações' : step.key === 'sending' ? 'Configurações' : step.key === 'contacts' ? 'Contatos' : step.key === 'campaign' ? 'Campanhas' : 'Campanhas'}
+                                Ir para {step.key === 'profile' ? 'Configurações' : step.key === 'contacts' ? 'Contatos' : step.key === 'campaign' ? 'Campanhas' : 'Campanhas'}
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                 </svg>
@@ -988,32 +1317,63 @@ export default function Dashboard(){
                         const progress = subscription?.onboardingProgress || {}
                         const done = !!progress[step.key]
                         
+                        const handleStepAction = async () => {
+                          if (!subscription?.id) return
+                          
+                          let success = false
+                          
+                          if (step.key === 'profile') {
+                            success = await saveCompanyProfile()
+                          } else if (step.key === 'contacts') {
+                            success = await addContact()
+                          } else if (step.key === 'test') {
+                            success = await sendTestEmail()
+                          } else {
+                            // Para campaign, apenas marcar como feito
+                            success = true
+                          }
+                          
+                          if (success) {
+                            // Atualizar progresso
+                            const newProgress = { ...(subscription.onboardingProgress || {}), [step.key]: true }
+                            await setDoc(doc(db, 'subscriptions', subscription.id), { 
+                              onboardingProgress: newProgress
+                            }, { merge: true })
+                            
+                            // Avançar para o próximo passo
+                            if (currentStep < onboardingStepsDef.length - 1) {
+                              setTimeout(() => setCurrentStep(currentStep + 1), 500)
+                            }
+                          }
+                        }
+                        
                         return (
                           <button
-                            onClick={async () => {
-                              if (!subscription?.id) return
-                              try {
-                                const newProgress = { ...(subscription.onboardingProgress || {}), [step.key]: !done }
-                                await setDoc(doc(db, 'subscriptions', subscription.id), { 
-                                  onboardingProgress: newProgress
-                                }, { merge: true })
-                                
-                                // Se concluiu o passo, vai para o próximo
-                                if (!done && currentStep < onboardingStepsDef.length - 1) {
-                                  setTimeout(() => setCurrentStep(currentStep + 1), 500)
-                                }
-                              } catch (e) {
-                                console.error('failed to update onboarding progress', e)
-                                alert('Erro ao salvar progresso de onboarding')
-                              }
-                            }}
+                            onClick={handleStepAction}
+                            disabled={
+                              (step.key === 'profile' && !companyName.trim() && !logoFile) ||
+                              (step.key === 'contacts' && !contactEmail.trim()) ||
+                              (step.key === 'test' && sendingTestEmail) ||
+                              uploadingLogo
+                            }
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
                               done 
                                 ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' 
                                 : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
                             }`}
                           >
-                            {done ? 'Desmarcar' : 'Concluir e continuar'}
+                            {uploadingLogo || sendingTestEmail ? (
+                              <div className="flex items-center gap-2">
+                                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                {uploadingLogo ? 'Enviando...' : 'Enviando...'}
+                              </div>
+                            ) : done ? 'Concluído' : 
+                              step.key === 'profile' ? 'Salvar perfil' :
+                              step.key === 'contacts' ? 'Adicionar contato' :
+                              step.key === 'campaign' ? 'Ir para campanhas' :
+                              step.key === 'test' ? (testEmailSent ? 'Enviado' : 'Enviar teste') :
+                              'Concluir'
+                            }
                           </button>
                         )
                       })()}
