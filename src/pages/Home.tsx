@@ -103,17 +103,17 @@ export default function Home() {
                   Envie campanhas automáticas para captar, reter e vender mais viagens. Teste grátis por 14 dias — sem cartão de crédito. Resultados já no primeiro mês.
                 </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <div className="mt-8 flex flex-row gap-4 justify-center lg:justify-start">
                   <Link 
                     to="/plans" 
-                    className="group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
+                    className="group relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
                   >
                     <span className="relative z-10">Começar Agora - 14 Dias Grátis</span>
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
                   <Link 
                     to="/demo" 
-                    className="px-8 py-4 border-2 border-cyan-200 text-cyan-700 font-semibold rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all duration-300"
+                    className="px-6 py-3 border-2 border-cyan-200 text-cyan-700 font-semibold rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all duration-300"
                   >
                     Agendar Demonstração
                   </Link>
