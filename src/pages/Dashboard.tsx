@@ -416,6 +416,13 @@ export default function Dashboard(){
     </div>
   )
   
+
+  // Se não há subscription e não está carregando, redireciona para planos
+  if (user && !loading && !subscription) {
+    navigate('/plans', { replace: true })
+    return null
+  }
+
   if(!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 flex items-center justify-center">

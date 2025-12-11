@@ -32,12 +32,15 @@ export default function Login() {
   
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const pendingPlanStr = localStorage.getItem('pendingPlan')
     if (params.get('signup') === '1') {
+      if (!pendingPlanStr) {
+        navigate('/plans', { replace: true })
+        return
+      }
       setIsSignup(true)
     }
-    
     // Verificar se há plano pendente e mostrar banner
-    const pendingPlanStr = localStorage.getItem('pendingPlan')
     if (pendingPlanStr) {
       try {
         const pendingPlan = JSON.parse(pendingPlanStr)
@@ -46,7 +49,7 @@ export default function Login() {
         console.error('Error parsing pending plan:', e)
       }
     }
-  }, [])
+  }, [navigate])
 
   // Verificar resultado do redirect do Google OAuth
   useEffect(() => {
@@ -489,13 +492,23 @@ export default function Login() {
             ) : (
               <>
                 Não tem uma conta?{' '}
-                <button
-                  type="button"
-                  onClick={() => {setIsSignup(true); setError(''); setSuccess('')}}
-                  className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
-                >
-                  Cadastre-se grátis
-                </button>
+                {selectedPlan ? (
+                  <button
+                    type="button"
+                    onClick={() => {setIsSignup(true); setError(''); setSuccess('')}}
+                    className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+                  >
+                    Cadastre-se grátis
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/plans')}
+                    className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+                  >
+                    Escolher um plano
+                  </button>
+                )}
               </>
             )}
           </p>
