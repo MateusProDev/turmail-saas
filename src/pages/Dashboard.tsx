@@ -289,7 +289,7 @@ export default function Dashboard(){
   useEffect(() => {
     if (subscription?.onboardingCompleted === true) {
       setOnboardingOpen(false)
-      setCheckoutPending(false)
+      setCheckoutPending(false) // ✅ Reset checkout pending quando onboarding é completado
     }
   }, [subscription?.onboardingCompleted])
 
@@ -1052,7 +1052,13 @@ export default function Dashboard(){
         {/* Onboarding Modal: guided checklist for new users */}
         {(onboardingOpen && isOnboardingReady) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" onClick={() => setOnboardingOpen(false)} />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" onClick={() => {
+              setOnboardingOpen(false)
+              // Se não é uma nova conta (já tem onboarding completado), reset checkout pending
+              if (subscription?.onboardingCompleted) {
+                setCheckoutPending(false)
+              }
+            }} />
             <div 
               role="dialog" 
               aria-modal="true" 
@@ -1070,7 +1076,13 @@ export default function Dashboard(){
                 <>
                   {/* Botão fechar */}
                   <button 
-                    onClick={() => setOnboardingOpen(false)}
+                    onClick={() => {
+                      setOnboardingOpen(false)
+                      // Se não é uma nova conta (já tem onboarding completado), reset checkout pending
+                      if (subscription?.onboardingCompleted) {
+                        setCheckoutPending(false)
+                      }
+                    }}
                     className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-10"
                     aria-label="Fechar onboarding"
                   >
@@ -1308,7 +1320,13 @@ export default function Dashboard(){
 
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => setOnboardingOpen(false)}
+                        onClick={() => {
+                          setOnboardingOpen(false)
+                          // Se não é uma nova conta (já tem onboarding completado), reset checkout pending
+                          if (subscription?.onboardingCompleted) {
+                            setCheckoutPending(false)
+                          }
+                        }}
                         className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors"
                       >
                         Depois
@@ -1394,6 +1412,7 @@ export default function Dashboard(){
                                 onboardingCompleted: true 
                               }, { merge: true })
                               setOnboardingOpen(false)
+                              setCheckoutPending(false) // ✅ Reset checkout pending quando finalizar onboarding
                             } catch (e) {
                               console.error('failed to mark onboarding complete', e)
                               alert('Erro ao marcar onboarding como completo')
