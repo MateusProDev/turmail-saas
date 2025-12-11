@@ -24,9 +24,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-700 rounded-lg flex items-center justify-center">
-                <FaPlane className="w-4 h-4 text-white" />
-              </div>
+              <img
+                src="/logoturmailsemfundo.png"
+                alt="Turmail Logo"
+                className="w-8 h-8 object-contain mr-2"
+                style={{ borderRadius: '0.5rem' }}
+              />
               <span className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent">Turmail</span>
             </div>
 
