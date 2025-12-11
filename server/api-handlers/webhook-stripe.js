@@ -246,8 +246,18 @@ export default async function handler(req, res) {
             originalSessionId: session.id
           })
           
+          // Add owner as member
+          if (ownerUid) {
+            const memberRef = tenantRef.collection('members').doc(ownerUid)
+            await memberRef.set({
+              role: 'owner',
+              joinedAt: admin.firestore.FieldValue.serverTimestamp(),
+              email: email || null
+            })
+          }
+          
           tenantDoc = await tenantRef.get()
-          console.log('[webhook-stripe] Criado tenant de reconciliação:', tenantId)
+          console.log('[webhook-stripe] Criado tenant de reconciliação com membro:', tenantId)
         }
       }
 
