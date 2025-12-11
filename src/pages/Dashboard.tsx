@@ -329,64 +329,86 @@ export default function Dashboard(){
 
   // subscription listener (ownerUid preferred, fallback to email)
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      console.log('[Dashboard] No user, skipping subscription query')
+      return
+    }
+    console.log('[Dashboard] Setting up subscription listener for user:', user.uid, user.email)
     const subsRef = collection(db, 'subscriptions')
-    const qByUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
+    
+    // Try ownerUid first
+    const qByOwnerUid = query(subsRef, where('ownerUid', '==', user.uid), limit(1))
+    // Fallback to uid field
+    const qByUid = query(subsRef, where('uid', '==', user.uid), limit(1))
+    
+    let unsubOwnerUid: (() => void) | null = null
     let unsubUid: (() => void) | null = null
     let unsubEmail: (() => void) | null = null
 
-    const handleSnap = (snap: { empty: boolean; docs: { id: string; data: () => Record<string, unknown> }[] }) => {
-      console.log('[Dashboard] Subscription query result:', {
+    const handleSnap = (snap: { empty: boolean; docs: { id: string; data: () => Record<string, unknown> }[] }, queryType: string) => {
+      console.log(`[Dashboard] Subscription query result (${queryType}):`, {
         empty: snap.empty,
         docsCount: snap.docs.length,
         userUid: user.uid,
-        queryType: 'ownerUid'
+        queryType
       })
       if (!snap.empty) {
         const doc = snap.docs[0]
         const data = doc.data()
-        console.log('[Dashboard] Found subscription by ownerUid:', { id: doc.id, status: data.status, planId: data.planId })
+        console.log(`[Dashboard] Found subscription by ${queryType}:`, { id: doc.id, status: data.status, planId: data.planId, uid: data.uid, ownerUid: data.ownerUid })
         setSubscription({ id: doc.id, ...doc.data() } as Subscription)
         return true
       }
-      console.log('[Dashboard] No subscription found by ownerUid')
+      console.log(`[Dashboard] No subscription found by ${queryType}`)
       return false
     }
 
-    unsubUid = onSnapshot(qByUid, (snap) => {
-      const found = handleSnap(snap)
-      if (found) setCheckoutPending(false)
-      if (!found && user.email) {
-        if (unsubEmail) unsubEmail()
-        const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
-        unsubEmail = onSnapshot(qByEmail, (snap2) => {
-          console.log('[Dashboard] Subscription query by email result:', {
-            empty: snap2.empty,
-            docsCount: snap2.docs.length,
-            userEmail: user.email,
-            queryType: 'email'
-          })
-          if (!snap2.empty) {
-            const doc = snap2.docs[0]
-            const data = doc.data()
-            console.log('[Dashboard] Found subscription by email:', { id: doc.id, status: data.status, planId: data.planId })
-            setSubscription({ id: doc.id, ...doc.data() } as Subscription)
-            setCheckoutPending(false)
-          } else {
-            console.log('[Dashboard] No subscription found by email either')
-            setSubscription(null)
-          }
-        }, (err) => {
-          console.error('subscription-by-email snapshot error', err)
-          setSubscription(null)
-        })
+    // Listen to ownerUid query
+    unsubOwnerUid = onSnapshot(qByOwnerUid, (snap) => {
+      const found = handleSnap(snap, 'ownerUid')
+      if (found) {
+        setCheckoutPending(false)
+        return
       }
+      
+      // If not found by ownerUid, try uid field
+      if (unsubUid) unsubUid()
+      unsubUid = onSnapshot(qByUid, (snap2) => {
+        const found2 = handleSnap(snap2, 'uid')
+        if (found2) {
+          setCheckoutPending(false)
+          return
+        }
+        
+        // If still not found, try email
+        if (!found2 && user.email) {
+          if (unsubEmail) unsubEmail()
+          const qByEmail = query(subsRef, where('email', '==', user.email), limit(1))
+          unsubEmail = onSnapshot(qByEmail, (snap3) => {
+            const found3 = handleSnap(snap3, 'email')
+            if (found3) {
+              setCheckoutPending(false)
+            } else {
+              setSubscription(null)
+            }
+          }, (err) => {
+            console.error('subscription-by-email snapshot error', err)
+            setSubscription(null)
+          })
+        } else {
+          setSubscription(null)
+        }
+      }, (err) => {
+        console.error('subscription-by-uid snapshot error', err)
+        setSubscription(null)
+      })
     }, (err) => {
-      console.error('subscription snapshot error', err)
+      console.error('subscription-by-ownerUid snapshot error', err)
       setSubscription(null)
     })
 
     return () => {
+      if (unsubOwnerUid) unsubOwnerUid()
       if (unsubUid) unsubUid()
       if (unsubEmail) unsubEmail()
     }
