@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './Login.css'
 import { useNavigate } from 'react-router-dom'
 import { auth, db } from '../lib/firebase'
@@ -14,10 +14,11 @@ import {
 import { doc, setDoc } from 'firebase/firestore'
 import makeInitialUserData from '../lib/initUser'
 
-export default function Login() {
+const Login: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const passwordInputRef = useRef<HTMLInputElement>(null)
   const [isSignup, setIsSignup] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [companyName, setCompanyName] = useState('')
@@ -333,19 +334,24 @@ export default function Login() {
         if (passwordError) {
           setError(passwordError)
           setLoading(false)
+          setPassword('')
+          setConfirmPassword('')
+          passwordInputRef.current?.focus()
           return
         }
 
         if (password !== confirmPassword) {
           setError('As senhas não coincidem')
           setLoading(false)
+          setPassword('')
+          setConfirmPassword('')
+          passwordInputRef.current?.focus()
           return
         }
       }
 
       if (isSignup) {
         const userCred = await createUserWithEmailAndPassword(auth, email, password)
-        
         // Enviar verificação de email
         try {
           await sendEmailVerification(userCred.user)
@@ -353,14 +359,12 @@ export default function Login() {
         } catch (verifyErr) {
           console.warn('Failed to send verification email', verifyErr)
         }
-
         // create user doc in Firestore
         try {
           const init = makeInitialUserData(userCred.user.uid, userCred.user.email)
           if (!init.company) init.company = { name: '', website: '' }
           init.company.name = companyName || ''
           await setDoc(doc(db, 'users', userCred.user.uid), init, { merge: true })
-        
           // Start trial
           try {
             await fetch('/api/start-trial', {
@@ -371,7 +375,6 @@ export default function Login() {
           } catch (trialErr) {
             console.error('failed to start trial on signup', trialErr)
           }
-
           // Create tenant
           try {
             const token = await userCred.user.getIdToken()
@@ -387,7 +390,6 @@ export default function Login() {
         } catch (setErr) {
           console.error('failed to create user doc', setErr)
         }
-
         // Verificar se há plano pendente para processar checkout
         const hasPendingPlan = await processPendingPlan(userCred.user)
         if (hasPendingPlan) {
@@ -396,7 +398,6 @@ export default function Login() {
         }
       } else {
         await signInWithEmailAndPassword(auth, email, password)
-        
         // Verificar se há plano pendente após login
         const hasPendingPlan = await processPendingPlan(auth.currentUser)
         if (hasPendingPlan) {
@@ -404,7 +405,6 @@ export default function Login() {
           return
         }
       }
-      
       navigate('/dashboard')
     } catch (err: any) {
       console.error(err)
@@ -438,7 +438,7 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8">
         {/* Banner do Plano Selecionado */}
         {selectedPlan && isSignup && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-sm animate-fadeIn">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-sm animate-fadeIn" aria-live="polite">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
@@ -516,22 +516,27 @@ export default function Login() {
 
         {/* Card de Login/Signup */}
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/60 p-8">
-          {/* Mensagens de Erro e Sucesso */}
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-start">
-              <svg className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-start">
-              <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span className="text-sm">{success}</span>
+          {/* Mensagens de Erro e Sucesso acessíveis */}
+          {(!!error || !!success) && (
+            <div className={`mb-4 px-4 py-3 rounded-xl flex items-start border text-sm ${error ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`} aria-live="polite">
+              {error ? (
+                <>
+                  <svg className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>{error}</span>
+                  {error.includes('Usuário não encontrado') && (
+                    <button onClick={() => navigate('/plans')} className="underline text-indigo-600 ml-2">Escolher um plano</button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <svg className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>{success}</span>
+                </>
+              )}
             </div>
           )}
 
@@ -662,6 +667,8 @@ export default function Login() {
                     onChange={e => setPassword(e.target.value)}
                     className="appearance-none relative block w-full px-4 py-3 pr-12 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     placeholder={isSignup ? "Crie uma senha forte" : "Digite sua senha"}
+                    ref={passwordInputRef}
+                    disabled={loading}
                   />
                   <button
                     type="button"
@@ -702,6 +709,7 @@ export default function Login() {
                     onChange={e => setConfirmPassword(e.target.value)}
                     className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     placeholder="Digite a senha novamente"
+                    disabled={loading}
                   />
                 </div>
               )}
@@ -719,20 +727,30 @@ export default function Login() {
               )}
 
               <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
-                >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      {isSignup ? 'Criando conta...' : 'Entrando...'}
-                    </div>
-                  ) : (
-                    <span>{isSignup ? 'Criar conta grátis' : 'Entrar'}</span>
-                  )}
-                </button>
+                {isSignup && !selectedPlan ? (
+                  <button
+                    type="button"
+                    className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg hover:shadow-xl"
+                    onClick={() => navigate('/plans')}
+                  >
+                    Escolher um plano
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                  >
+                    {loading ? (
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        {isSignup ? 'Criando conta...' : 'Entrando...'}
+                      </div>
+                    ) : (
+                      <span>{isSignup ? 'Criar conta grátis' : 'Entrar'}</span>
+                    )}
+                  </button>
+                )}
               </div>
 
               {isSignup && (
@@ -778,3 +796,5 @@ export default function Login() {
     </div>
   )
 }
+
+export default Login;
