@@ -103,7 +103,7 @@ export default function Home() {
                   Envie campanhas automáticas para captar, reter e vender mais viagens. Teste grátis por 14 dias — sem cartão de crédito. Resultados já no primeiro mês.
                 </p>
 
-                <div className="mt-8 flex flex-row gap-4 justify-center lg:justify-start">
+                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <Link 
                     to="/plans" 
                     className="group relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
