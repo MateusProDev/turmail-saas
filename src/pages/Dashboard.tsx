@@ -85,6 +85,7 @@ export default function Dashboard(){
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [isOnboardingReady, setIsOnboardingReady] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
   
   // Estado simplificado de carregamento
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
@@ -255,6 +256,7 @@ export default function Dashboard(){
       // Pequeno delay para garantir que tudo está carregado
       const timer = setTimeout(() => {
         setOnboardingOpen(true)
+        setCurrentStep(0) // Reset to first step
       }, 500)
       return () => clearTimeout(timer)
     } else if (!shouldOpenOnboarding && onboardingOpen) {
@@ -887,10 +889,11 @@ export default function Dashboard(){
                 </div>
               ) : (
                 <>
+                  {/* Header com progresso */}
                   <div className="flex items-start justify-between mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-slate-900">👋 Bem-vindo ao Turmail</h3>
-                      <p className="text-sm text-slate-600 mt-1">Complete estes passos rápidos para começar a enviar campanhas.</p>
+                      <p className="text-sm text-slate-600 mt-1">Vamos configurar sua conta passo a passo</p>
                     </div>
                     <button 
                       onClick={() => setOnboardingOpen(false)}
@@ -903,63 +906,75 @@ export default function Dashboard(){
                     </button>
                   </div>
 
-                  <div className="space-y-3 mb-6">
-                    {onboardingStepsDef.map((s) => {
-                      const progress = subscription?.onboardingProgress || {}
-                      const done = !!progress[s.key]
-                      
-                      return (
-                        <div key={s.key} className={`p-4 rounded-xl border transition-all ${done ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                                {done ? '✓' : <span className="text-xs font-medium">{onboardingStepsDef.indexOf(s) + 1}</span>}
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-slate-900">{s.label}</div>
-                                <a 
-                                  href={s.href} 
-                                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium mt-1 inline-block"
-                                >
-                                  Ir para →
-                                </a>
-                              </div>
+                  {/* Indicador de progresso */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-700">
+                        Passo {currentStep + 1} de {onboardingStepsDef.length}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {Math.round(((currentStep + 1) / onboardingStepsDef.length) * 100)}% completo
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${((currentStep + 1) / onboardingStepsDef.length) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Passo atual */}
+                  {(() => {
+                    const step = onboardingStepsDef[currentStep]
+                    const progress = subscription?.onboardingProgress || {}
+                    const done = !!progress[step.key]
+                    
+                    return (
+                      <div className="mb-8">
+                        <div className={`p-6 rounded-xl border-2 transition-all ${done ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200'}`}>
+                          <div className="flex items-start gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${done ? 'bg-emerald-500 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                              {done ? '✓' : currentStep + 1}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={async () => {
-                                  if (!subscription?.id) return
-                                  try {
-                                    const newProgress = { ...(subscription.onboardingProgress || {}), [s.key]: !done }
-                                    const allDone = onboardingStepsDef.every(st => newProgress[st.key])
-                                    await setDoc(doc(db, 'subscriptions', subscription.id), { 
-                                      onboardingProgress: newProgress, 
-                                      onboardingCompleted: allDone 
-                                    }, { merge: true })
-                                  } catch (e) {
-                                    console.error('failed to update onboarding progress', e)
-                                    alert('Erro ao salvar progresso de onboarding')
-                                  }
-                                }}
-                                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${done ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}
+                            <div className="flex-1">
+                              <h4 className="text-lg font-semibold text-slate-900 mb-2">{step.label}</h4>
+                              <p className="text-sm text-slate-600 mb-4">
+                                {step.key === 'profile' && 'Configure o nome e logo da sua empresa para personalizar seus emails.'}
+                                {step.key === 'sending' && 'Configure o endereço de email que será usado como remetente.'}
+                                {step.key === 'contacts' && 'Importe ou adicione contatos para enviar suas campanhas.'}
+                                {step.key === 'campaign' && 'Crie sua primeira campanha de email marketing.'}
+                                {step.key === 'test' && 'Envie um email de teste para verificar se tudo está funcionando.'}
+                              </p>
+                              <a 
+                                href={step.href} 
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium rounded-lg transition-colors"
                               >
-                                {done ? 'Desmarcar' : 'Concluir'}
-                              </button>
+                                Ir para {step.key === 'profile' ? 'Configurações' : step.key === 'sending' ? 'Configurações' : step.key === 'contacts' ? 'Contatos' : step.key === 'campaign' ? 'Campanhas' : 'Campanhas'}
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                              </a>
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })()}
 
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <div className="text-xs text-slate-500">
-                      {subscription && subscription.onboardingProgress ? (
-                        <span>
-                          {Object.keys(subscription.onboardingProgress).length} de {onboardingStepsDef.length} passos completos
-                        </span>
-                      ) : 'Comece agora'}
-                    </div>
+                  {/* Navegação */}
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                    <button 
+                      onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                      disabled={currentStep === 0}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Anterior
+                    </button>
+
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => setOnboardingOpen(false)}
@@ -967,27 +982,66 @@ export default function Dashboard(){
                       >
                         Fazer depois
                       </button>
-                      <button 
-                        onClick={async () => {
-                          if (!subscription?.id) return
-                          try {
-                            const newProgress = onboardingStepsDef.reduce((acc, st) => ({ 
-                              ...acc, 
-                              [st.key]: true 
-                            }), {})
-                            await setDoc(doc(db, 'subscriptions', subscription.id), { 
-                              onboardingProgress: newProgress, 
-                              onboardingCompleted: true 
-                            }, { merge: true })
-                          } catch (e) {
-                            console.error('failed to mark onboarding complete', e)
-                            alert('Erro ao marcar onboarding como completo')
-                          }
-                        }} 
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-medium transition-all shadow-sm hover:shadow"
-                      >
-                        Concluir tudo
-                      </button>
+                      
+                      {(() => {
+                        const step = onboardingStepsDef[currentStep]
+                        const progress = subscription?.onboardingProgress || {}
+                        const done = !!progress[step.key]
+                        
+                        return (
+                          <button
+                            onClick={async () => {
+                              if (!subscription?.id) return
+                              try {
+                                const newProgress = { ...(subscription.onboardingProgress || {}), [step.key]: !done }
+                                await setDoc(doc(db, 'subscriptions', subscription.id), { 
+                                  onboardingProgress: newProgress
+                                }, { merge: true })
+                                
+                                // Se concluiu o passo, vai para o próximo
+                                if (!done && currentStep < onboardingStepsDef.length - 1) {
+                                  setTimeout(() => setCurrentStep(currentStep + 1), 500)
+                                }
+                              } catch (e) {
+                                console.error('failed to update onboarding progress', e)
+                                alert('Erro ao salvar progresso de onboarding')
+                              }
+                            }}
+                            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${
+                              done 
+                                ? 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50' 
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                            }`}
+                          >
+                            {done ? 'Desmarcar' : 'Concluir e continuar'}
+                          </button>
+                        )
+                      })()}
+                      
+                      {currentStep === onboardingStepsDef.length - 1 && (
+                        <button 
+                          onClick={async () => {
+                            if (!subscription?.id) return
+                            try {
+                              const newProgress = onboardingStepsDef.reduce((acc, st) => ({ 
+                                ...acc, 
+                                [st.key]: true 
+                              }), {})
+                              await setDoc(doc(db, 'subscriptions', subscription.id), { 
+                                onboardingProgress: newProgress, 
+                                onboardingCompleted: true 
+                              }, { merge: true })
+                              setOnboardingOpen(false)
+                            } catch (e) {
+                              console.error('failed to mark onboarding complete', e)
+                              alert('Erro ao marcar onboarding como completo')
+                            }
+                          }} 
+                          className="px-6 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium transition-all shadow-sm"
+                        >
+                          Finalizar
+                        </button>
+                      )}
                     </div>
                   </div>
                 </>
