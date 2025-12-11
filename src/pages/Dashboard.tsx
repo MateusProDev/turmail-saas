@@ -188,43 +188,58 @@ export default function Dashboard(){
     }
   }, [checkoutSessionId, subscription, loading, user])
 
-  // 🚨 CORREÇÃO CRÍTICA: Timing do modal de onboarding
+  // 🎯 SOLUÇÃO DEFINITIVA: Onboarding sempre abre para novas contas
   useEffect(() => {
-    console.log('[Dashboard] useEffect onboarding check:', {
+    console.log('[Dashboard] Onboarding check:', {
       loading,
       subscription: !!subscription,
       tenant: !!tenant,
       onboardingCompleted: subscription?.onboardingCompleted,
-      checkoutPending
+      checkoutPending,
+      planId: subscription?.planId
     })
-    
+
     // Não fazer nada enquanto loading
     if (loading) {
       setIsOnboardingReady(false)
       return
     }
-    
+
     // Verificar se os dados necessários estão prontos
     const subscriptionLoaded = subscription !== undefined && subscription !== null
     const tenantLoaded = tenant !== undefined && tenant !== null
-    const onboardingCompleted = subscription?.onboardingCompleted === true
-    
-    // Determinar se o onboarding está pronto para ser mostrado
-    const shouldOpenOnboarding = 
-      subscriptionLoaded && 
-      tenantLoaded && 
-      !onboardingCompleted &&
-      (checkoutPending || !onboardingCompleted)
-    
-    setIsOnboardingReady(subscriptionLoaded && tenantLoaded)
-    
-    // Pequeno delay para evitar flicker
+
+    if (!subscriptionLoaded || !tenantLoaded) {
+      setIsOnboardingReady(false)
+      return
+    }
+
+    // ✅ LÓGICA DEFINITIVA PARA PRODUÇÃO:
+    // Onboarding deve abrir se:
+    // 1. É uma nova conta (checkoutPending = true) OU
+    // 2. Onboarding não foi completado (onboardingCompleted = false/undefined)
+    const isNewAccount = checkoutPending
+    const onboardingNotCompleted = subscription?.onboardingCompleted !== true
+
+    const shouldOpenOnboarding = isNewAccount || onboardingNotCompleted
+
+    setIsOnboardingReady(true)
+
+    console.log('[Dashboard] Onboarding decision:', {
+      isNewAccount,
+      onboardingNotCompleted,
+      shouldOpenOnboarding
+    })
+
     if (shouldOpenOnboarding) {
+      console.log('[Dashboard] Opening onboarding modal')
+      // Pequeno delay para garantir que tudo está carregado
       const timer = setTimeout(() => {
         setOnboardingOpen(true)
-      }, 300)
+      }, 500)
       return () => clearTimeout(timer)
     } else {
+      console.log('[Dashboard] Onboarding already completed, keeping modal closed')
       setOnboardingOpen(false)
     }
   }, [subscription, tenant, loading, checkoutPending])

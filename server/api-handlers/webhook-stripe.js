@@ -304,9 +304,9 @@ export default async function handler(req, res) {
           subscriptionData.limits = planConfig.limits
         }
 
-        // ✅ CRÍTICO: Trial NÃO precisa de onboarding, Pagos SIM
+        // ✅ DEFINITIVO: Novas contas sempre precisam de onboarding
         subscriptionData.onboardingProgress = getInitialOnboardingProgress(!isTrial)
-        subscriptionData.onboardingCompleted = isTrial // false para planos pagos, true para trial
+        subscriptionData.onboardingCompleted = false // Sempre false para novas contas
 
         // Se esta sessão representa uma compra de addon
         if (session.metadata?.itemType === 'addon' && session.metadata?.itemId) {

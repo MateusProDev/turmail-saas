@@ -113,7 +113,7 @@ export default async function handler(req, res) {
       company: { name: '', website: '' },
       phone: '',
       locale: 'pt-BR',
-      onboardingCompleted: true, // Set to true to avoid onboarding modal
+      onboardingCompleted: false, // Sempre false para novas contas - onboarding deve abrir
       metadata: {},
       ownerUid: uid,
       status: 'trial',
