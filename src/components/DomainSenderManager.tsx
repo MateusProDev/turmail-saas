@@ -28,7 +28,7 @@ export default function DomainSenderManager() {
   const { user, loading: authLoading } = useAuth()
   const [sendingDomains, setSendingDomains] = useState<SendingDomain[]>([])
   const [senderIdentities, setSenderIdentities] = useState<SenderIdentity[]>([])
-  const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'domains' | 'senders'>('domains')
 
   // Form states
@@ -72,7 +72,7 @@ export default function DomainSenderManager() {
     if (!user) return
 
     try {
-      setLoading(true)
+      setDataLoading(true)
 
       // Load sending domains
       const domainsQuery = query(
@@ -103,7 +103,7 @@ export default function DomainSenderManager() {
     } catch (error) {
       console.error('Failed to load domain/sender data:', error)
     } finally {
-      setLoading(false)
+      setDataLoading(false)
     }
   }
 
@@ -286,7 +286,7 @@ export default function DomainSenderManager() {
     }
   }
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-6 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
