@@ -742,6 +742,12 @@ export default function Dashboard(){
         return (t as { toDate: () => Date }).toDate()
       }
 
+      // Firestore Timestamp with _seconds (from JSON serialization)
+      if (typeof t === 'object' && t !== null && '_seconds' in t) {
+        const ts = t as { _seconds: number; _nanoseconds?: number }
+        return new Date(ts._seconds * 1000 + (ts._nanoseconds || 0) / 1000000)
+      }
+
       // Firestore Timestamp with seconds
       if (typeof t === 'object' && t !== null && 'seconds' in t) {
         return new Date((t as { seconds: number }).seconds * 1000)
