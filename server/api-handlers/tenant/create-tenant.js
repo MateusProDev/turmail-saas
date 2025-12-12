@@ -40,13 +40,26 @@ export default async function handler(req, res) {
       // ignore
     }
 
+    // ✅ IMPORTANTE: Inicializar tenant com limites do trial
+    const { PLANS } = await import('../../lib/plans.js')
+    const trialLimits = PLANS.trial.limits
+
     const tenantRef = db.collection('tenants').doc(tenantId)
-    // Persist tenant with ownerEmail and ownerUid (ownerEmail is required)
-    await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp(), ownerUid: uid, ownerEmail: email || '', name }, { merge: true })
+    // Persist tenant with ownerEmail, ownerUid, limits, and status (ownerEmail is required)
+    await tenantRef.set({ 
+      createdAt: admin.firestore.FieldValue.serverTimestamp(), 
+      ownerUid: uid, 
+      ownerEmail: email || '', 
+      name,
+      limits: trialLimits, // ✅ Inicializar com limites do trial
+      status: 'trial' // ✅ Status inicial como trial
+    }, { merge: true })
 
     await memberRef.set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp(), email, displayName }, { merge: true })
     const secretsRef = tenantRef.collection('settings').doc('secrets')
     await secretsRef.set({ brevoApiKey: null, smtpLogin: null, encrypted: false }, { merge: true })
+
+    console.log('[tenant/create-tenant] Tenant criado com limites do trial:', { tenantId, limits: trialLimits })
 
     return res.status(200).json({ ok: true, tenantId })
   } catch (e) {

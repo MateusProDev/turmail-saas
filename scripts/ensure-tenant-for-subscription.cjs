@@ -74,19 +74,26 @@ for (let i = 0; i < args.length; i++) {
     const tenantSnap = await tenantRef.get()
     if (!tenantSnap.exists) {
       console.log('Creating tenant:', tenantId)
+      
+      // ✅ IMPORTANTE: Inicializar tenant com limites do trial
+      const { PLANS } = await import('../server/lib/plans.js')
+      const trialLimits = PLANS.trial.limits
+      
       await tenantRef.set({
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         ownerUid: ownerUid,
         ownerEmail: email,
         name: `Account ${ownerUid}`,
         plan: data.plan || 'trial',
+        limits: trialLimits, // ✅ Inicializar com limites do trial
+        status: 'trial' // ✅ Status inicial como trial
       }, { merge: true })
 
       const memberRef = tenantRef.collection('members').doc(ownerUid)
       await memberRef.set({ role: 'owner', createdAt: admin.firestore.FieldValue.serverTimestamp(), email, displayName: data.displayName || '' }, { merge: true })
 
       await tenantRef.collection('settings').doc('secrets').set({ fromEmail: null, fromName: null, smtpLogin: null }, { merge: true })
-      console.log('Tenant created')
+      console.log('Tenant created with trial limits')
     } else {
       console.log('Tenant already exists:', tenantId)
     }

@@ -45,8 +45,18 @@ async function main() {
 
   try {
     console.log('Creating tenant', tenantId, 'encrypt=%s ownerUid=%s', doEncrypt, ownerUid)
+    
+    // ✅ IMPORTANTE: Inicializar tenant com limites do trial
+    const { PLANS } = await import('../server/lib/plans.js')
+    const trialLimits = PLANS.trial.limits
+    
     const tenantRef = db.collection('tenants').doc(tenantId)
-    await tenantRef.set({ createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    await tenantRef.set({ 
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      limits: trialLimits, // ✅ Inicializar com limites do trial
+      status: 'trial' // ✅ Status inicial como trial
+    }, { merge: true })
+    
     // If an ownerUid was provided, create a members doc for the tenant and set tenant.ownerUid
     if (ownerUid) {
       const memberRef = tenantRef.collection('members').doc(ownerUid)
