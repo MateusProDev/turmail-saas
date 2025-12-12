@@ -735,21 +735,83 @@ export default function Dashboard(){
 
   const toDate = (t: unknown) => {
     if (!t) return null
-    if (typeof t === 'object' && t !== null && typeof (t as { toDate?: () => Date }).toDate === 'function') return (t as { toDate: () => Date }).toDate()
-    if (typeof t === 'object' && t !== null && 'seconds' in t) return new Date((t as { seconds: number }).seconds * 1000)
-    return new Date(t as string | number | Date)
+
+    try {
+      // Firestore Timestamp object
+      if (typeof t === 'object' && t !== null && typeof (t as { toDate?: () => Date }).toDate === 'function') {
+        return (t as { toDate: () => Date }).toDate()
+      }
+
+      // Firestore Timestamp with seconds
+      if (typeof t === 'object' && t !== null && 'seconds' in t) {
+        return new Date((t as { seconds: number }).seconds * 1000)
+      }
+
+      // String or number
+      if (typeof t === 'string' || typeof t === 'number') {
+        return new Date(t)
+      }
+
+      // Already a Date
+      if (t instanceof Date) {
+        return t
+      }
+
+      console.warn('[Dashboard] Unknown date format:', t)
+      return null
+    } catch (error) {
+      console.error('[Dashboard] Error parsing date:', error, t)
+      return null
+    }
   }
 
   // compute trial badge info
   const trialInfo = (() => {
     try {
-      if (!subscription || !subscription.trialEndsAt) return null
+      console.log('[Dashboard] Computing trialInfo:', {
+        subscription: !!subscription,
+        trialEndsAt: subscription?.trialEndsAt,
+        planId: subscription?.planId,
+        status: subscription?.status
+      })
+
+      if (!subscription || !subscription.trialEndsAt) {
+        console.log('[Dashboard] No subscription or trialEndsAt, returning null')
+        return null
+      }
+
       const end = toDate(subscription.trialEndsAt)
-      if (!end) return null
-      const diff = end.getTime() - Date.now()
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      return { days, expired: diff <= 0 }
-    } catch { return null }
+      console.log('[Dashboard] Trial end date:', end)
+
+      if (!end) {
+        console.log('[Dashboard] Failed to parse trial end date, returning null')
+        return null
+      }
+
+      if (isNaN(end.getTime())) {
+        console.log('[Dashboard] Invalid trial end date, returning null')
+        return null
+      }
+
+      const now = Date.now()
+      const diff = end.getTime() - now
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) // Use ceil instead of floor for more accurate counting
+
+      console.log('[Dashboard] Trial calculation:', {
+        end: end.toISOString(),
+        now: new Date(now).toISOString(),
+        diff,
+        days
+      })
+
+      const result = { days: Math.max(0, days), expired: diff <= 0 }
+
+      console.log('[Dashboard] Trial info result:', result)
+      return result
+    } catch (error) {
+      console.error('[Dashboard] Error computing trial info:', error)
+      return null
+    }
   })()
 
   // Onboarding helper functions
@@ -1697,49 +1759,6 @@ export default function Dashboard(){
             )}
             
             {/* Plan Info Banner */}
-            {subscription && (
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-sm p-6 text-white border border-emerald-400/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                      </svg>
-                      <span className="font-semibold">Plano Ativo</span>
-                    </div>
-                    <p className="text-emerald-50 text-lg font-semibold">
-                      {subscription.planId === 'starter' && 'Starter'}
-                      {subscription.planId === 'pro' && 'Professional'}
-                      {subscription.planId === 'agency' && 'Agency'}
-                      {subscription.planId === 'trial' && 'Trial Gratuito'}
-                      {!['starter', 'pro', 'agency', 'trial'].includes(subscription.planId) && 'Plano Personalizado'}
-                    </p>
-                    <p className="text-emerald-100 text-xs mt-1">
-                      Status: {subscription.status === 'active' ? 'Ativo' : subscription.status === 'trial' ? 'Trial' : 'Inativo'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-emerald-100 mb-1">Limites do Plano</div>
-                    <div className="space-y-1 text-sm">
-                      {subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 ? (
-                        <>
-                          <div className="text-white font-semibold">{subscription.limits.emailsPerDay.toLocaleString()} emails/dia</div>
-                          <div className="text-emerald-100 text-xs">({(subscription.limits.emailsPerDay * 30).toLocaleString()} emails/mês)</div>
-                        </>
-                      ) : (
-                        <div className="text-white font-semibold">✨ Emails ilimitados</div>
-                      )}
-                      {subscription.limits?.contacts && subscription.limits.contacts !== -1 ? (
-                        <div className="text-emerald-100 text-xs mt-1">{subscription.limits.contacts.toLocaleString()} contatos</div>
-                      ) : (
-                        <div className="text-emerald-100 text-xs mt-1">Contatos ilimitados</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Email Usage Card - mostrar se o plano tiver limite */}
             {subscription && tenantId && subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 && (
               <EmailUsageCard tenantId={tenantId} subscription={subscription} />

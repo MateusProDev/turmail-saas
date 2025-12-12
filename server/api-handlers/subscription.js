@@ -36,6 +36,14 @@ export default async function handler(req, res) {
       ...subscriptionDoc.data()
     }
 
+    console.log('[subscription] Returning subscription:', {
+      id: subscription.id,
+      planId: subscription.planId,
+      status: subscription.status,
+      trialEndsAt: subscription.trialEndsAt,
+      trialEndsAtType: typeof subscription.trialEndsAt
+    })
+
     return res.status(200).json({ subscription })
   } catch (e) {
     console.error('[subscription] error', e)
