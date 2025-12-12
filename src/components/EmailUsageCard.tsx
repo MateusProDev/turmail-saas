@@ -29,7 +29,25 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
         const counterSnap = await getDoc(counterRef)
         
         const current = counterSnap.exists() ? (counterSnap.data()?.count || 0) : 0
-        const limits = subscription.limits || { emailsPerDay: 50 }
+        
+        // Usar limites da subscription, com fallback para getPlanInfo se não existir
+        let limits = subscription.limits
+        if (!limits) {
+          // Fallback: obter limites do plano via API
+          try {
+            const response = await fetch(`/api/subscription?tenantId=${tenantId}`)
+            if (response.ok) {
+              const data = await response.json()
+              limits = data.subscription?.limits
+            }
+          } catch (e) {
+            console.warn('Failed to fetch subscription limits, using defaults')
+          }
+        }
+        
+        // Último fallback: limites padrão do trial
+        limits = limits || { emailsPerDay: 50, emailsPerMonth: 1500 }
+        
         const limit = limits.emailsPerDay || 50
         const isUnlimited = limit === -1
         
@@ -152,10 +170,10 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
       )}
 
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500 space-y-1">
-          <div>• Limite reseta à meia-noite</div>
+        <div className="text-xs text-gray-400 flex items-center gap-4">
+          <span>• Limite reseta à meia-noite</span>
           {subscription?.limits?.emailsPerMonth && subscription.limits.emailsPerMonth !== -1 && (
-            <div>• Limite mensal: {subscription.limits.emailsPerMonth.toLocaleString()} emails</div>
+            <span>• Limite mensal: {subscription.limits.emailsPerMonth.toLocaleString()} emails</span>
           )}
         </div>
       </div>

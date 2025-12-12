@@ -436,12 +436,42 @@ export default async function handler(req, res) {
       const subscriptionId = invoice.subscription
       
       if (subscriptionId) {
-        await db.collection('subscriptions').doc(subscriptionId).set({ 
+        // Buscar subscription atual para verificar se era trial
+        const subDoc = await db.collection('subscriptions').doc(subscriptionId).get()
+        const currentSub = subDoc.data() || {}
+        
+        const updateData = { 
           status: 'active', 
           lastPaymentAt: new Date(),
           updatedAt: new Date()
-        }, { merge: true })
+        }
         
+        // Se era uma subscription trial, atualizar limites para o plano pago
+        if (currentSub.status === 'trial' && currentSub.planId) {
+          const { PLANS } = await import('../lib/plans.js')
+          const planConfig = PLANS[currentSub.planId]
+          
+          if (planConfig?.limits) {
+            updateData.limits = planConfig.limits
+            console.log('[webhook-stripe] Atualizando limites de trial para plano pago:', {
+              subscriptionId,
+              planId: currentSub.planId,
+              limits: planConfig.limits
+            })
+            
+            // Também atualizar limites do tenant
+            if (currentSub.tenantId) {
+              await db.collection('tenants').doc(currentSub.tenantId).update({
+                limits: planConfig.limits,
+                status: 'active',
+                updatedAt: new Date()
+              })
+              console.log('[webhook-stripe] Tenant atualizado com limites do plano pago:', currentSub.tenantId)
+            }
+          }
+        }
+        
+        await db.collection('subscriptions').doc(subscriptionId).set(updateData, { merge: true })
         console.log('[webhook-stripe] Pagamento confirmado para subscription:', subscriptionId)
       }
     }
