@@ -781,8 +781,9 @@ export default function Dashboard(){
         status: subscription?.status
       })
 
-      if (!subscription || !subscription.trialEndsAt) {
-        console.log('[Dashboard] No subscription or trialEndsAt, returning null')
+      // Só mostrar trial se o status for 'trial'
+      if (!subscription || subscription.status !== 'trial' || !subscription.trialEndsAt) {
+        console.log('[Dashboard] Not showing trial - status is not trial or no trialEndsAt')
         return null
       }
 
@@ -1765,8 +1766,8 @@ export default function Dashboard(){
             )}
             
             {/* Plan Info Banner */}
-            {/* Email Usage Card - mostrar se o plano tiver limite */}
-            {subscription && tenantId && subscription.limits?.emailsPerDay && subscription.limits.emailsPerDay !== -1 && (
+            {/* Email Usage Card - mostrar sempre que tiver subscription */}
+            {subscription && tenantId && (
               <EmailUsageCard tenantId={tenantId} subscription={subscription} />
             )}
 
