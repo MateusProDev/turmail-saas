@@ -86,6 +86,7 @@ export default function Dashboard(){
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [isOnboardingReady, setIsOnboardingReady] = useState(false)
+  const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   
   // Form states for onboarding steps
@@ -267,7 +268,7 @@ export default function Dashboard(){
       onboardingOpen
     })
 
-    if (shouldOpenOnboarding && !onboardingOpen) {
+    if (shouldOpenOnboarding && !onboardingOpen && !onboardingJustCompleted) {
       console.log('[Dashboard] Opening onboarding modal')
       // Pequeno delay para garantir que tudo está carregado
       const timer = setTimeout(() => {
@@ -286,13 +287,15 @@ export default function Dashboard(){
   }, [subscription, tenant, loading, checkoutPending, onboardingOpen])
   
 
-  // Fechar modal quando onboarding for completado
+  // Fechar modal quando onboarding for completado (backup - caso o estado seja atualizado por outro meio)
   useEffect(() => {
-    if (subscription?.onboardingCompleted === true) {
+    console.log('[Dashboard] useEffect check - onboardingCompleted:', subscription?.onboardingCompleted, 'onboardingOpen:', onboardingOpen)
+    if (subscription?.onboardingCompleted === true && onboardingOpen) {
+      console.log('[Dashboard] Closing onboarding modal due to completed status')
       setOnboardingOpen(false)
-      setCheckoutPending(false) // ✅ Reset checkout pending quando onboarding é completado
+      setCheckoutPending(false)
     }
-  }, [subscription?.onboardingCompleted])
+  }, [subscription?.onboardingCompleted, onboardingOpen])
 
   // Auto-concluir passo de onboarding ao voltar do local configurado
   useEffect(() => {
@@ -1455,20 +1458,34 @@ export default function Dashboard(){
                       })()}
                       
                       {currentStep === onboardingStepsDef.length - 1 && (
-                        <button 
+                        <button
                           onClick={async () => {
-                            if (!subscription?.id) return
+                            console.log('[Dashboard] Finalizar button clicked, currentStep:', currentStep, 'total steps:', onboardingStepsDef.length)
+                            if (!subscription?.id) {
+                              console.error('[Dashboard] No subscription ID for finalizar')
+                              return
+                            }
                             try {
-                              const newProgress = onboardingStepsDef.reduce((acc, st) => ({ 
-                                ...acc, 
-                                [st.key]: true 
+                              console.log('[Dashboard] Starting onboarding completion...')
+                              const newProgress = onboardingStepsDef.reduce((acc, st) => ({
+                                ...acc,
+                                [st.key]: true
                               }), {})
-                              await setDoc(doc(db, 'subscriptions', subscription.id), { 
-                                onboardingProgress: newProgress, 
-                                onboardingCompleted: true 
+                              await setDoc(doc(db, 'subscriptions', subscription.id), {
+                                onboardingProgress: newProgress,
+                                onboardingCompleted: true
                               }, { merge: true })
+
+                              console.log('[Dashboard] Firestore updated successfully, closing modal...')
+                              // ✅ Fechar modal imediatamente após sucesso
                               setOnboardingOpen(false)
-                              setCheckoutPending(false) // ✅ Reset checkout pending quando finalizar onboarding
+                              setCheckoutPending(false)
+                              setOnboardingJustCompleted(true)
+                              
+                              // Reset flag after 5 seconds
+                              setTimeout(() => setOnboardingJustCompleted(false), 5000)
+                              
+                              console.log('[Dashboard] Onboarding completed successfully, modal closed')
                             } catch (e) {
                               console.error('failed to mark onboarding complete', e)
                               alert('Erro ao marcar onboarding como completo')
