@@ -248,6 +248,10 @@ export default async function handler(req, res) {
           const tenantsRef = db.collection('tenants')
           const tenantRef = tenantsRef.doc(tenantId)
           
+          // ✅ IMPORTANTE: Mesmo tenants de reconciliação precisam de limites
+          const { PLANS } = await import('../lib/plans.js')
+          const trialLimits = PLANS.trial.limits
+          
           await tenantRef.set({
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             ownerUid: ownerUid || null,
@@ -255,7 +259,8 @@ export default async function handler(req, res) {
             name: `Reconciliação ${email || tenantId}`,
             status: 'reconciled',
             reconciledAt: new Date(),
-            originalSessionId: session.id
+            originalSessionId: session.id,
+            limits: trialLimits // ✅ Inicializar com limites do trial
           })
           
           // Add owner as member
@@ -544,13 +549,18 @@ export default async function handler(req, res) {
           const tenantsRef = db.collection('tenants')
           const tenantRef = tenantsRef.doc(tenantId)
           
+          // ✅ IMPORTANTE: Mesmo tenants reconciliados precisam de limites
+          const { PLANS } = await import('../lib/plans.js')
+          const trialLimits = PLANS.trial.limits
+          
           await tenantRef.set({
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             ownerUid: ownerUid || null,
             ownerEmail: email || null,
             name: `Reconciliado ${tenantId}`,
             status: 'reconciled',
-            reconciledAt: new Date()
+            reconciledAt: new Date(),
+            limits: trialLimits // ✅ Inicializar com limites do trial
           }, { merge: true })
           
           tenantDoc = await tenantRef.get()
