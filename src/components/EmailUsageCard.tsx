@@ -8,6 +8,9 @@ interface UsageStats {
   remaining: number
   percentage: number
   isUnlimited: boolean
+  type?: 'daily' | 'monthly' | 'unlimited'
+  dailyCurrent?: number
+  monthlyCurrent?: number
 }
 
 interface Props {
@@ -28,7 +31,32 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
         const counterRef = doc(db, `tenants/${tenantId}/counters/emails-${today}`)
         const counterSnap = await getDoc(counterRef)
         
-        const current = counterSnap.exists() ? (counterSnap.data()?.count || 0) : 0
+        const currentDaily = counterSnap.exists() ? (counterSnap.data()?.count || 0) : 0
+        
+        // Buscar contador mensal (últimos 30 dias)
+        // Como não temos query por prefixo no Firestore web SDK, vamos buscar por data
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        
+        let currentMonthly = 0
+        // Buscar contadores dos últimos 30 dias individualmente
+        for (let i = 0; i < 30; i++) {
+          const date = new Date()
+          date.setDate(date.getDate() - i)
+          const dateStr = date.toISOString().split('T')[0]
+          
+          try {
+            const monthlyCounterRef = doc(db, `tenants/${tenantId}/counters/emails-${dateStr}`)
+            const monthlyCounterSnap = await getDoc(monthlyCounterRef)
+            
+            if (monthlyCounterSnap.exists()) {
+              currentMonthly += monthlyCounterSnap.data()?.count || 0
+            }
+          } catch (e) {
+            // Ignorar erros individuais de data
+            console.warn(`Failed to fetch counter for ${dateStr}:`, e)
+          }
+        }
         
         // Usar limites da subscription, com fallback para getPlanInfo se não existir
         let limits = subscription.limits
@@ -48,18 +76,31 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
         // Último fallback: limites padrão do trial
         limits = limits || { emailsPerDay: 50, emailsPerMonth: 1500 }
         
-        const limit = limits.emailsPerDay || 50
-        const isUnlimited = limit === -1
+        // Lógica de prioridade: mensal > diário
+        const monthlyLimit = limits.emailsPerMonth
+        const dailyLimit = limits.emailsPerDay || 50
         
-        const remaining = isUnlimited ? -1 : Math.max(0, limit - current)
-        const percentage = isUnlimited ? 0 : Math.min(100, (current / limit) * 100)
+        const displayType: 'daily' | 'monthly' | 'unlimited' = 
+          monthlyLimit && monthlyLimit !== -1 ? 'monthly' :
+          dailyLimit !== -1 ? 'daily' : 'unlimited'
+        
+        const displayLimit = displayType === 'monthly' ? monthlyLimit : 
+                            displayType === 'daily' ? dailyLimit : -1
+        const displayCurrent = displayType === 'monthly' ? currentMonthly : currentDaily
+        
+        const isUnlimited = displayType === 'unlimited'
+        const remaining = isUnlimited ? -1 : Math.max(0, displayLimit - displayCurrent)
+        const percentage = isUnlimited ? 0 : Math.min(100, (displayCurrent / displayLimit) * 100)
 
         setUsage({
-          current,
-          limit,
+          current: displayCurrent,
+          limit: displayLimit,
           remaining,
           percentage,
           isUnlimited,
+          type: displayType,
+          dailyCurrent: currentDaily,
+          monthlyCurrent: currentMonthly,
         })
       } catch (e) {
         console.error('Failed to load email usage:', e)
@@ -102,7 +143,9 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">📧 Uso de Emails Hoje</h3>
+        <h3 className="text-lg font-semibold text-gray-800">
+          📧 Uso de Emails {usage.type === 'monthly' ? 'Mensal' : 'Hoje'}
+        </h3>
         {subscription?.planId && (
           <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-800 rounded">
             {subscription.planId.toUpperCase()}
@@ -113,7 +156,7 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
       {usage.isUnlimited ? (
         <div className="space-y-2">
           <div className="text-3xl font-bold text-purple-600">
-            {usage.current.toLocaleString()}
+            {usage.dailyCurrent?.toLocaleString() || usage.current.toLocaleString()}
           </div>
           <div className="text-sm text-gray-600">
             ✨ Emails ilimitados
@@ -130,13 +173,15 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className={`h-2.5 rounded-full transition-all duration-300 ${getProgressColor()}`}
-              style={{ width: `${Math.min(100, usage.percentage)}%` }}
-            ></div>
-          </div>
+          {/* Progress bar - sempre mostrar para mensal, opcional para diário */}
+          {(usage.type === 'monthly' || (usage.type === 'daily' && usage.percentage > 0)) && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className={`h-2.5 rounded-full transition-all duration-300 ${getProgressColor()}`}
+                style={{ width: `${Math.min(100, usage.percentage)}%` }}
+              ></div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
@@ -157,13 +202,13 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
 
           {usage.percentage >= 90 && usage.remaining > 0 && (
             <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-800">
-              ⚠️ Você está próximo do limite diário. Considere fazer upgrade.
+              ⚠️ Você está próximo do limite {usage.type === 'monthly' ? 'mensal' : 'diário'}. Considere fazer upgrade.
             </div>
           )}
 
           {usage.remaining === 0 && (
             <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
-              🚫 Limite diário atingido. Volte amanhã ou faça upgrade para enviar mais.
+              🚫 Limite {usage.type === 'monthly' ? 'mensal' : 'diário'} atingido. {usage.type === 'monthly' ? 'Volte no próximo mês' : 'Volte amanhã'} ou faça upgrade.
             </div>
           )}
         </div>
@@ -171,8 +216,11 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
 
       <div className="mt-4 pt-4 border-t border-gray-200">
         <div className="text-xs text-gray-400 flex items-center gap-4">
-          <span>• Limite reseta à meia-noite</span>
-          {subscription?.limits?.emailsPerMonth && subscription.limits.emailsPerMonth !== -1 && (
+          <span>• {usage.type === 'monthly' ? 'Limite reseta mensalmente' : 'Limite reseta à meia-noite'}</span>
+          {usage.type === 'monthly' && usage.dailyCurrent !== undefined && (
+            <span>• Hoje: {usage.dailyCurrent.toLocaleString()} emails</span>
+          )}
+          {subscription?.limits?.emailsPerMonth && subscription.limits.emailsPerMonth !== -1 && usage.type !== 'monthly' && (
             <span>• Limite mensal: {subscription.limits.emailsPerMonth.toLocaleString()} emails</span>
           )}
         </div>
