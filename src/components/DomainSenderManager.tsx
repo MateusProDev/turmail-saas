@@ -31,6 +31,7 @@ export default function DomainSenderManager() {
   const [senderIdentities, setSenderIdentities] = useState<SenderIdentity[]>([])
   const [dataLoading, setDataLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'domains' | 'senders'>('domains')
+  const [tenantId, setTenantId] = useState<string | null>(null)
 
   // Form states
   const [newDomain, setNewDomain] = useState('')
@@ -69,14 +70,49 @@ export default function DomainSenderManager() {
   useEffect(() => {
     console.log('[DomainSenderManager] useEffect triggered, user:', !!user)
     if (user) {
-      loadData()
+      loadTenantId()
     }
   }, [user])
 
+  const loadTenantId = async () => {
+    if (!user) return
+
+    try {
+      console.log('[DomainSenderManager] Loading tenant ID...')
+      const token = await user.getIdToken()
+      const resp = await fetch('/api/my-tenants', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await resp.json()
+      console.log('[DomainSenderManager] My tenants response:', data)
+
+      if (data.tenants && data.tenants.length > 0) {
+        const firstTenant = data.tenants[0]
+        console.log('[DomainSenderManager] Found tenant:', firstTenant.tenantId)
+        setTenantId(firstTenant.tenantId)
+      } else {
+        console.log('[DomainSenderManager] No tenant found for user')
+        setTenantId(null)
+      }
+    } catch (error) {
+      console.error('[DomainSenderManager] Error fetching tenant:', error)
+      setTenantId(null)
+    }
+  }
+
+  useEffect(() => {
+    if (tenantId) {
+      loadData()
+    }
+  }, [tenantId])
+
   const loadData = async () => {
     console.log('[DomainSenderManager] loadData called')
-    if (!user) {
-      console.log('[DomainSenderManager] No user, returning')
+    if (!user || !tenantId) {
+      console.log('[DomainSenderManager] No user or tenantId, returning')
       return
     }
 
@@ -87,7 +123,7 @@ export default function DomainSenderManager() {
       // Load sending domains
       console.log('[DomainSenderManager] Loading sending domains...')
       const domainsQuery = query(
-        collection(db, `tenants/${user.uid}/sendingDomains`)
+        collection(db, `tenants/${tenantId}/sendingDomains`)
       )
       const domainsSnap = await getDocs(domainsQuery)
       console.log('[DomainSenderManager] Domains query result:', domainsSnap.docs.length, 'documents')
@@ -103,7 +139,7 @@ export default function DomainSenderManager() {
       // Load sender identities
       console.log('[DomainSenderManager] Loading sender identities...')
       const sendersQuery = query(
-        collection(db, `tenants/${user.uid}/senderIdentities`)
+        collection(db, `tenants/${tenantId}/senderIdentities`)
       )
       const sendersSnap = await getDocs(sendersQuery)
       console.log('[DomainSenderManager] Senders query result:', sendersSnap.docs.length, 'documents')
@@ -161,7 +197,7 @@ export default function DomainSenderManager() {
       }
 
       // Salvar no Firestore
-      const domainRef = doc(collection(db, `tenants/${user.uid}/sendingDomains`))
+      const domainRef = doc(collection(db, `tenants/${tenantId}/sendingDomains`))
       await setDoc(domainRef, {
         domain: newDomain,
         status: 'pending',
@@ -223,7 +259,7 @@ export default function DomainSenderManager() {
       }
 
       // Salvar no Firestore
-      const senderRef = doc(collection(db, `tenants/${user.uid}/senderIdentities`))
+      const senderRef = doc(collection(db, `tenants/${tenantId}/senderIdentities`))
       await setDoc(senderRef, {
         email: newSenderEmail,
         name: newSenderName,

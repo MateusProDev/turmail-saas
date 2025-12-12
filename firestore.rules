@@ -150,6 +150,26 @@ service cloud.firestore {
       allow write: if false; // Only server can write counters
     }
 
+    // Sending domains: allow tenant owner/admin to manage sending domains
+    match /tenants/{tenantId}/sendingDomains/{domainId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
+      allow create, update, delete: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
+    }
+
+    // Sender identities: allow tenant owner/admin to manage sender identities
+    match /tenants/{tenantId}/senderIdentities/{senderId} {
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
+      allow create, update, delete: if request.auth != null && exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role in ['owner', 'admin']
+      );
+    }
+
     // Fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
