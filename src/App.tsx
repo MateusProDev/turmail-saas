@@ -18,6 +18,7 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import Demo from './pages/Demo'
 import DnsCheck from './pages/DnsCheck'
+import DomainSenderPage from './pages/DomainSenderPage'
 import './App.css'
 
 import AccountCreationProgress from './components/AccountCreationProgress';
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/dns-check" element={<DnsCheck />} />
+          <Route path="/domain-sender" element={<DomainSenderPage />} />
           <Route path="/tenants/:tenantId/members" element={<TenantMembers />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/features" element={<Features />} />

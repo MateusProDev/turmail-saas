@@ -1678,6 +1678,19 @@ export default function Dashboard(){
                   </div>
                   <span>Configurações</span>
                 </Link>
+
+                <Link
+                  to="/domain-sender"
+                  className="flex items-center space-x-3 p-3 rounded-xl text-slate-700 hover:bg-slate-50/80 font-medium transition-all duration-200 group hover:border hover:border-slate-200"
+                >
+                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                    <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7l4 4m0 0l-4 4m4-4H7"/>
+                    </svg>
+                  </div>
+                  <span>Domínios & Remetentes</span>
+                </Link>
               </nav>
             </div>
           </aside>
