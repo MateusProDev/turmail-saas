@@ -544,15 +544,15 @@ export default function Dashboard(){
 
   // Estatísticas isoladas por tenant
   const brevoMetrics = useMemo(() => {
-    console.log('[Dashboard] Computing brevoMetrics, brevoStats:', brevoStats)
+    // console.log('[Dashboard] Computing brevoMetrics, brevoStats:', brevoStats)
     
     if (!brevoStats?.emailStats) {
-      console.log('[Dashboard] No emailStats available')
+      // console.log('[Dashboard] No emailStats available')
       return null
     }
     
     const stats = brevoStats.emailStats
-    console.log('[Dashboard] Email stats data:', stats)
+    // console.log('[Dashboard] Email stats data:', stats)
     
     const metrics = {
       sent: stats.totalSent || 0,
@@ -567,7 +567,7 @@ export default function Dashboard(){
       unsubscribes: stats.totalUnsubscribes || 0
     }
     
-    console.log('[Dashboard] Computed metrics:', metrics)
+    // console.log('[Dashboard] Computed metrics:', metrics)
     return metrics
   }, [brevoStats])
 
@@ -755,29 +755,29 @@ export default function Dashboard(){
   // compute trial badge info
   const trialInfo = (() => {
     try {
-      console.log('[Dashboard] Computing trialInfo:', {
-        subscription: !!subscription,
-        trialEndsAt: subscription?.trialEndsAt,
-        planId: subscription?.planId,
-        status: subscription?.status
-      })
+      // console.log('[Dashboard] Computing trialInfo:', {
+      //   subscription: !!subscription,
+      //   trialEndsAt: subscription?.trialEndsAt,
+      //   planId: subscription?.planId,
+      //   status: subscription?.status
+      // })
 
       // Só mostrar trial se o status for 'trial'
       if (!subscription || subscription.status !== 'trial' || !subscription.trialEndsAt) {
-        console.log('[Dashboard] Not showing trial - status is not trial or no trialEndsAt')
+        // console.log('[Dashboard] Not showing trial - status is not trial or no trialEndsAt')
         return null
       }
 
       const end = toDate(subscription.trialEndsAt)
-      console.log('[Dashboard] Trial end date:', end)
+      // console.log('[Dashboard] Trial end date:', end)
 
       if (!end) {
-        console.log('[Dashboard] Failed to parse trial end date, returning null')
+        // console.log('[Dashboard] Failed to parse trial end date, returning null')
         return null
       }
 
       if (isNaN(end.getTime())) {
-        console.log('[Dashboard] Invalid trial end date, returning null')
+        // console.log('[Dashboard] Invalid trial end date, returning null')
         return null
       }
 
@@ -785,16 +785,16 @@ export default function Dashboard(){
       const diff = end.getTime() - now
       const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) // Use ceil instead of floor for more accurate counting
 
-      console.log('[Dashboard] Trial calculation:', {
-        end: end.toISOString(),
-        now: new Date(now).toISOString(),
-        diff,
-        days
-      })
+      // console.log('[Dashboard] Trial calculation:', {
+      //   end: end.toISOString(),
+      //   now: new Date(now).toISOString(),
+      //   diff,
+      //   days
+      // })
 
       const result = { days: Math.max(0, days), expired: diff <= 0 }
 
-      console.log('[Dashboard] Trial info result:', result)
+      // console.log('[Dashboard] Trial info result:', result)
       return result
     } catch (error) {
       console.error('[Dashboard] Error computing trial info:', error)

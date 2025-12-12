@@ -23,13 +23,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('[AuthContext] AuthProvider initialized, loading:', loading, 'user:', !!user)
+
   useEffect(() => {
+    console.log('[AuthContext] Setting up onAuthStateChanged listener')
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('[AuthContext] onAuthStateChanged fired - user:', !!firebaseUser, 'userId:', firebaseUser?.uid)
       setUser(firebaseUser);
       setLoading(false);
+      console.log('[AuthContext] Auth state updated - loading set to false')
     });
-    return () => unsubscribe();
+    return () => {
+      console.log('[AuthContext] Cleaning up auth listener')
+      unsubscribe();
+    }
   }, []);
+
+  console.log('[AuthContext] AuthProvider rendering - loading:', loading, 'user:', !!user)
 
   return (
     <AuthContext.Provider value={{ user, loading }}>

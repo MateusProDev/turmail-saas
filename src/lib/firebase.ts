@@ -14,6 +14,7 @@ const firebaseConfig = {
 }
 
 if (!getApps().length) {
+  console.log('[Firebase] Initializing Firebase app...')
   // Runtime validation: warn if critical env vars are missing
   const missing: string[] = []
   if (!firebaseConfig.apiKey) missing.push('VITE_FIREBASE_API_KEY')
@@ -24,7 +25,10 @@ if (!getApps().length) {
   }
 
   initializeApp(firebaseConfig)
+  console.log('[Firebase] Firebase app initialized successfully')
 }
 
+console.log('[Firebase] Getting auth and firestore instances')
 export const auth = getAuth()
 export const db = getFirestore()
+console.log('[Firebase] Auth and Firestore instances created')

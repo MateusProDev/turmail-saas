@@ -3,8 +3,11 @@ import DomainSenderManager from '../components/DomainSenderManager'
 
 export default function DomainSenderPage() {
   const { user, loading } = useAuth()
+  
+  console.log('[DomainSenderPage] Rendered - loading:', loading, 'user:', !!user, 'userId:', user?.uid)
 
   if (loading) {
+    console.log('[DomainSenderPage] Still loading auth, showing loading spinner')
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center space-x-3">
@@ -16,6 +19,7 @@ export default function DomainSenderPage() {
   }
 
   if (!user) {
+    console.log('[DomainSenderPage] No user, showing access denied')
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -26,6 +30,7 @@ export default function DomainSenderPage() {
     )
   }
 
+  console.log('[DomainSenderPage] User authenticated, rendering DomainSenderManager')
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

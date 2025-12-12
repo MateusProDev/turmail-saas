@@ -26,6 +26,7 @@ interface SenderIdentity {
 
 export default function DomainSenderManager() {
   const { user, loading: authLoading } = useAuth()
+  console.log('[DomainSenderManager] Component rendered, authLoading:', authLoading, 'user:', !!user)
   const [sendingDomains, setSendingDomains] = useState<SendingDomain[]>([])
   const [senderIdentities, setSenderIdentities] = useState<SenderIdentity[]>([])
   const [dataLoading, setDataLoading] = useState(false)
@@ -39,7 +40,9 @@ export default function DomainSenderManager() {
   const [addingSender, setAddingSender] = useState(false)
 
   // Verificar autenticação
+  console.log('[DomainSenderManager] Checking auth - authLoading:', authLoading, 'user:', !!user)
   if (authLoading) {
+    console.log('[DomainSenderManager] Still loading auth, showing loading state')
     return (
       <div className="bg-white rounded-lg shadow p-6 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -52,6 +55,7 @@ export default function DomainSenderManager() {
   }
 
   if (!user) {
+    console.log('[DomainSenderManager] No user, showing access denied')
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="text-center py-8">
@@ -63,46 +67,59 @@ export default function DomainSenderManager() {
   }
 
   useEffect(() => {
+    console.log('[DomainSenderManager] useEffect triggered, user:', !!user)
     if (user) {
       loadData()
     }
   }, [user])
 
   const loadData = async () => {
-    if (!user) return
+    console.log('[DomainSenderManager] loadData called')
+    if (!user) {
+      console.log('[DomainSenderManager] No user, returning')
+      return
+    }
 
     try {
+      console.log('[DomainSenderManager] Setting dataLoading to true')
       setDataLoading(true)
 
       // Load sending domains
+      console.log('[DomainSenderManager] Loading sending domains...')
       const domainsQuery = query(
         collection(db, `tenants/${user.uid}/sendingDomains`)
       )
       const domainsSnap = await getDocs(domainsQuery)
+      console.log('[DomainSenderManager] Domains query result:', domainsSnap.docs.length, 'documents')
       const domains = domainsSnap.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate(),
         verifiedAt: doc.data().verifiedAt?.toDate()
       })) as SendingDomain[]
+      console.log('[DomainSenderManager] Setting domains:', domains.length)
       setSendingDomains(domains)
 
       // Load sender identities
+      console.log('[DomainSenderManager] Loading sender identities...')
       const sendersQuery = query(
         collection(db, `tenants/${user.uid}/senderIdentities`)
       )
       const sendersSnap = await getDocs(sendersQuery)
+      console.log('[DomainSenderManager] Senders query result:', sendersSnap.docs.length, 'documents')
       const senders = sendersSnap.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate(),
         verifiedAt: doc.data().verifiedAt?.toDate()
       })) as SenderIdentity[]
+      console.log('[DomainSenderManager] Setting senders:', senders.length)
       setSenderIdentities(senders)
 
     } catch (error) {
-      console.error('Failed to load domain/sender data:', error)
+      console.error('[DomainSenderManager] Failed to load domain/sender data:', error)
     } finally {
+      console.log('[DomainSenderManager] Setting dataLoading to false')
       setDataLoading(false)
     }
   }
@@ -287,6 +304,7 @@ export default function DomainSenderManager() {
   }
 
   if (dataLoading) {
+    console.log('[DomainSenderManager] Data loading, showing loading state')
     return (
       <div className="bg-white rounded-lg shadow p-6 animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -304,6 +322,8 @@ export default function DomainSenderManager() {
       </div>
     )
   }
+
+  console.log('[DomainSenderManager] Rendering main component, dataLoading:', dataLoading, 'domains:', sendingDomains.length, 'senders:', senderIdentities.length)
 
   return (
     <div className="bg-white rounded-lg shadow">
