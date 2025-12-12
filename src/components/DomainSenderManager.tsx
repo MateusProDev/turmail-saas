@@ -25,7 +25,7 @@ interface SenderIdentity {
 }
 
 export default function DomainSenderManager() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [sendingDomains, setSendingDomains] = useState<SendingDomain[]>([])
   const [senderIdentities, setSenderIdentities] = useState<SenderIdentity[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +37,30 @@ export default function DomainSenderManager() {
   const [newSenderName, setNewSenderName] = useState('')
   const [addingDomain, setAddingDomain] = useState(false)
   const [addingSender, setAddingSender] = useState(false)
+
+  // Verificar autenticação
+  if (authLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="text-center py-8">
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Acesso Negado</h3>
+          <p className="text-sm text-gray-600">Você precisa estar logado para gerenciar domínios e remetentes.</p>
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     if (user) {

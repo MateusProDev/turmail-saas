@@ -2,7 +2,18 @@ import { useAuth } from '../contexts/AuthContext'
 import DomainSenderManager from '../components/DomainSenderManager'
 
 export default function DomainSenderPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-gray-600">Verificando autenticação...</span>
+        </div>
+      </div>
+    )
+  }
 
   if (!user) {
     return (
