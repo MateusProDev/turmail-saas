@@ -451,27 +451,53 @@ export default async function handler(req, res) {
           updatedAt: new Date()
         }
         
-        // Se era uma subscription trial, atualizar limites para o plano pago
-        if (currentSub.status === 'trial' && currentSub.planId) {
+        // Se era uma subscription trial, determinar o plano pago e atualizar
+        if (currentSub.status === 'trial') {
+          // Mapear priceId para planId baseado nas variáveis de ambiente
+          const priceToPlanMap = {
+            [process.env.VITE_STRIPE_PRICE_STARTER]: 'starter',
+            [process.env.VITE_STRIPE_PRICE_STARTER_ANNUAL]: 'starter',
+            [process.env.VITE_STRIPE_PRICE_PRO]: 'pro',
+            [process.env.VITE_STRIPE_PRICE_PRO_ANNUAL]: 'pro',
+            [process.env.VITE_STRIPE_PRICE_AGENCY]: 'agency',
+            [process.env.VITE_STRIPE_PRICE_AGENCY_ANNUAL]: 'agency',
+          }
+          
+          // Tentar determinar o plano baseado nos line items do invoice
+          let paidPlanId = null
+          const lineItems = invoice.lines?.data || []
+          
+          for (const item of lineItems) {
+            if (item.price?.id && priceToPlanMap[item.price.id]) {
+              paidPlanId = priceToPlanMap[item.price.id]
+              break
+            }
+          }
+          
+          // Fallback: usar o planId atual se não conseguir determinar
+          const targetPlanId = paidPlanId || currentSub.planId
           const { PLANS } = await import('../lib/plans.js')
-          const planConfig = PLANS[currentSub.planId]
+          const planConfig = PLANS[targetPlanId]
           
           if (planConfig?.limits) {
+            updateData.planId = targetPlanId
             updateData.limits = planConfig.limits
-            console.log('[webhook-stripe] Atualizando limites de trial para plano pago:', {
+            console.log('[webhook-stripe] Convertendo trial para plano pago:', {
               subscriptionId,
-              planId: currentSub.planId,
+              fromPlanId: currentSub.planId,
+              toPlanId: targetPlanId,
               limits: planConfig.limits
             })
             
-            // Também atualizar limites do tenant
+            // Também atualizar tenant
             if (currentSub.tenantId) {
               await db.collection('tenants').doc(currentSub.tenantId).update({
+                planId: targetPlanId,
                 limits: planConfig.limits,
                 status: 'active',
                 updatedAt: new Date()
               })
-              console.log('[webhook-stripe] Tenant atualizado com limites do plano pago:', currentSub.tenantId)
+              console.log('[webhook-stripe] Tenant atualizado para plano pago:', currentSub.tenantId)
             }
           }
         }
