@@ -22,37 +22,40 @@ import DomainSenderPage from './pages/DomainSenderPage'
 import './App.css'
 
 import AccountCreationProgress from './components/AccountCreationProgress';
+import { AuthProvider } from './contexts/AuthContext';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AccountCreationProgress />
-      <main className="w-full">
-        <div className="app-container">
-          <Routes> 
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/contacts" element={<Contacts />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/dns-check" element={<DnsCheck />} />
-          <Route path="/domain-sender" element={<DomainSenderPage />} />
-          <Route path="/tenants/:tenantId/members" element={<TenantMembers />} />
-          <Route path="/plans" element={<Plans />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/about" element={<About />} />
-          {/* <Route path="/contact" element={<Contact />} /> */}
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/demo" element={<Demo />} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          </Routes>
-        </div>
-      </main>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AccountCreationProgress />
+        <main className="w-full">
+          <div className="app-container">
+            <Routes> 
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/dns-check" element={<DnsCheck />} />
+            <Route path="/domain-sender" element={<DomainSenderPage />} />
+            <Route path="/tenants/:tenantId/members" element={<TenantMembers />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="/about" element={<About />} />
+            {/* <Route path="/contact" element={<Contact />} /> */}
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/demo" element={<Demo />} />
+            <Route path="/success" element={<Success />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            </Routes>
+          </div>
+        </main>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
