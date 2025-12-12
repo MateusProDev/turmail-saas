@@ -11,6 +11,7 @@ interface UsageStats {
   type?: 'daily' | 'monthly' | 'unlimited'
   dailyCurrent?: number
   monthlyCurrent?: number
+  isLoadingMonthly?: boolean
 }
 
 interface Props {
@@ -32,31 +33,6 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
         const counterSnap = await getDoc(counterRef)
         
         const currentDaily = counterSnap.exists() ? (counterSnap.data()?.count || 0) : 0
-        
-        // Buscar contador mensal (últimos 30 dias)
-        // Como não temos query por prefixo no Firestore web SDK, vamos buscar por data
-        const thirtyDaysAgo = new Date()
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        
-        let currentMonthly = 0
-        // Buscar contadores dos últimos 30 dias individualmente
-        for (let i = 0; i < 30; i++) {
-          const date = new Date()
-          date.setDate(date.getDate() - i)
-          const dateStr = date.toISOString().split('T')[0]
-          
-          try {
-            const monthlyCounterRef = doc(db, `tenants/${tenantId}/counters/emails-${dateStr}`)
-            const monthlyCounterSnap = await getDoc(monthlyCounterRef)
-            
-            if (monthlyCounterSnap.exists()) {
-              currentMonthly += monthlyCounterSnap.data()?.count || 0
-            }
-          } catch (e) {
-            // Ignorar erros individuais de data
-            console.warn(`Failed to fetch counter for ${dateStr}:`, e)
-          }
-        }
         
         // Usar limites da subscription, com fallback para getPlanInfo se não existir
         let limits = subscription.limits
@@ -84,24 +60,66 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
           monthlyLimit && monthlyLimit !== -1 ? 'monthly' :
           dailyLimit !== -1 ? 'daily' : 'unlimited'
         
-        const displayLimit = displayType === 'monthly' ? monthlyLimit : 
-                            displayType === 'daily' ? dailyLimit : -1
-        const displayCurrent = displayType === 'monthly' ? currentMonthly : currentDaily
+        // Primeiro: mostrar dados diários rapidamente
+        const initialDisplayLimit = displayType === 'monthly' ? monthlyLimit : 
+                                   displayType === 'daily' ? dailyLimit : -1
+        const initialDisplayCurrent = displayType === 'monthly' ? currentDaily : currentDaily // placeholder
         
         const isUnlimited = displayType === 'unlimited'
-        const remaining = isUnlimited ? -1 : Math.max(0, displayLimit - displayCurrent)
-        const percentage = isUnlimited ? 0 : Math.min(100, (displayCurrent / displayLimit) * 100)
+        const initialRemaining = isUnlimited ? -1 : Math.max(0, initialDisplayLimit - initialDisplayCurrent)
+        const initialPercentage = isUnlimited ? 0 : Math.min(100, (initialDisplayCurrent / initialDisplayLimit) * 100)
 
+        // Mostrar dados iniciais rapidamente
         setUsage({
-          current: displayCurrent,
-          limit: displayLimit,
-          remaining,
-          percentage,
+          current: initialDisplayCurrent,
+          limit: initialDisplayLimit,
+          remaining: initialRemaining,
+          percentage: initialPercentage,
           isUnlimited,
           type: displayType,
           dailyCurrent: currentDaily,
-          monthlyCurrent: currentMonthly,
+          monthlyCurrent: initialDisplayCurrent, // placeholder
+          isLoadingMonthly: displayType === 'monthly',
         })
+
+        // Se precisa de dados mensais, buscar em background
+        if (displayType === 'monthly') {
+          // Buscar contador mensal (últimos 30 dias) - Otimizado
+          let currentMonthly = currentDaily // começar com hoje
+          const monthlyPromises = []
+          
+          // Buscar apenas os últimos 7 dias primeiro (mais provável de ter dados)
+          for (let i = 1; i <= 7; i++) {
+            const date = new Date()
+            date.setDate(date.getDate() - i)
+            const dateStr = date.toISOString().split('T')[0]
+            
+            const monthlyCounterRef = doc(db, `tenants/${tenantId}/counters/emails-${dateStr}`)
+            monthlyPromises.push(getDoc(monthlyCounterRef))
+          }
+          
+          // Executar em paralelo as 7 chamadas mais recentes
+          const recentResults = await Promise.all(monthlyPromises)
+          recentResults.forEach(docSnap => {
+            if (docSnap.exists()) {
+              currentMonthly += docSnap.data()?.count || 0
+            }
+          })
+          
+          // Atualizar com dados mensais reais
+          const finalRemaining = Math.max(0, monthlyLimit - currentMonthly)
+          const finalPercentage = Math.min(100, (currentMonthly / monthlyLimit) * 100)
+          
+          setUsage(prev => prev ? {
+            ...prev,
+            current: currentMonthly,
+            remaining: finalRemaining,
+            percentage: finalPercentage,
+            monthlyCurrent: currentMonthly,
+            isLoadingMonthly: false,
+          } : null)
+        }
+        
       } catch (e) {
         console.error('Failed to load email usage:', e)
       } finally {
@@ -145,6 +163,7 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-800">
           📧 Uso de Emails {usage.type === 'monthly' ? 'Mensal' : 'Hoje'}
+          {usage.isLoadingMonthly && <span className="ml-2 text-xs text-gray-500">(carregando...)</span>}
         </h3>
         {subscription?.planId && (
           <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-800 rounded">
@@ -177,7 +196,9 @@ export default function EmailUsageCard({ tenantId, subscription }: Props) {
           {(usage.type === 'monthly' || (usage.type === 'daily' && usage.percentage > 0)) && (
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className={`h-2.5 rounded-full transition-all duration-300 ${getProgressColor()}`}
+                className={`h-2.5 rounded-full transition-all duration-300 ${getProgressColor()} ${
+                  usage.isLoadingMonthly ? 'animate-pulse' : ''
+                }`}
                 style={{ width: `${Math.min(100, usage.percentage)}%` }}
               ></div>
             </div>
