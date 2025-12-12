@@ -1,7 +1,28 @@
 #!/usr/bin/env node
 import dotenv from 'dotenv'
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = join(__filename, '..')
+
+// Load .env.local if it exists
+const envLocalPath = join(__dirname, '..', '.env.local')
+if (existsSync(envLocalPath)) {
+  const envLocalContent = readFileSync(envLocalPath, 'utf8')
+  const parsed = dotenv.parse(envLocalContent)
+  for (const [k, v] of Object.entries(parsed)) {
+    if (!process.env[k]) {
+      process.env[k] = v
+    }
+  }
+}
+
 dotenv.config({ path: '.env' })
-import admin from '../api/firebaseAdmin.js'
+
+// Now import admin after env vars are loaded
+import admin from '../server/firebaseAdmin.js'
 import crypto from 'crypto'
 
 const db = admin.firestore()

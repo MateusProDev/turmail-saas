@@ -1,5 +1,25 @@
 #!/usr/bin/env node
-import admin from '../api/firebaseAdmin.js'
+import 'dotenv/config'
+import { readFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Load service account if FIREBASE_SERVICE_ACCOUNT_JSON not set
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  try {
+    const serviceAccountPath = join(__dirname, '..', 'serviceAccount.json')
+    const serviceAccount = readFileSync(serviceAccountPath, 'utf8')
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON = serviceAccount
+    console.log('✅ Loaded serviceAccount.json')
+  } catch (err) {
+    console.warn('⚠️ Could not load serviceAccount.json:', err.message)
+  }
+}
+
+import admin from '../server/firebaseAdmin.js'
 
 async function run() {
   try {
