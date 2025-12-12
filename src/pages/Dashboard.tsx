@@ -135,11 +135,9 @@ export default function Dashboard(){
     const params = new URLSearchParams(window.location.search)
     const checkoutSuccess = params.get('checkout')
     const sessionId = params.get('session_id')
-    const planId = params.get('plan')
-    const uid = params.get('uid')
     
     if (checkoutSuccess === 'success') {
-      console.log('[Dashboard] 🔄 Processando redirecionamento pós-pagamento...', { sessionId, planId, uid })
+      // console.log('[Dashboard] 🔄 Processando redirecionamento pós-pagamento...', { sessionId, planId, uid })
       
       // Store session ID for fallback verification
       if (sessionId) {
@@ -158,7 +156,7 @@ export default function Dashboard(){
       
       // Optional: Show loading state while webhook processes
       // This gives time for the webhook to update the database
-      console.log('[Dashboard] Checkout success detected, setCheckoutPending=true')
+      // console.log('[Dashboard] Checkout success detected, setCheckoutPending=true')
     }
   }, [])
 
@@ -166,7 +164,7 @@ export default function Dashboard(){
   useEffect(() => {
     if (!checkoutSessionId || subscription || loading) return
 
-    console.log('[Dashboard] Checking subscription status for session:', checkoutSessionId)
+    // console.log('[Dashboard] Checking subscription status for session:', checkoutSessionId)
     
     const checkSubscriptionStatus = async () => {
       try {
@@ -179,19 +177,19 @@ export default function Dashboard(){
 
         if (response.ok) {
           const sessionData = await response.json()
-          console.log('[Dashboard] Session data retrieved:', {
-            id: sessionData.id,
-            payment_status: sessionData.payment_status,
-            subscription: sessionData.subscription?.id,
-            status: sessionData.status
-          })
+          // console.log('[Dashboard] Session data retrieved:', {
+          //   id: sessionData.id,
+          //   payment_status: sessionData.payment_status,
+          //   subscription: sessionData.subscription?.id,
+          //   status: sessionData.status
+          // })
           
           if (sessionData.subscription) {
-            console.log('[Dashboard] Subscription found via session check, reloading...')
+            // console.log('[Dashboard] Subscription found via session check, reloading...')
             // Force reload to get updated subscription data
             window.location.reload()
           } else if (sessionData.payment_status === 'paid') {
-            console.log('[Dashboard] Payment was successful but no subscription found, webhook may have failed')
+            // console.log('[Dashboard] Payment was successful but no subscription found, webhook may have failed')
             // Show message to user that payment was processed but subscription setup failed
             alert('Pagamento processado com sucesso! Estamos configurando sua conta. Se o problema persistir, contate o suporte.')
           }
@@ -208,9 +206,9 @@ export default function Dashboard(){
     const interval = setInterval(checkSubscriptionStatus, 5000)
     const timeout = setTimeout(() => {
       clearInterval(interval)
-      console.log('[Dashboard] Stopped checking subscription status after 2 minutes')
+      // console.log('[Dashboard] Stopped checking subscription status after 2 minutes')
       if (!subscription) {
-        console.log('[Dashboard] No subscription found after 2 minutes, user may need manual intervention')
+        // console.log('[Dashboard] No subscription found after 2 minutes, user may need manual intervention')
         alert('Não conseguimos verificar sua subscription. Tente recarregar a página ou contate o suporte.')
       }
     }, 120000)
@@ -222,16 +220,7 @@ export default function Dashboard(){
   }, [checkoutSessionId, subscription, loading, user])
 
   // 🎯 SOLUÇÃO DEFINITIVA: Onboarding sempre abre para novas contas
-  useEffect(() => {
-    console.log('[Dashboard] Onboarding check:', {
-      loading,
-      subscription: !!subscription,
-      tenant: !!tenant,
-      onboardingCompleted: subscription?.onboardingCompleted,
-      checkoutPending,
-      planId: subscription?.planId
-    })
-
+  const onboardingEffect = useCallback(() => {
     // Não fazer nada enquanto loading
     if (loading) {
       if (isOnboardingReady) {
@@ -258,18 +247,9 @@ export default function Dashboard(){
 
     // Calcular variáveis de decisão de onboarding
     const isNewAccount = !subscription?.onboardingCompleted && subscription?.planId
-    const onboardingNotCompleted = !subscription?.onboardingCompleted
     const shouldOpenOnboarding = isNewAccount || checkoutPending
 
-    console.log('[Dashboard] Onboarding decision:', {
-      isNewAccount,
-      onboardingNotCompleted,
-      shouldOpenOnboarding,
-      onboardingOpen
-    })
-
     if (shouldOpenOnboarding && !onboardingOpen && !onboardingJustCompleted) {
-      console.log('[Dashboard] Opening onboarding modal')
       // Pequeno delay para garantir que tudo está carregado
       const timer = setTimeout(() => {
         setOnboardingOpen(true)
@@ -277,21 +257,22 @@ export default function Dashboard(){
       }, 500)
       return () => clearTimeout(timer)
     } else if (!shouldOpenOnboarding && onboardingOpen) {
-      console.log('[Dashboard] Closing onboarding modal')
       setOnboardingOpen(false)
       return () => {}
     } else {
       // No change needed
       return () => {}
     }
-  }, [subscription, tenant, loading, checkoutPending, onboardingOpen])
+  }, [subscription?.onboardingCompleted, subscription?.planId, tenant, loading, checkoutPending, onboardingOpen, onboardingJustCompleted, isOnboardingReady])
+
+  useEffect(onboardingEffect, [onboardingEffect])
   
 
   // Fechar modal quando onboarding for completado (backup - caso o estado seja atualizado por outro meio)
   useEffect(() => {
-    console.log('[Dashboard] useEffect check - onboardingCompleted:', subscription?.onboardingCompleted, 'onboardingOpen:', onboardingOpen)
+    // console.log('[Dashboard] useEffect check - onboardingCompleted:', subscription?.onboardingCompleted, 'onboardingOpen:', onboardingOpen)
     if (subscription?.onboardingCompleted === true && onboardingOpen) {
-      console.log('[Dashboard] Closing onboarding modal due to completed status')
+      // console.log('[Dashboard] Closing onboarding modal due to completed status')
       setOnboardingOpen(false)
       setCheckoutPending(false)
     }
@@ -344,11 +325,11 @@ export default function Dashboard(){
         })
         
         const data = await resp.json()
-        console.log('[Dashboard] My tenants response:', data)
+        // console.log('[Dashboard] My tenants response:', data)
         
         if (data.tenants && data.tenants.length > 0) {
           const firstTenant = data.tenants[0]
-          console.log('[Dashboard] Found tenant:', firstTenant.tenantId)
+          // console.log('[Dashboard] Found tenant:', firstTenant.tenantId)
           setTenantId(firstTenant.tenantId)
           
           // Buscar dados completos do tenant incluindo logoUrl
@@ -358,7 +339,7 @@ export default function Dashboard(){
             setTenant({ id: tenantSnap.id, ...tenantSnap.data() } as Tenant)
           }
         } else {
-          console.log('[Dashboard] No tenant found for user')
+          // console.log('[Dashboard] No tenant found for user')
           setTenantId(null)
           setTenant(null)
         }
@@ -379,7 +360,7 @@ export default function Dashboard(){
     const unsubscribe = onSnapshot(tenantRef, (snap) => {
       if (snap.exists()) {
         setTenant({ id: snap.id, ...snap.data() } as Tenant)
-        console.log('[Dashboard] Tenant data updated:', snap.data())
+        // console.log('[Dashboard] Tenant data updated:', snap.data())
       }
     })
     
@@ -389,14 +370,14 @@ export default function Dashboard(){
   // subscription via API - MAIS SEGURO E CONSISTENTE
   useEffect(() => {
     if (!user || !user.uid || !tenantId) {
-      console.log('[Dashboard] User or tenant not ready for subscription fetch')
+      // console.log('[Dashboard] User or tenant not ready for subscription fetch')
       setSubscription(null)
       return
     }
 
     const fetchSubscription = async () => {
       try {
-        console.log('[Dashboard] Fetching subscription via API for tenant:', tenantId)
+        // console.log('[Dashboard] Fetching subscription via API for tenant:', tenantId)
         const token = await user.getIdToken()
         const response = await fetch(`/api/subscription?tenantId=${tenantId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -407,21 +388,21 @@ export default function Dashboard(){
         }
 
         const data = await response.json()
-        console.log('[Dashboard] Subscription API response:', data)
+        // console.log('[Dashboard] Subscription API response:', data)
 
         if (data.subscription) {
-          console.log('[Dashboard] Subscription loaded via API:', {
-            id: data.subscription.id,
-            status: data.subscription.status,
-            planId: data.subscription.planId
-          })
+          // console.log('[Dashboard] Subscription loaded via API:', {
+          //   id: data.subscription.id,
+          //   status: data.subscription.status,
+          //   planId: data.subscription.planId
+          // })
           setSubscription(data.subscription)
           // Se carregou subscription com sucesso, não está mais em checkout pending
           if (checkoutPending) {
             setCheckoutPending(false)
           }
         } else {
-          console.log('[Dashboard] No subscription found via API')
+          // console.log('[Dashboard] No subscription found via API')
           setSubscription(null)
         }
       } catch (error) {
@@ -481,7 +462,7 @@ export default function Dashboard(){
       try {
         setLoadingBrevo(true)
         const token = await user.getIdToken()
-        console.log('[Dashboard] Fetching Brevo stats for tenant:', tenantId)
+        // console.log('[Dashboard] Fetching Brevo stats for tenant:', tenantId)
         
         const resp = await fetch(`/api/get-brevo-stats?tenantId=${tenantId}`, {
           headers: {
@@ -490,16 +471,16 @@ export default function Dashboard(){
         })
         
         const data = await resp.json()
-        console.log('[Dashboard] Brevo stats response:', data)
+        // console.log('[Dashboard] Brevo stats response:', data)
         
         if (data.success && data.stats) {
-          console.log('[Dashboard] Stats received:', {
-            hasAccount: !!data.stats.account,
-            hasEmailStats: !!data.stats.emailStats,
-            hasCampaigns: !!data.stats.campaigns,
-            emailStats: data.stats.emailStats,
-            errors: data.stats.errors
-          })
+          // console.log('[Dashboard] Stats received:', {
+          //   hasAccount: !!data.stats.account,
+          //   hasEmailStats: !!data.stats.emailStats,
+          //   hasCampaigns: !!data.stats.campaigns,
+          //   emailStats: data.stats.emailStats,
+          //   errors: data.stats.errors
+          // })
           
           // Log errors if any
           if (data.stats.errors) {
