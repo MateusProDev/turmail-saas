@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { FaShoppingCart, FaLeaf, FaInstagram, FaWhatsapp, FaFacebook, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner } from 'react-icons/fa'
+import { FaShoppingCart, FaLeaf, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 import { listFeaturedProducts, formatBRL, type Product } from '../lib/productService'
 import './Home.css'
@@ -107,6 +107,8 @@ export default function Home() {
   const [current, setCurrent] = useState(0)
   const [products, setProducts] = useState(fallbackProducts)
   const [loadingProducts, setLoadingProducts] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
 
   /* Buscar produtos destaque do Firestore */
   useEffect(() => {
@@ -167,10 +169,56 @@ export default function Home() {
               <Link to="/produtos" className="hover:text-green-400 transition-colors">Produtos</Link>
               <Link to="/plans" className="hover:text-green-400 transition-colors">Ofertas</Link>
               <Link to="/about" className="hover:text-green-400 transition-colors">Sobre</Link>
+              {/* Search inline */}
+              <div className="relative">
+                <FaSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={e => { setSearchTerm(e.target.value); setSearchOpen(true) }}
+                  onFocus={() => setSearchOpen(true)}
+                  placeholder="Buscar..."
+                  className="pl-8 pr-3 py-1.5 w-40 bg-gray-800 text-white text-xs rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                />
+                {searchOpen && searchTerm.trim().length > 0 && (
+                  <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 max-h-80 overflow-y-auto z-50">
+                    {products
+                      .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .length === 0 ? (
+                        <p className="p-3 text-xs text-gray-400">Nenhum produto encontrado</p>
+                      ) : (
+                        products
+                          .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                          .map(p => (
+                            <Link
+                              key={p.id}
+                              to="/produtos"
+                              onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
+                              className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                            >
+                              <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-bold text-gray-900">{p.name}</p>
+                                <p className="text-xs font-black text-green-700">{p.price}</p>
+                              </div>
+                            </Link>
+                          ))
+                      )}
+                  </div>
+                )}
+              </div>
             </nav>
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Mobile search toggle */}
+              <button
+                onClick={() => setSearchOpen(v => !v)}
+                className="md:hidden p-1.5 text-gray-300 hover:text-green-400"
+                aria-label="Buscar"
+              >
+                <FaSearch className="w-4 h-4" />
+              </button>
               <Link to="/login" className="hidden md:block text-sm text-gray-300 hover:text-green-400 transition-colors">Entrar</Link>
               <button onClick={toggle} className="relative flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
                 <FaShoppingCart className="w-3.5 h-3.5" />
@@ -205,6 +253,49 @@ export default function Home() {
               Entrar
             </Link>
           </nav>
+        )}
+
+        {/* Mobile search bar */}
+        {searchOpen && (
+          <div className="md:hidden bg-black border-t border-gray-800 px-3 py-2">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Buscar produtos..."
+                autoFocus
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-800 text-white text-sm rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+              />
+            </div>
+            {searchTerm.trim().length > 0 && (
+              <div className="mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-60 overflow-y-auto">
+                {products
+                  .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .length === 0 ? (
+                    <p className="p-3 text-xs text-gray-400">Nenhum produto encontrado</p>
+                  ) : (
+                    products
+                      .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(p => (
+                        <Link
+                          key={p.id}
+                          to="/produtos"
+                          onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
+                          className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                        >
+                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">{p.name}</p>
+                            <p className="text-xs font-black text-green-700">{p.price}</p>
+                          </div>
+                        </Link>
+                      ))
+                  )}
+              </div>
+            )}
+          </div>
         )}
       </header>
 
@@ -299,7 +390,7 @@ export default function Home() {
                     className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
                   >
                     <FaShoppingCart className="w-3 h-3" />
-                    Comprar
+                    Add
                   </button>
                 </div>
               </div>
@@ -336,16 +427,18 @@ export default function Home() {
         {/* ═══════ CTA FINAL ═══════ */}
         <section className="py-10 sm:py-16 bg-black text-center px-4">
           <h2 className="text-xl sm:text-3xl font-black text-white mb-2">
-            Cadastre-se e ganhe <span className="text-green-400">15% OFF</span>
+            Ganhe <span className="text-green-400">15% OFF</span> nos Combos
           </h2>
-          <p className="text-sm text-gray-400 mb-5 max-w-md mx-auto">Na sua primeira compra. Sem enrolação.</p>
-          <Link
-            to="/produtos"
+          <p className="text-sm text-gray-400 mb-5 max-w-md mx-auto">Entre no nosso grupo do WhatsApp e resgate seu cupom na descrição do grupo!</p>
+          <a
+            href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
           >
-            <FaShoppingCart className="w-4 h-4" />
-            Ver Todos os Produtos
-          </Link>
+            <FaWhatsapp className="w-4 h-4" />
+            Entrar no Grupo de Promoções
+          </a>
         </section>
       </main>
 
@@ -363,9 +456,8 @@ export default function Home() {
               </Link>
               <p className="text-gray-500 text-xs leading-relaxed">Qualidade, preço justo e entrega rápida.</p>
               <div className="flex gap-3 mt-3">
-                <a href="#" aria-label="Instagram" className="hover:text-green-400"><FaInstagram className="w-4 h-4" /></a>
-                <a href="#" aria-label="Facebook" className="hover:text-green-400"><FaFacebook className="w-4 h-4" /></a>
-                <a href="#" aria-label="WhatsApp" className="hover:text-green-400"><FaWhatsapp className="w-4 h-4" /></a>
+                <a href="https://www.instagram.com/bensuplementos_" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-green-400"><FaInstagram className="w-4 h-4" /></a>
+                <a href="https://wa.me/5585991470709" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="hover:text-green-400"><FaWhatsapp className="w-4 h-4" /></a>
               </div>
             </div>
 
@@ -395,7 +487,7 @@ export default function Home() {
             <div>
               <h4 className="font-bold text-white mb-2">Contato</h4>
               <ul className="space-y-1.5">
-                <li className="flex items-center gap-1"><FaWhatsapp className="w-3 h-3 text-green-500" /> (11) 99999-9999</li>
+                <li><a href="https://wa.me/5585991470709" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-green-400"><FaWhatsapp className="w-3 h-3 text-green-500" /> (85) 99147-0709</a></li>
                 <li>contato@bensuplementos.com.br</li>
               </ul>
               <div className="flex gap-1.5 mt-3">

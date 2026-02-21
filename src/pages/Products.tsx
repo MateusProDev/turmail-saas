@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaShoppingCart, FaLeaf, FaStar, FaArrowLeft, FaSpinner } from 'react-icons/fa'
+import { FaShoppingCart, FaLeaf, FaStar, FaArrowLeft, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 import { listProducts, formatBRL, type Product } from '../lib/productService'
 
@@ -55,6 +55,7 @@ export default function Products() {
   const [detail, setDetail] = useState<DisplayProduct | null>(null)
   const [products, setProducts] = useState<DisplayProduct[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   /* Buscar produtos do Firestore */
   useEffect(() => {
@@ -78,7 +79,10 @@ export default function Products() {
     return () => { cancelled = true }
   }, [])
 
-  const filtered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
+  const catFiltered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
+  const filtered = searchTerm.trim()
+    ? catFiltered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : catFiltered
 
   const handleAdd = (p: DisplayProduct) => {
     addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image })
@@ -182,6 +186,26 @@ export default function Products() {
         </div>
 
         <h1 className="text-xl sm:text-3xl font-black text-gray-900 mb-4 sm:mb-6">Todos os Produtos</h1>
+
+        {/* Search bar */}
+        <div className="relative mb-4">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nome do produto..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 text-gray-900 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-400"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold"
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useCart } from '../contexts/CartContext'
-import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaShoppingCart } from 'react-icons/fa'
+import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart } from 'react-icons/fa'
 
 export default function CartDrawer() {
   const {
@@ -27,8 +27,7 @@ export default function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white">
           <div className="flex items-center gap-2 font-bold text-sm">
-            <FaShoppingCart className="w-4 h-4 text-green-400" />
-            Carrinho ({totalItems})
+            🛒 Carrinho ({totalItems})
           </div>
           <button onClick={close} className="p-1.5 hover:bg-gray-800 rounded transition-colors">
             <FaTimes className="w-4 h-4" />
@@ -143,10 +142,30 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            {/* Checkout */}
-            <button className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm flex items-center justify-center gap-2">
-              <FaShoppingCart className="w-3.5 h-3.5" />
-              Finalizar Compra
+            {/* Checkout via WhatsApp */}
+            <button
+              onClick={() => {
+                const lines = items.map(
+                  (it) => `• ${it.qty}x ${it.name} — ${it.price}`
+                )
+                const msg = [
+                  '🛒 *Pedido BenSuplementos*',
+                  '',
+                  ...lines,
+                  '',
+                  discount > 0 ? `Cupom: ${coupon?.code} (-${coupon?.percent}%)` : '',
+                  `*Total: ${fmt(total)}*`,
+                  '',
+                  'Olá! Gostaria de finalizar este pedido 🙂',
+                ]
+                  .filter(Boolean)
+                  .join('%0A')
+                window.open(`https://wa.me/5585991470709?text=${msg}`, '_blank')
+              }}
+              className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+            >
+              <FaWhatsapp className="w-4 h-4" />
+              Finalizar pelo WhatsApp
             </button>
           </div>
         )}
