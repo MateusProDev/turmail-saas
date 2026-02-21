@@ -19,20 +19,28 @@ import Terms from './pages/Terms'
 import Demo from './pages/Demo'
 import DnsCheck from './pages/DnsCheck'
 import DomainSenderPage from './pages/DomainSenderPage'
+import Products from './pages/Products'
+import StoreDashboard from './pages/StoreDashboard'
 import './App.css'
 
 import AccountCreationProgress from './components/AccountCreationProgress';
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
+import CartDrawer from './components/CartDrawer';
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <CartProvider>
         <AccountCreationProgress />
+        <CartDrawer />
         <main className="w-full">
           <div className="app-container">
             <Routes> 
             <Route path="/" element={<Home />} />
+            <Route path="/produtos" element={<Products />} />
+            <Route path="/admin/loja" element={<StoreDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/campaigns" element={<Campaigns />} />
@@ -55,6 +63,7 @@ export default function App() {
             </Routes>
           </div>
         </main>
+        </CartProvider>
       </BrowserRouter>
     </AuthProvider>
   )

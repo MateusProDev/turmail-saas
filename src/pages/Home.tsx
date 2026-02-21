@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { FaShoppingCart, FaLeaf, FaInstagram, FaWhatsapp, FaFacebook, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { FaShoppingCart, FaLeaf, FaInstagram, FaWhatsapp, FaFacebook, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner } from 'react-icons/fa'
+import { useCart } from '../contexts/CartContext'
+import { listFeaturedProducts, formatBRL, type Product } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -45,46 +47,81 @@ const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
   }
 }
 
-/* ── Produtos (4 = grid limpo no mobile 2×2) ── */
-const products = [
+/* ── Produtos fallback (quando Firestore vazio/offline) ── */
+const fallbackProducts = [
   {
-    id: 1,
+    id: 'fb-1' as string | number,
     name: 'Whey Isolado 900g',
     price: 'R$ 189,90',
+    priceNum: 189.90,
     oldPrice: 'R$ 249,90',
     image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=400&h=400&q=80',
     tag: 'Mais Vendido',
   },
   {
-    id: 2,
+    id: 'fb-2' as string | number,
     name: 'Creatina 300g',
     price: 'R$ 89,90',
+    priceNum: 89.90,
     oldPrice: 'R$ 119,90',
     image: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?auto=format&fit=crop&w=400&h=400&q=80',
     tag: '-25%',
   },
   {
-    id: 3,
+    id: 'fb-3' as string | number,
     name: 'Pré-Treino 300g',
     price: 'R$ 129,90',
+    priceNum: 129.90,
     oldPrice: 'R$ 169,90',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&h=400&q=80',
     tag: 'Novo',
   },
   {
-    id: 4,
+    id: 'fb-4' as string | number,
     name: 'BCAA 120 Cáps',
     price: 'R$ 59,90',
+    priceNum: 59.90,
     oldPrice: 'R$ 79,90',
     image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&h=400&q=80',
     tag: '-25%',
   },
 ]
 
+/* Converte Firestore Product → formato da Home */
+function toHomeProduct(p: Product) {
+  return {
+    id: p.id,
+    name: p.name,
+    price: formatBRL(p.price),
+    priceNum: p.price,
+    oldPrice: p.oldPrice ? formatBRL(p.oldPrice) : '',
+    image: p.image,
+    tag: p.tag || '',
+  }
+}
+
 export default function Home() {
+  const { addItem, toggle, totalItems } = useCart()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [current, setCurrent] = useState(0)
+  const [products, setProducts] = useState(fallbackProducts)
+  const [loadingProducts, setLoadingProducts] = useState(true)
+
+  /* Buscar produtos destaque do Firestore */
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const data = await listFeaturedProducts()
+        if (!cancelled && data.length > 0) {
+          setProducts(data.map(toHomeProduct))
+        }
+      } catch { /* usa fallback */ }
+      finally { if (!cancelled) setLoadingProducts(false) }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   /* scroll listener */
   useEffect(() => {
@@ -127,7 +164,7 @@ export default function Home() {
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
               <Link to="/" className="hover:text-green-400 transition-colors">Início</Link>
-              <Link to="/features" className="hover:text-green-400 transition-colors">Produtos</Link>
+              <Link to="/produtos" className="hover:text-green-400 transition-colors">Produtos</Link>
               <Link to="/plans" className="hover:text-green-400 transition-colors">Ofertas</Link>
               <Link to="/about" className="hover:text-green-400 transition-colors">Sobre</Link>
             </nav>
@@ -135,10 +172,11 @@ export default function Home() {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <Link to="/login" className="hidden md:block text-sm text-gray-300 hover:text-green-400 transition-colors">Entrar</Link>
-              <Link to="/plans" className="flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
+              <button onClick={toggle} className="relative flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
                 <FaShoppingCart className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Comprar</span>
-              </Link>
+                <span className="hidden sm:inline">Carrinho</span>
+                {totalItems > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-[10px] font-bold rounded-full flex items-center justify-center">{totalItems}</span>}
+              </button>
               {/* Mobile hamburger */}
               <button
                 aria-label="Menu"
@@ -159,7 +197,7 @@ export default function Home() {
         {mobileOpen && (
           <nav className="md:hidden bg-black border-t border-gray-800 px-4 py-3 space-y-2 text-sm">
             {['Início', 'Produtos', 'Ofertas', 'Sobre'].map((label, i) => (
-              <Link key={i} to={['/', '/features', '/plans', '/about'][i]} className="block py-1.5 text-gray-300 hover:text-green-400" onClick={() => setMobileOpen(false)}>
+              <Link key={i} to={['/', '/produtos', '/plans', '/about'][i]} className="block py-1.5 text-gray-300 hover:text-green-400" onClick={() => setMobileOpen(false)}>
                 {label}
               </Link>
             ))}
@@ -229,27 +267,37 @@ export default function Home() {
         <section className="py-6 sm:py-10 px-3 sm:px-6 max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-2xl font-black">Mais Vendidos</h2>
-            <Link to="/features" className="text-xs sm:text-sm text-green-600 font-semibold hover:underline">Ver todos →</Link>
+            <Link to="/produtos" className="text-xs sm:text-sm text-green-600 font-semibold hover:underline">Ver todos →</Link>
           </div>
 
+          {loadingProducts ? (
+            <div className="flex items-center justify-center py-10">
+              <FaSpinner className="w-5 h-5 text-green-600 animate-spin" />
+            </div>
+          ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {products.map(p => (
               <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                {/* Imagem */}
-                <div className="relative aspect-square bg-gray-50 overflow-hidden">
+                {/* Imagem - clique leva para página de produtos */}
+                <Link to="/produtos" className="block relative aspect-square bg-gray-50 overflow-hidden">
                   <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                   <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">
                     {p.tag}
                   </span>
-                </div>
+                </Link>
                 {/* Info */}
                 <div className="p-2.5 sm:p-4">
-                  <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight line-clamp-2">{p.name}</h3>
+                  <Link to="/produtos" className="block">
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight line-clamp-2 hover:text-green-600 transition-colors">{p.name}</h3>
+                  </Link>
                   <div className="flex items-baseline gap-1.5 mt-1">
                     <span className="text-sm sm:text-lg font-black text-green-700">{p.price}</span>
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
-                  <button className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1">
+                  <button
+                    onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image })}
+                    className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
+                  >
                     <FaShoppingCart className="w-3 h-3" />
                     Comprar
                   </button>
@@ -257,6 +305,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          )}
         </section>
 
         {/* ─── Depoimentos (compacto, horizontal scroll no mobile) ─── */}
@@ -291,11 +340,11 @@ export default function Home() {
           </h2>
           <p className="text-sm text-gray-400 mb-5 max-w-md mx-auto">Na sua primeira compra. Sem enrolação.</p>
           <Link
-            to="/plans"
+            to="/produtos"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
           >
             <FaShoppingCart className="w-4 h-4" />
-            Criar Conta e Comprar
+            Ver Todos os Produtos
           </Link>
         </section>
       </main>
@@ -324,10 +373,10 @@ export default function Home() {
             <div>
               <h4 className="font-bold text-white mb-2">Loja</h4>
               <ul className="space-y-1.5">
-                <li><Link to="/features" className="hover:text-green-400">Whey Protein</Link></li>
-                <li><Link to="/features" className="hover:text-green-400">Creatina</Link></li>
-                <li><Link to="/features" className="hover:text-green-400">Pré-Treino</Link></li>
-                <li><Link to="/features" className="hover:text-green-400">Vitaminas</Link></li>
+                <li><Link to="/produtos" className="hover:text-green-400">Whey Protein</Link></li>
+                <li><Link to="/produtos" className="hover:text-green-400">Creatina</Link></li>
+                <li><Link to="/produtos" className="hover:text-green-400">Pré-Treino</Link></li>
+                <li><Link to="/produtos" className="hover:text-green-400">Vitaminas</Link></li>
               </ul>
             </div>
 

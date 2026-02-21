@@ -1,0 +1,562 @@
+import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { FaLeaf, FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes } from 'react-icons/fa'
+import {
+  listProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  formatBRL,
+  type Product,
+  type ProductInput,
+} from '../lib/productService'
+import { uploadImage } from '../lib/cloudinary'
+
+/* ── Categorias disponíveis ── */
+const CATEGORIES = ['Whey Protein', 'Creatina', 'Pré-Treino', 'Aminoácidos', 'Vitaminas', 'Acessórios']
+
+/* ── Estado vazio do form ── */
+const emptyForm: ProductInput = {
+  name: '',
+  price: 0,
+  oldPrice: 0,
+  image: '',
+  tag: '',
+  category: CATEGORIES[0],
+  description: '',
+  featured: false,
+  active: true,
+}
+
+export default function StoreDashboard() {
+  /* ── State ── */
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [form, setForm] = useState<ProductInput>({ ...emptyForm })
+  const [search, setSearch] = useState('')
+  const [filterCat, setFilterCat] = useState('Todos')
+  const [uploading, setUploading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  /* ── Load products ── */
+  const load = async () => {
+    setLoading(true)
+    try {
+      const data = await listProducts(false)
+      setProducts(data)
+    } catch (e) {
+      showToast('Erro ao carregar produtos', 'err')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  /* ── Toast helper ── */
+  const showToast = (msg: string, type: 'ok' | 'err' = 'ok') => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  /* ── Filtered list ── */
+  const filtered = products.filter(p => {
+    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase())
+    const matchCat = filterCat === 'Todos' || p.category === filterCat
+    return matchSearch && matchCat
+  })
+
+  /* ── Form handlers ── */
+  const openNew = () => {
+    setEditId(null)
+    setForm({ ...emptyForm })
+    setShowForm(true)
+  }
+
+  const openEdit = (p: Product) => {
+    setEditId(p.id)
+    setForm({
+      name: p.name,
+      price: p.price,
+      oldPrice: p.oldPrice || 0,
+      image: p.image,
+      tag: p.tag || '',
+      category: p.category,
+      description: p.description || '',
+      featured: p.featured || false,
+      active: p.active !== false,
+    })
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditId(null)
+    setForm({ ...emptyForm })
+  }
+
+  const handleChange = (field: keyof ProductInput, value: string | number | boolean) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  /* ── Image upload ── */
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const res = await uploadImage(file)
+      setForm(prev => ({ ...prev, image: res.secure_url }))
+      showToast('Imagem enviada!', 'ok')
+    } catch {
+      showToast('Erro ao enviar imagem', 'err')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  /* ── Save (create / update) ── */
+  const handleSave = async () => {
+    if (!form.name.trim()) return showToast('Nome obrigatório', 'err')
+    if (form.price <= 0) return showToast('Preço deve ser > 0', 'err')
+    if (!form.image.trim()) return showToast('Imagem obrigatória', 'err')
+
+    setSaving(true)
+    try {
+      if (editId) {
+        await updateProduct(editId, form)
+        showToast('Produto atualizado!', 'ok')
+      } else {
+        await createProduct(form)
+        showToast('Produto criado!', 'ok')
+      }
+      closeForm()
+      await load()
+    } catch {
+      showToast('Erro ao salvar', 'err')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /* ── Delete ── */
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProduct(id)
+      showToast('Produto removido', 'ok')
+      setConfirmDelete(null)
+      await load()
+    } catch {
+      showToast('Erro ao remover', 'err')
+    }
+  }
+
+  /* ── Toggle active/featured ── */
+  const toggleField = async (p: Product, field: 'active' | 'featured') => {
+    try {
+      await updateProduct(p.id, { [field]: !p[field] })
+      await load()
+    } catch {
+      showToast('Erro ao atualizar', 'err')
+    }
+  }
+
+  /* ═══════════════════════ RENDER ═══════════════════════ */
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-40 bg-black shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-1.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                <FaLeaf className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-extrabold text-white leading-none hidden sm:block">Ben<span className="text-green-400">Suplementos</span></span>
+            </Link>
+            <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold">ADMIN</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/produtos" className="text-sm text-gray-300 hover:text-green-400 transition-colors flex items-center gap-1">
+              <FaArrowLeft className="w-3 h-3" /> Voltar à Loja
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* ── Title + New button ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900">Gerenciar Produtos</h1>
+            <p className="text-sm text-gray-500 mt-1">{products.length} produto(s) cadastrado(s)</p>
+          </div>
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm"
+          >
+            <FaPlus className="w-3.5 h-3.5" />
+            Novo Produto
+          </button>
+        </div>
+
+        {/* ── Search + Category filter ── */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar produto..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {['Todos', ...CATEGORIES].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilterCat(cat)}
+                className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                  filterCat === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Loading ── */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <FaSpinner className="w-6 h-6 text-green-600 animate-spin" />
+            <span className="ml-2 text-gray-500 text-sm">Carregando...</span>
+          </div>
+        )}
+
+        {/* ── Empty state ── */}
+        {!loading && filtered.length === 0 && (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center mb-4">
+              <FaImage className="w-7 h-7 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-700 mb-1">Nenhum produto encontrado</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              {search || filterCat !== 'Todos' ? 'Tente outro filtro.' : 'Comece adicionando seu primeiro produto!'}
+            </p>
+            {!search && filterCat === 'Todos' && (
+              <button onClick={openNew} className="px-5 py-2 bg-green-600 text-white font-bold rounded-lg text-sm hover:bg-green-500 transition-colors">
+                <FaPlus className="w-3 h-3 inline mr-1" /> Cadastrar Produto
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Product Table/Cards ── */}
+        {!loading && filtered.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            {/* Desktop table header */}
+            <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <div className="col-span-1">Img</div>
+              <div className="col-span-3">Nome</div>
+              <div className="col-span-2">Categoria</div>
+              <div className="col-span-1">Preço</div>
+              <div className="col-span-1">Tag</div>
+              <div className="col-span-1">Ativo</div>
+              <div className="col-span-1">Destaque</div>
+              <div className="col-span-2 text-right">Ações</div>
+            </div>
+
+            {filtered.map(p => (
+              <div key={p.id} className="border-b border-gray-100 last:border-0">
+                {/* Desktop row */}
+                <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
+                  <div className="col-span-1">
+                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
+                  </div>
+                  <div className="col-span-3">
+                    <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
+                    {p.description && <p className="text-xs text-gray-400 truncate mt-0.5">{p.description}</p>}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">{p.category}</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-sm font-bold text-green-700">{formatBRL(p.price)}</span>
+                    {p.oldPrice ? <span className="block text-[10px] text-gray-400 line-through">{formatBRL(p.oldPrice)}</span> : null}
+                  </div>
+                  <div className="col-span-1">
+                    {p.tag ? <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{p.tag}</span> : <span className="text-gray-300">—</span>}
+                  </div>
+                  <div className="col-span-1">
+                    <button onClick={() => toggleField(p, 'active')} className="text-xl">
+                      {p.active !== false ? <FaToggleOn className="text-green-500" /> : <FaToggleOff className="text-gray-300" />}
+                    </button>
+                  </div>
+                  <div className="col-span-1">
+                    <button onClick={() => toggleField(p, 'featured')} className="text-lg">
+                      <FaStar className={p.featured ? 'text-yellow-400' : 'text-gray-300'} />
+                    </button>
+                  </div>
+                  <div className="col-span-2 flex justify-end gap-2">
+                    <button onClick={() => openEdit(p)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Editar">
+                      <FaEdit className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors" title="Excluir">
+                      <FaTrash className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile card */}
+                <div className="md:hidden p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex gap-3">
+                    <img src={p.image} alt={p.name} className="w-16 h-16 rounded-lg object-cover bg-gray-100 flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{p.category}</span>
+                        {p.tag && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">{p.tag}</span>}
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-sm font-black text-green-700">{formatBRL(p.price)}</span>
+                        {p.oldPrice ? <span className="text-[10px] text-gray-400 line-through">{formatBRL(p.oldPrice)}</span> : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => toggleField(p, 'active')} className="flex items-center gap-1 text-xs">
+                        {p.active !== false ? <FaToggleOn className="text-green-500 text-lg" /> : <FaToggleOff className="text-gray-300 text-lg" />}
+                        <span className="text-gray-500">Ativo</span>
+                      </button>
+                      <button onClick={() => toggleField(p, 'featured')} className="flex items-center gap-1 text-xs">
+                        <FaStar className={`text-lg ${p.featured ? 'text-yellow-400' : 'text-gray-300'}`} />
+                        <span className="text-gray-500">Destaque</span>
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(p)} className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                        <FaEdit className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg bg-red-50 text-red-500">
+                        <FaTrash className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ═══════ FORM MODAL ═══════ */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 sm:pt-20 overflow-y-auto">
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/60" onClick={closeForm} />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 z-10 mb-10">
+            <button onClick={closeForm} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600">
+              <FaTimes className="w-4 h-4" />
+            </button>
+
+            <h2 className="text-xl font-black text-gray-900 mb-6">
+              {editId ? 'Editar Produto' : 'Novo Produto'}
+            </h2>
+
+            <div className="space-y-4">
+              {/* Nome */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Nome do Produto *</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={e => handleChange('name', e.target.value)}
+                  placeholder="Ex: Whey Isolado 900g"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* Preço + Preço antigo */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">Preço (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price || ''}
+                    onChange={e => handleChange('price', parseFloat(e.target.value) || 0)}
+                    placeholder="189.90"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1">Preço Antigo (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.oldPrice || ''}
+                    onChange={e => handleChange('oldPrice', parseFloat(e.target.value) || 0)}
+                    placeholder="249.90"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Categoria */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Categoria *</label>
+                <select
+                  value={form.category}
+                  onChange={e => handleChange('category', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white"
+                >
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Tag */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Tag / Selo</label>
+                <input
+                  type="text"
+                  value={form.tag}
+                  onChange={e => handleChange('tag', e.target.value)}
+                  placeholder="Ex: Mais Vendido, -25%, Novo"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              {/* Imagem */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Imagem *</label>
+                <div className="flex gap-3 items-start">
+                  {form.image ? (
+                    <img src={form.image} alt="Preview" className="w-20 h-20 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <FaImage className="w-6 h-6 text-gray-300" />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full py-2 border-2 border-dashed border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:border-green-400 hover:text-green-600 transition-colors flex items-center justify-center gap-1"
+                    >
+                      {uploading ? <><FaSpinner className="w-3 h-3 animate-spin" /> Enviando...</> : <><FaImage className="w-3 h-3" /> Upload Imagem</>}
+                    </button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <input
+                      type="text"
+                      value={form.image}
+                      onChange={e => handleChange('image', e.target.value)}
+                      placeholder="Ou cole a URL da imagem"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Descrição</label>
+                <textarea
+                  value={form.description}
+                  onChange={e => handleChange('description', e.target.value)}
+                  placeholder="Descreva o produto..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                />
+              </div>
+
+              {/* Toggles */}
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.active ?? true}
+                    onChange={e => handleChange('active', e.target.checked)}
+                    className="w-4 h-4 rounded text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 font-medium">Ativo na loja</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.featured ?? false}
+                    onChange={e => handleChange('featured', e.target.checked)}
+                    className="w-4 h-4 rounded text-yellow-500 focus:ring-yellow-500"
+                  />
+                  <span className="text-sm text-gray-700 font-medium">Destaque (Home)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-6">
+              <button onClick={closeForm} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {saving ? <><FaSpinner className="w-3 h-3 animate-spin" /> Salvando...</> : (editId ? 'Salvar Alterações' : 'Criar Produto')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ CONFIRM DELETE MODAL ═══════ */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setConfirmDelete(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 z-10 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full mx-auto flex items-center justify-center mb-4">
+              <FaTrash className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Excluir Produto?</h3>
+            <p className="text-sm text-gray-500 mb-6">Essa ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button onClick={() => handleDelete(confirmDelete)} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-bold transition-colors">
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ TOAST ═══════ */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] px-5 py-3 rounded-lg shadow-lg text-sm font-bold text-white transition-all ${
+          toast.type === 'ok' ? 'bg-green-600' : 'bg-red-500'
+        }`}>
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  )
+}
