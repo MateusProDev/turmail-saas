@@ -12,7 +12,7 @@ const banners = [
     price: 'R$ 189,90',
     cta: 'Comprar Agora',
     bg: 'from-green-700 via-green-900 to-black',
-    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2c843?w=800&h=500&fit=crop',
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ const banners = [
     price: 'R$ 89,90',
     cta: 'Aproveitar',
     bg: 'from-black via-gray-900 to-green-900',
-    image: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=800&h=500&fit=crop',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 3,
@@ -30,9 +30,20 @@ const banners = [
     price: '',
     cta: 'Ver Ofertas',
     bg: 'from-green-800 via-green-950 to-black',
-    image: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=800&h=500&fit=crop',
+    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80',
   },
 ]
+
+/* ── Fallback para imagens que não carregam ── */
+const IMG_FALLBACK = 'https://placehold.co/400x400/1a1a1a/22c55e?text=BenSuplementos'
+const BANNER_FALLBACK = 'https://placehold.co/1200x500/1a1a1a/22c55e?text=BenSuplementos'
+const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const el = e.currentTarget
+  if (!el.dataset.fallback) {
+    el.dataset.fallback = '1'
+    el.src = el.closest('[data-banner]') ? BANNER_FALLBACK : IMG_FALLBACK
+  }
+}
 
 /* ── Produtos (4 = grid limpo no mobile 2×2) ── */
 const products = [
@@ -41,7 +52,7 @@ const products = [
     name: 'Whey Isolado 900g',
     price: 'R$ 189,90',
     oldPrice: 'R$ 249,90',
-    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2c843?w=400&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=400&h=400&q=80',
     tag: 'Mais Vendido',
   },
   {
@@ -49,7 +60,7 @@ const products = [
     name: 'Creatina 300g',
     price: 'R$ 89,90',
     oldPrice: 'R$ 119,90',
-    image: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=400&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?auto=format&fit=crop&w=400&h=400&q=80',
     tag: '-25%',
   },
   {
@@ -57,7 +68,7 @@ const products = [
     name: 'Pré-Treino 300g',
     price: 'R$ 129,90',
     oldPrice: 'R$ 169,90',
-    image: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&h=400&q=80',
     tag: 'Novo',
   },
   {
@@ -65,7 +76,7 @@ const products = [
     name: 'BCAA 120 Cáps',
     price: 'R$ 59,90',
     oldPrice: 'R$ 79,90',
-    image: 'https://images.unsplash.com/photo-1614859324967-bdf413c78a1f?w=400&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&h=400&q=80',
     tag: '-25%',
   },
 ]
@@ -168,9 +179,9 @@ export default function Home() {
             style={{ transform: `translateX(-${current * 100}%)` }}
           >
             {banners.map(b => (
-              <div key={b.id} className={`relative flex-shrink-0 w-full h-full bg-gradient-to-r ${b.bg}`}>
+              <div key={b.id} data-banner className={`relative flex-shrink-0 w-full h-full bg-gradient-to-r ${b.bg}`}>
                 {/* bg image */}
-                <img src={b.image} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-luminosity" />
+                <img src={b.image} alt="" onError={handleImgError} className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-luminosity" />
                 {/* content */}
                 <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
                   <p className="text-green-400 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-1">{b.subtitle}</p>
@@ -226,7 +237,7 @@ export default function Home() {
               <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Imagem */}
                 <div className="relative aspect-square bg-gray-50 overflow-hidden">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                   <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">
                     {p.tag}
                   </span>
