@@ -1,27 +1,65 @@
-/* Clean, minimal overrides for Home page */
+/* BenSuplementos - Store Home Page Styles */
 
-/* Footer spacing */
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Footer spacing override */
 footer {
-  margin-top: 3rem;
-  padding: 1.25rem 0;
+  margin-top: 0;
 }
 
-/* Small adjustments for hero content */
-.max-w-prose { max-width: 56ch; }
-
-@media (min-width: 640px) {
-  .home-hero h1 { font-size: 2.75rem; }
-}
-@media (min-width: 1024px) {
-  .home-hero h1 { font-size: 3.25rem; }
+/* Bounce animations for floating cards */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-/* Header scrolled state (subtle shadow) */
-.header-scrolled {
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+@keyframes bounce-slow-delay {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
-/* Utility for compact hero subtitle */
-.hero-subtitle {
-  color: #4b5563;
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
+.animate-bounce-slow-delay {
+  animation: bounce-slow-delay 3s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* Product card image zoom */
+.group:hover img {
+  transform: scale(1.05);
+}
+
+/* Green glow effect for CTA buttons */
+.shadow-green-glow {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #111827;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #22c55e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #16a34a;
 }

@@ -1,7 +1,85 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaEnvelope, FaChartBar, FaBullseye, FaCheck, FaTwitter, FaInstagram, FaLinkedin, FaGithub, FaPlane, FaMapMarkerAlt, FaShip, FaUmbrellaBeach } from 'react-icons/fa'
+import { FaShoppingCart, FaDumbbell, FaLeaf, FaCheck, FaInstagram, FaWhatsapp, FaFacebook, FaTruck, FaShieldAlt, FaStar, FaBolt, FaHeart, FaFire, FaCertificate } from 'react-icons/fa'
 import './Home.css'
+
+const products = [
+  {
+    id: 1,
+    name: 'Whey Protein Isolado',
+    brand: 'BenSupplementos',
+    price: 'R$ 189,90',
+    originalPrice: 'R$ 249,90',
+    image: 'https://images.unsplash.com/photo-1593095948071-474c5cc2c843?w=400&h=400&fit=crop',
+    tag: 'Mais Vendido',
+    rating: 4.9,
+    reviews: 342
+  },
+  {
+    id: 2,
+    name: 'Creatina Monohidratada 300g',
+    brand: 'BenSupplementos',
+    price: 'R$ 89,90',
+    originalPrice: 'R$ 119,90',
+    image: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=400&h=400&fit=crop',
+    tag: 'Oferta',
+    rating: 4.8,
+    reviews: 218
+  },
+  {
+    id: 3,
+    name: 'BCAA 2:1:1 - 120 Cáps',
+    brand: 'BenSupplementos',
+    price: 'R$ 59,90',
+    originalPrice: 'R$ 79,90',
+    image: 'https://images.unsplash.com/photo-1614859324967-bdf413c78a1f?w=400&h=400&fit=crop',
+    tag: 'Novo',
+    rating: 4.7,
+    reviews: 156
+  },
+  {
+    id: 4,
+    name: 'Pré-Treino Extreme 300g',
+    brand: 'BenSupplementos',
+    price: 'R$ 129,90',
+    originalPrice: 'R$ 169,90',
+    image: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=400&fit=crop',
+    tag: 'Lançamento',
+    rating: 4.9,
+    reviews: 89
+  },
+  {
+    id: 5,
+    name: 'Glutamina Pura 300g',
+    brand: 'BenSupplementos',
+    price: 'R$ 69,90',
+    originalPrice: 'R$ 99,90',
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop',
+    tag: 'Promoção',
+    rating: 4.6,
+    reviews: 127
+  },
+  {
+    id: 6,
+    name: 'Multivitamínico Daily 60 Cáps',
+    brand: 'BenSupplementos',
+    price: 'R$ 49,90',
+    originalPrice: 'R$ 69,90',
+    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop',
+    tag: 'Essencial',
+    rating: 4.8,
+    reviews: 203
+  }
+]
+
+const categories = [
+  { name: 'Whey Protein', icon: <FaDumbbell className="w-6 h-6" />, count: 24 },
+  { name: 'Creatina', icon: <FaBolt className="w-6 h-6" />, count: 12 },
+  { name: 'Pré-Treino', icon: <FaFire className="w-6 h-6" />, count: 18 },
+  { name: 'Vitaminas', icon: <FaLeaf className="w-6 h-6" />, count: 30 },
+  { name: 'Aminoácidos', icon: <FaHeart className="w-6 h-6" />, count: 15 },
+  { name: 'Naturais', icon: <FaCertificate className="w-6 h-6" />, count: 20 },
+]
 
 export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -17,46 +95,60 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white text-gray-800 overflow-hidden">
-      {/* Header Moderno com Paleta Azul Turística */}
-      <header className={`fixed w-full top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+      {/* Top Bar */}
+      <div className="bg-black text-white text-center text-xs sm:text-sm py-2 font-medium tracking-wide">
+        <span className="text-green-400">FRETE GRÁTIS</span> em compras acima de R$ 199 | Use o cupom <span className="text-green-400 font-bold">BEN10</span> e ganhe 10% OFF
+      </div>
+
+      {/* Header */}
+      <header className={`fixed w-full top-8 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-black/95 backdrop-blur-md shadow-lg shadow-green-900/10' : 'bg-black'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <img
-                src="/logoturmailsemfundo.png"
-                alt="Turmail Logo"
-                className="w-30 h-12 object-contain"
-                style={{ borderRadius: '0.5rem' }}
-              />
-            </div>
+          <div className="flex justify-between items-center py-3">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+                <FaLeaf className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-xl font-extrabold text-white tracking-tight">Ben</span>
+                <span className="text-xl font-extrabold text-green-400 tracking-tight">Suplementos</span>
+              </div>
+            </Link>
 
-            <nav className="hidden md:flex items-center gap-8">
-              <Link to="/" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors">Início</Link>
-              <Link to="/features" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors">Funcionalidades</Link>
-              <Link to="/plans" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors">Planos</Link>
-              <Link to="/templates" className="text-sm font-medium text-gray-700 hover:text-cyan-600 transition-colors">Templates</Link>
-              <Link to="/plans" className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
-                Começar
-              </Link>
+            <nav className="hidden md:flex items-center gap-6">
+              <Link to="/" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">Início</Link>
+              <Link to="/features" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">Produtos</Link>
+              <Link to="/plans" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">Ofertas</Link>
+              <Link to="/about" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">Sobre Nós</Link>
+              <Link to="/templates" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">Blog</Link>
             </nav>
 
+            <div className="hidden md:flex items-center gap-3">
+              <Link to="/login" className="text-sm font-medium text-gray-300 hover:text-green-400 transition-colors">
+                Entrar
+              </Link>
+              <Link to="/plans" className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all transform hover:scale-105">
+                <FaShoppingCart className="w-4 h-4" />
+                Comprar
+              </Link>
+            </div>
+
             <div className="md:hidden flex items-center gap-2">
-              <Link to="/plans" className="text-sm px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium hover:shadow-lg transition-all">
-                Começar
+              <Link to="/plans" className="text-sm px-4 py-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:shadow-lg transition-all">
+                <FaShoppingCart className="w-4 h-4" />
               </Link>
               <button
                 aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
-                className="ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="ml-1 p-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
                 onClick={() => setMobileOpen((v) => !v)}
               >
                 {mobileOpen ? (
-                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 )}
@@ -66,194 +158,290 @@ export default function Home() {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-md border-t">
-            <div className="px-4 pt-4 pb-6 space-y-4">
-              <Link to="/" className="block text-gray-700 font-medium py-2">Início</Link>
-              <Link to="/features" className="block text-gray-700 font-medium py-2">Funcionalidades</Link>
-              <Link to="/plans" className="block text-gray-700 font-medium py-2">Planos</Link>
-              <Link to="/templates" className="block text-gray-700 font-medium py-2">Templates</Link>
-              <Link to="/login" className="block bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-center font-medium py-3 rounded-full mt-4">
-                Entrar
+          <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-gray-800">
+            <div className="px-4 pt-4 pb-6 space-y-3">
+              <Link to="/" className="block text-gray-300 font-medium py-2 hover:text-green-400">Início</Link>
+              <Link to="/features" className="block text-gray-300 font-medium py-2 hover:text-green-400">Produtos</Link>
+              <Link to="/plans" className="block text-gray-300 font-medium py-2 hover:text-green-400">Ofertas</Link>
+              <Link to="/about" className="block text-gray-300 font-medium py-2 hover:text-green-400">Sobre Nós</Link>
+              <Link to="/templates" className="block text-gray-300 font-medium py-2 hover:text-green-400">Blog</Link>
+              <Link to="/login" className="block bg-gradient-to-r from-green-500 to-green-600 text-white text-center font-semibold py-3 rounded-xl mt-4">
+                Entrar na Conta
               </Link>
             </div>
           </div>
         )}
       </header>
 
-      {/* Hero Section com Tema Azul Turístico */}
-      <main className="pt-20">
-        <section className="relative bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-50 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] opacity-5 bg-cover bg-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/90" />
+      {/* Hero Section */}
+      <main className="pt-24">
+        <section className="relative bg-black overflow-hidden min-h-[600px] flex items-center">
+          {/* Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-green-950" />
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-green-500 rounded-full blur-[120px]" />
+            <div className="absolute bottom-10 left-10 w-72 h-72 bg-green-600 rounded-full blur-[100px]" />
+          </div>
           
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                  <FaShip className="w-4 h-4" />
-                  Aumente suas reservas em até 3x
+                <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+                  <FaFire className="w-4 h-4" />
+                  Super Ofertas de Fevereiro - Até 40% OFF
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight">
-                  Triplique suas reservas com automação de e-mails para turismo
-                  <span className="bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent"> comprovada</span>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
+                  Seu treino merece os
+                  <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent"> melhores suplementos</span>
                 </h1>
 
-                <p className="mt-6 text-lg text-gray-600 max-w-2xl leading-relaxed">
-                  Envie campanhas automáticas para captar, reter e vender mais viagens. Teste grátis por 14 dias — sem cartão de crédito. Resultados já no primeiro mês.
+                <p className="mt-6 text-lg text-gray-400 max-w-xl leading-relaxed">
+                  Whey Protein, Creatina, Pré-treino e muito mais. Produtos de alta qualidade com os melhores preços do mercado. Entrega rápida para todo o Brasil.
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <Link 
                     to="/plans" 
-                    className="group relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-cyan-500/25 transform hover:scale-105 transition-all duration-300"
+                    className="group relative px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/40 transform hover:scale-105 transition-all duration-300 text-lg"
                   >
-                    <span className="relative z-10">Começar Agora - 14 Dias Grátis</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <FaShoppingCart className="w-5 h-5" />
+                      Comprar Agora
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
                   <Link 
-                    to="/demo" 
-                    className="px-6 py-3 border-2 border-cyan-200 text-cyan-700 font-semibold rounded-xl hover:border-cyan-500 hover:bg-cyan-50 transition-all duration-300"
+                    to="/features" 
+                    className="px-8 py-4 border-2 border-green-500/50 text-green-400 font-semibold rounded-xl hover:border-green-400 hover:bg-green-500/10 transition-all duration-300 text-lg"
                   >
-                    Agendar Demonstração
+                    Ver Catálogo
                   </Link>
                 </div>
 
-                <div className="mt-6 flex flex-col sm:flex-row gap-4 text-sm text-gray-600">
+                <div className="mt-8 flex flex-col sm:flex-row gap-6 text-sm text-gray-400">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Setup em 5 minutos</span>
+                    <FaTruck className="w-4 h-4 text-green-500" />
+                    <span>Frete Grátis +R$199</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Sem cartão necessário</span>
+                    <FaShieldAlt className="w-4 h-4 text-green-500" />
+                    <span>Compra 100% Segura</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Foco em turismo</span>
+                    <FaStar className="w-4 h-4 text-green-500" />
+                    <span>+10.000 Clientes</span>
                   </div>
                 </div>
               </div>
 
-              {/* Dashboard Preview com Tema Turístico */}
-              <div className="relative">
-                <div className="relative bg-white rounded-2xl shadow-2xl p-2 transform rotate-1 hover:rotate-0 transition-transform duration-500">
-                  <div className="bg-gradient-to-br from-cyan-900 to-blue-900 rounded-xl p-4">
-                    <div className="flex gap-2 mb-4">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <div className="bg-blue-800/50 rounded-lg p-6 backdrop-blur-sm">
-                      <div className="text-white font-mono text-sm">
-                        <div className="text-cyan-300 flex items-center gap-2">
-                          <FaMapMarkerAlt className="w-3 h-3" />
-                          Dashboard Turmail - Resultados Reais
-                        </div>
-                        <div className="mt-3 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-blue-200">Aumento de reservas:</span>
-                            <span className="text-white font-bold">3x</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-200">Taxa de abertura:</span>
-                            <span className="text-white font-bold">45%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-200">Receita estimada:</span>
-                            <span className="text-white font-bold">+120%</span>
-                          </div>
-                        </div>
-                      </div>
+              {/* Hero Visual */}
+              <div className="relative flex justify-center">
+                <div className="relative">
+                  <div className="w-80 h-80 lg:w-96 lg:h-96 bg-gradient-to-br from-green-500/20 to-green-700/20 rounded-full flex items-center justify-center border border-green-500/20">
+                    <div className="w-64 h-64 lg:w-80 lg:h-80 bg-gradient-to-br from-green-500/30 to-green-700/30 rounded-full flex items-center justify-center border border-green-500/30">
+                      <FaDumbbell className="w-24 h-24 lg:w-32 lg:h-32 text-green-400 drop-shadow-2xl" />
                     </div>
                   </div>
-                </div>
-                
-                {/* Floating Elements Turísticos */}
-                <div className="absolute -top-4 -right-4 bg-white p-4 rounded-xl shadow-lg border border-cyan-100">
-                  <div className="text-sm font-semibold text-cyan-600 flex items-center gap-1">
-                    <FaUmbrellaBeach className="w-3 h-3" />
-                    Reservas: <span className="text-gray-700">+3x</span>
+                  
+                  {/* Floating Cards */}
+                  <div className="absolute -top-4 -right-4 bg-white p-3 rounded-xl shadow-2xl animate-bounce-slow">
+                    <div className="text-sm font-bold text-gray-900">Whey Isolado</div>
+                    <div className="text-green-600 font-extrabold">R$ 189,90</div>
+                    <div className="flex text-yellow-400 text-xs mt-1">
+                      <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">(após automações)</div>
-                </div>
 
-                <div className="absolute -bottom-4 -left-4 bg-white p-4 rounded-xl shadow-lg border border-blue-100">
-                  <div className="text-sm font-semibold text-blue-600 flex items-center gap-1">
-                    <FaShip className="w-3 h-3" />
-                    Retenção: <span className="text-gray-700">+25%</span>
+                  <div className="absolute -bottom-4 -left-4 bg-white p-3 rounded-xl shadow-2xl animate-bounce-slow-delay">
+                    <div className="text-sm font-bold text-gray-900">Creatina 300g</div>
+                    <div className="text-green-600 font-extrabold">R$ 89,90</div>
+                    <div className="text-xs text-gray-500 line-through">R$ 119,90</div>
                   </div>
-                  <div className="text-xs text-gray-500">(exemplo de resultado)</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Social Proof */}
-        <section className="bg-gradient-to-r from-cyan-50 to-blue-50 py-12 border-y border-cyan-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-gray-600 font-medium mb-6">Estamos em piloto com agências selecionadas. Inscreva-se para testar o piloto.</p>
-            <div className="flex justify-center">
-              <Link to="/demo" className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-md font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all">
-                Solicitar acesso ao piloto
+        {/* Trust Bar */}
+        <section className="bg-gradient-to-r from-green-600 to-green-700 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white text-center">
+              <div className="flex items-center justify-center gap-2">
+                <FaTruck className="w-5 h-5" />
+                <span className="text-sm font-medium">Entrega Rápida</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <FaShieldAlt className="w-5 h-5" />
+                <span className="text-sm font-medium">Pagamento Seguro</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <FaCertificate className="w-5 h-5" />
+                <span className="text-sm font-medium">Produtos Originais</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <FaStar className="w-5 h-5" />
+                <span className="text-sm font-medium">4.9/5 Avaliações</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Section */}
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+                Navegue por
+                <span className="bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent"> Categorias</span>
+              </h2>
+              <p className="mt-3 text-lg text-gray-500">Encontre o suplemento ideal para o seu objetivo</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((cat, index) => (
+                <Link
+                  key={index}
+                  to="/features"
+                  className="group flex flex-col items-center p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-green-300 hover:bg-green-50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                >
+                  <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                    {cat.icon}
+                  </div>
+                  <span className="mt-3 text-sm font-bold text-gray-800">{cat.name}</span>
+                  <span className="text-xs text-gray-400">{cat.count} produtos</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Products Grid */}
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+                  Produtos em
+                  <span className="bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent"> Destaque</span>
+                </h2>
+                <p className="mt-2 text-gray-500">Os mais vendidos da semana</p>
+              </div>
+              <Link to="/features" className="hidden sm:flex items-center gap-2 text-green-600 font-semibold hover:text-green-700 transition-colors">
+                Ver todos
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <div 
+                  key={product.id}
+                  className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="relative overflow-hidden bg-gray-100 aspect-square">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
+                        {product.tag}
+                      </span>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                    <button className="absolute bottom-3 right-3 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 hover:bg-green-700 shadow-lg">
+                      <FaShoppingCart className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="p-5">
+                    <div className="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">{product.brand}</div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">{product.name}</h3>
+                    <div className="flex items-center gap-1 mb-3">
+                      <div className="flex text-yellow-400">
+                        {[...Array(5)].map((_, i) => (
+                          <FaStar key={i} className="w-3 h-3" />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-400">({product.reviews})</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-black text-gray-900">{product.price}</span>
+                      <span className="text-sm text-gray-400 line-through">{product.originalPrice}</span>
+                    </div>
+                    <button className="mt-4 w-full py-3 bg-black text-white font-bold rounded-xl hover:bg-green-600 transition-colors duration-300 flex items-center justify-center gap-2">
+                      <FaShoppingCart className="w-4 h-4" />
+                      Adicionar ao Carrinho
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-10 sm:hidden">
+              <Link to="/features" className="inline-flex items-center gap-2 text-green-600 font-semibold hover:text-green-700 transition-colors">
+                Ver todos os produtos
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Features Grid com Tema Turístico */}
+        {/* Benefits Section */}
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Tudo que você precisa para 
-                <span className="bg-gradient-to-r from-cyan-600 to-blue-800 bg-clip-text text-transparent"> fidelizar viajantes</span>
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+                Por que escolher a
+                <span className="bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent"> BenSuplementos?</span>
               </h2>
-              <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-                Ferramentas especializadas para o mercado de turismo, desde a primeira reserva até a viagem dos sonhos recorrente.
+              <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">
+                Qualidade, preço justo e compromisso com sua saúde e performance
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[
                 {
-                  icon: <FaEnvelope className="w-8 h-8 text-cyan-600" />,
-                  title: 'Campanhas Inteligentes',
-                  description: 'Automações que enviam a mensagem certa na hora certa, baseado no comportamento do cliente.',
-                  features: ['Abandoned cart', 'Recomendações', 'Ofertas personalizadas'],
-                  color: 'from-cyan-50 to-blue-50'
+                  icon: <FaCertificate className="w-8 h-8 text-green-600" />,
+                  title: 'Produtos Certificados',
+                  description: 'Todos os nossos suplementos passam por rigoroso controle de qualidade e possuem registro na ANVISA.',
+                  features: ['Registro ANVISA', 'Laudos laboratoriais', 'Selo de qualidade'],
                 },
                 {
-                  icon: <FaChartBar className="w-8 h-8 text-blue-600" />,
-                  title: 'Analytics do Turismo',
-                  description: 'Métricas que importam: taxa de reserva, destino preferido, gasto médio por cliente.',
-                  features: ['Dashboard especializado', 'Relatórios automáticos', 'KPIs do setor'],
-                  color: 'from-blue-50 to-cyan-50'
+                  icon: <FaTruck className="w-8 h-8 text-green-600" />,
+                  title: 'Entrega Super Rápida',
+                  description: 'Enviamos para todo o Brasil com rastreamento em tempo real. Frete grátis acima de R$ 199.',
+                  features: ['Entrega em 24-48h*', 'Frete grátis +R$199', 'Rastreamento em tempo real'],
                 },
                 {
-                  icon: <FaBullseye className="w-8 h-8 text-sky-600" />,
-                  title: 'Segmentação Avançada',
-                  description: 'Agrupe clientes por destino preferido, tipo de viagem, gasto médio e muito mais.',
-                  features: ['Tags inteligentes', 'Comportamento', 'Histórico de viagens'],
-                  color: 'from-sky-50 to-blue-50'
+                  icon: <FaShieldAlt className="w-8 h-8 text-green-600" />,
+                  title: 'Compra 100% Segura',
+                  description: 'Pagamento seguro com as principais bandeiras e PIX com desconto adicional de 5%.',
+                  features: ['PIX com 5% OFF', 'Parcelamento em até 12x', 'Garantia de satisfação'],
                 }
               ].map((feature, index) => (
                 <div 
                   key={index}
-                  className="group bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl border border-gray-100 hover:border-cyan-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:transform hover:-translate-y-2"
+                  className="group bg-white p-8 rounded-2xl border-2 border-gray-100 hover:border-green-300 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
                 >
-                  <div className={`mb-4 flex items-center justify-center p-4 rounded-xl bg-gradient-to-br ${feature.color}`}>
-                    <div className="p-3 bg-white rounded-lg shadow-sm">
+                  <div className="mb-6 w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all duration-300">
+                    <div className="group-hover:text-white transition-colors duration-300">
                       {feature.icon}
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">{feature.description}</p>
+                  <p className="text-gray-500 mb-4 leading-relaxed">{feature.description}</p>
                   <ul className="space-y-2">
                     {feature.features.map((feat, idx) => (
                       <li key={idx} className="flex items-center gap-3 text-sm text-gray-500">
-                        <FaCheck className="text-cyan-500 w-4 h-4 flex-shrink-0" />
+                        <FaCheck className="text-green-500 w-4 h-4 flex-shrink-0" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -264,106 +452,166 @@ export default function Home() {
           </div>
         </section>
 
-        {/* CTA Section com Gradiente Azul Turístico */}
-        <section className="py-20 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] opacity-10 bg-cover bg-center" />
+        {/* Testimonials */}
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900">
+                O que nossos
+                <span className="bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent"> clientes dizem</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { name: 'Lucas M.', text: 'Melhor custo-benefício que já encontrei! O Whey Isolado é top e a entrega chegou antes do prazo.', stars: 5 },
+                { name: 'Ana Paula S.', text: 'A creatina é pura mesmo, deu uma diferença absurda nos treinos. Já virei cliente fiel!', stars: 5 },
+                { name: 'Carlos R.', text: 'Atendimento excelente e produtos de qualidade. O pré-treino Extreme é insano, recomendo muito.', stars: 5 },
+              ].map((review, i) => (
+                <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="flex text-yellow-400 mb-3">
+                    {[...Array(review.stars)].map((_, j) => <FaStar key={j} className="w-4 h-4" />)}
+                  </div>
+                  <p className="text-gray-600 mb-4 italic">"{review.text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-sm">
+                      {review.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{review.name}</div>
+                      <div className="text-xs text-green-600">Cliente verificado</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 bg-black relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-10 right-20 w-96 h-96 bg-green-500 rounded-full blur-[120px]" />
+            <div className="absolute bottom-10 left-20 w-72 h-72 bg-green-600 rounded-full blur-[100px]" />
+          </div>
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              Pronto para navegar em águas mais calmas?
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-6">
+              Pronto para transformar seus
+              <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent"> resultados?</span>
             </h2>
-            <p className="text-xl text-cyan-100 mb-8 max-w-2xl mx-auto">
-              Teste grátis por 14 dias e veja como a automação pode aumentar suas reservas recorrentes.
+            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+              Cadastre-se agora e ganhe 15% de desconto na primeira compra. Não perca tempo, sua evolução começa aqui!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 to="/plans" 
-                className="px-8 py-4 bg-white text-cyan-700 font-bold rounded-xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 hover:bg-cyan-50"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl shadow-2xl shadow-green-500/25 hover:shadow-green-500/40 transform hover:scale-105 transition-all duration-300 text-lg"
               >
-                Começar Agora - 14 Dias Grátis
+                Criar Minha Conta - 15% OFF
               </Link>
               <Link 
-                to="/demo" 
-                className="px-8 py-4 border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-cyan-700 transition-all duration-300"
+                to="/features" 
+                className="px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white hover:text-black transition-all duration-300 text-lg"
               >
-                Agendar Demonstração
+                Explorar Produtos
               </Link>
             </div>
-            <p className="mt-4 text-cyan-200 text-sm">
-              Não pedimos cartão de crédito. Cancele quando quiser.
+            <p className="mt-6 text-gray-500 text-sm">
+              Mais de 10.000 clientes satisfeitos em todo o Brasil
             </p>
           </div>
         </section>
       </main>
 
-      {/* Footer com Tema Azul Marinho */}
-      <footer className="bg-gradient-to-b from-blue-900 to-gray-900 text-white py-12">
+      {/* Newsletter */}
+      <section className="bg-green-600 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-2xl font-bold text-white mb-2">Receba ofertas exclusivas!</h3>
+          <p className="text-green-100 mb-6">Cadastre-se e fique por dentro das melhores promoções e lançamentos</p>
+          <form onSubmit={(e) => { e.preventDefault(); alert('Cadastrado com sucesso! Você receberá nossas ofertas.'); }} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+            <input 
+              type="email" 
+              placeholder="Seu melhor e-mail" 
+              className="flex-1 px-4 py-3 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-300" 
+            />
+            <button 
+              type="submit" 
+              className="px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-800 transition-all"
+            >
+              Quero Ofertas!
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-black text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-left">
               <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <FaPlane className="w-4 h-4 text-white" />
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center">
+                    <FaLeaf className="w-5 h-5 text-white" />
                   </div>
-                  <div className="text-xl font-bold">Turmail</div>
+                  <div>
+                    <span className="text-xl font-extrabold text-white">Ben</span>
+                    <span className="text-xl font-extrabold text-green-400">Suplementos</span>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm">Email marketing especializado para agências de turismo.</div>
+                <div className="text-gray-400 text-sm">Sua loja de suplementos de confiança. Qualidade, preço justo e entrega rápida.</div>
               </div>
 
               <div className="flex items-center gap-3 mt-4">
-                <a href="#" aria-label="Twitter" className="text-gray-400 hover:text-cyan-300 transition-colors"><FaTwitter className="w-5 h-5" /></a>
-                <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-cyan-300 transition-colors"><FaInstagram className="w-5 h-5" /></a>
-                <a href="#" aria-label="LinkedIn" className="text-gray-400 hover:text-cyan-300 transition-colors"><FaLinkedin className="w-5 h-5" /></a>
-                <a href="#" aria-label="GitHub" className="text-gray-400 hover:text-cyan-300 transition-colors"><FaGithub className="w-5 h-5" /></a>
+                <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-green-400 transition-colors"><FaInstagram className="w-5 h-5" /></a>
+                <a href="#" aria-label="Facebook" className="text-gray-400 hover:text-green-400 transition-colors"><FaFacebook className="w-5 h-5" /></a>
+                <a href="#" aria-label="WhatsApp" className="text-gray-400 hover:text-green-400 transition-colors"><FaWhatsapp className="w-5 h-5" /></a>
               </div>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-3">Produto</h4>
+              <h4 className="font-semibold text-white mb-3">Loja</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><Link to="/features" className="hover:text-cyan-300 transition-colors">Funcionalidades</Link></li>
-                <li><Link to="/plans" className="hover:text-cyan-300 transition-colors">Planos</Link></li>
-                <li><Link to="/templates" className="hover:text-cyan-300 transition-colors">Templates</Link></li>
-                <li><Link to="/integrations" className="hover:text-cyan-300 transition-colors">Integrações</Link></li>
+                <li><Link to="/features" className="hover:text-green-400 transition-colors">Whey Protein</Link></li>
+                <li><Link to="/features" className="hover:text-green-400 transition-colors">Creatina</Link></li>
+                <li><Link to="/features" className="hover:text-green-400 transition-colors">Pré-Treino</Link></li>
+                <li><Link to="/features" className="hover:text-green-400 transition-colors">Vitaminas</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-3">Empresa</h4>
+              <h4 className="font-semibold text-white mb-3">Institucional</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li><Link to="/about" className="hover:text-cyan-300 transition-colors">Sobre</Link></li>
-                <li><Link to="/contact" className="hover:text-cyan-300 transition-colors">Contato</Link></li>
-                <li><Link to="/blog" className="hover:text-cyan-300 transition-colors">Blog</Link></li>
-                <li><Link to="/careers" className="hover:text-cyan-300 transition-colors">Carreiras</Link></li>
+                <li><Link to="/about" className="hover:text-green-400 transition-colors">Sobre Nós</Link></li>
+                <li><Link to="/privacy" className="hover:text-green-400 transition-colors">Política de Privacidade</Link></li>
+                <li><Link to="/terms" className="hover:text-green-400 transition-colors">Termos de Uso</Link></li>
+                <li><a href="#" className="hover:text-green-400 transition-colors">Trocas e Devoluções</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-3">Receba novidades</h4>
-              <p className="text-gray-400 text-sm mb-4">Inscreva-se para receber atualizações do piloto e dicas para aumentar reservas.</p>
-              <form onSubmit={(e) => { e.preventDefault(); alert('Obrigado! Entraremos em contato.'); }} className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="Seu melhor email" 
-                  className="w-full px-3 py-2 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500" 
-                />
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-md hover:shadow-lg transition-all"
-                >
-                  Inscrever
-                </button>
-              </form>
-              <p className="text-gray-500 text-xs mt-3">Respeitamos sua privacidade. Sem spam.</p>
+              <h4 className="font-semibold text-white mb-3">Atendimento</h4>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li className="flex items-center gap-2"><FaWhatsapp className="w-4 h-4 text-green-500" /> (11) 99999-9999</li>
+                <li>contato@bensuplementos.com.br</li>
+                <li>Seg-Sex: 9h às 18h</li>
+              </ul>
+              <div className="mt-4">
+                <h5 className="text-xs text-gray-500 mb-2">Formas de Pagamento</h5>
+                <div className="flex gap-2 text-xs">
+                  <span className="px-2 py-1 bg-gray-800 rounded text-gray-400">PIX</span>
+                  <span className="px-2 py-1 bg-gray-800 rounded text-gray-400">Cartão</span>
+                  <span className="px-2 py-1 bg-gray-800 rounded text-gray-400">Boleto</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400">
-            <p>© 2025 Turmail. Feito com ❤️ para agências de turismo brasileiras.</p>
+          <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between text-sm text-gray-500">
+            <p>© 2026 BenSuplementos. Todos os direitos reservados. CNPJ: XX.XXX.XXX/0001-XX</p>
             <div className="flex gap-4 mt-4 md:mt-0">
-              <Link to="/terms" className="hover:text-cyan-300 transition-colors">Termos</Link>
-              <Link to="/privacy" className="hover:text-cyan-300 transition-colors">Privacidade</Link>
-              <Link to="/contact" className="hover:text-cyan-300 transition-colors">Suporte</Link>
+              <Link to="/terms" className="hover:text-green-400 transition-colors">Termos</Link>
+              <Link to="/privacy" className="hover:text-green-400 transition-colors">Privacidade</Link>
+              <a href="#" className="hover:text-green-400 transition-colors">Suporte</a>
             </div>
           </div>
         </div>
