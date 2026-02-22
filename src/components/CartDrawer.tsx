@@ -119,7 +119,7 @@ export default function CartDrawer() {
                     </button>
                   </div>
                   {couponError && <p className="text-red-500 text-[10px] mt-1">{couponError}</p>}
-                  <p className="text-gray-400 text-[10px] mt-1">Experimente: BEN10, BEN15 ou BEN20</p>
+                  <p className="text-gray-400 text-[10px] mt-1">Use o cupom <b>BEN5</b> para 5% OFF</p>
                 </div>
               )}
             </div>

@@ -15,9 +15,8 @@ interface Coupon {
 }
 
 const VALID_COUPONS: Record<string, number> = {
+  BEN5: 5,
   BEN10: 10,
-  BEN15: 15,
-  BEN20: 20,
 }
 
 interface CartCtx {

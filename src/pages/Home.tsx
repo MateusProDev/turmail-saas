@@ -146,7 +146,7 @@ export default function Home() {
 
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
-        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> acima de R$199 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN10</span> = 10% OFF
+        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> acima de R$199 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF
       </div>
 
       {/* ─── Header ─── */}
