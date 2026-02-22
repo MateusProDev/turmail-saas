@@ -171,10 +171,10 @@ export default function StoreDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* ── Header ── */}
       <header className="sticky top-0 z-40 bg-black shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 sm:h-20">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-1.5">
-              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-12 h-12 rounded-lg object-contain" />
               <span className="text-lg font-extrabold text-white leading-none hidden sm:block">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
             <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold">ADMIN</span>

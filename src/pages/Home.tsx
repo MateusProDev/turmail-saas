@@ -9,18 +9,18 @@ import './Home.css'
 const banners = [
   {
     id: 1,
-    title: 'Whey Protein Isolado',
+    title: 'Combo Creatina + Whey Black Skull',
     subtitle: 'A partir de',
-    price: 'R$ 189,90',
+    price: 'R$ 169,90',
     cta: 'Comprar Agora',
     bg: 'from-green-700 via-green-900 to-black',
     image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 2,
-    title: 'Creatina com 25% OFF',
+    title: 'Creatinas com até 14% OFF',
     subtitle: 'Promoção por tempo limitado',
-    price: 'R$ 89,90',
+    price: 'R$ 62,90',
     cta: 'Aproveitar',
     bg: 'from-black via-gray-900 to-green-900',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
@@ -28,7 +28,7 @@ const banners = [
   {
     id: 3,
     title: 'Frete Grátis acima de R$199',
-    subtitle: 'Para todo o Brasil',
+    subtitle: 'Para toda Fortaleza',
     price: '',
     cta: 'Ver Ofertas',
     bg: 'from-green-800 via-green-950 to-black',
@@ -154,18 +154,18 @@ export default function Home() {
         scrolled ? 'bg-black/95 backdrop-blur-md shadow-md' : 'bg-black'
       }`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6">
-          <div className="flex items-center justify-between h-12 sm:h-14">
+          <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-1.5">
-              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
-              <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-12 h-12 rounded-lg object-contain" />
+              <span className="text-lg sm:text-xl font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
 
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
               <Link to="/" className="hover:text-green-400 transition-colors">Início</Link>
               <Link to="/produtos" className="hover:text-green-400 transition-colors">Produtos</Link>
-              <Link to="/plans" className="hover:text-green-400 transition-colors">Ofertas</Link>
+              <Link to="/produtos" className="hover:text-green-400 transition-colors">Ofertas</Link>
               <Link to="/about" className="hover:text-green-400 transition-colors">Sobre</Link>
               {/* Search inline */}
               <div className="relative">
@@ -314,7 +314,7 @@ export default function Home() {
                   <p className="text-green-400 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-1">{b.subtitle}</p>
                   <h2 className="text-xl sm:text-3xl lg:text-5xl font-black text-white leading-tight max-w-2xl">{b.title}</h2>
                   {b.price && <p className="text-2xl sm:text-4xl font-black text-green-400 mt-2">{b.price}</p>}
-                  <Link to="/plans" className="mt-4 sm:mt-6 px-6 py-2.5 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-bold rounded-lg transition-colors">
+                  <Link to="/produtos" className="mt-4 sm:mt-6 px-6 py-2.5 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-bold rounded-lg transition-colors">
                     {b.cta}
                   </Link>
                 </div>
@@ -447,7 +447,7 @@ export default function Home() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <Link to="/" className="flex items-center gap-1.5 mb-3">
-                <img src="/android-icon-36x36.png" alt="BenSuplementos" className="w-7 h-7 rounded-lg object-contain" />
+                <img src="/android-icon-36x36.png" alt="BenSuplementos" className="w-10 h-10 rounded-lg object-contain" />
                 <span className="text-sm font-extrabold text-white">Ben<span className="text-green-400">Suplementos</span></span>
               </Link>
               <p className="text-gray-500 text-xs leading-relaxed">Qualidade, preço justo e entrega rápida.</p>

@@ -94,10 +94,10 @@ export default function Products() {
       <div className="min-h-screen bg-white">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-black">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-12 sm:h-14">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-16 sm:h-20">
             <Link to="/" className="flex items-center gap-1.5">
-              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
-              <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-12 h-12 rounded-lg object-contain" />
+              <span className="text-lg sm:text-xl font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
             <button onClick={toggle} className="relative flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
               <FaShoppingCart className="w-3.5 h-3.5" />
@@ -158,10 +158,10 @@ export default function Products() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-black">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-12 sm:h-14">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-16 sm:h-20">
           <Link to="/" className="flex items-center gap-1.5">
-            <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
-            <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
+            <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-12 h-12 rounded-lg object-contain" />
+            <span className="text-lg sm:text-xl font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/" className="hidden md:block text-sm text-gray-300 hover:text-green-400 transition-colors">Início</Link>
