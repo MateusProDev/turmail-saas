@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useCart } from '../contexts/CartContext'
-import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart } from 'react-icons/fa'
+import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart, FaTruck } from 'react-icons/fa'
 
 export default function CartDrawer() {
   const {
     items, isOpen, coupon, couponError,
-    totalItems, subtotal, discount, total,
+    totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
     close, removeItem, updateQty,
-    applyCoupon, removeCoupon,
+    applyCoupon, removeCoupon, markCouponUsed, clearCart,
   } = useCart()
 
   const [couponInput, setCouponInput] = useState('')
@@ -125,7 +125,7 @@ export default function CartDrawer() {
             </div>
 
             {/* Totals */}
-            <div className="space-y-1 text-xs">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between text-gray-500">
                 <span>Subtotal</span>
                 <span>{fmt(subtotal)}</span>
@@ -136,6 +136,34 @@ export default function CartDrawer() {
                   <span>-{fmt(discount)}</span>
                 </div>
               )}
+
+              {/* CEP + Frete */}
+              <div className="border-t pt-2 space-y-1.5">
+                <p className="text-[10px] text-gray-500 font-medium flex items-center gap-1"><FaTruck className="w-3 h-3" /> Calcular frete</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={cep}
+                    onChange={e => setCep(e.target.value)}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-mono tracking-wider"
+                  />
+                </div>
+                {freteStatus === 'gratis' && (
+                  <p className="text-green-600 font-bold text-[11px] flex items-center gap-1">✅ Frete GRÁTIS para Fortaleza!</p>
+                )}
+                {freteStatus === 'combinar' && (
+                  <p className="text-yellow-600 font-semibold text-[11px]">📦 Frete a combinar (fora de Fortaleza)</p>
+                )}
+                {freteStatus === 'pendente' && cep.replace(/\D/g, '').length === 8 && subtotal < 199.90 && (
+                  <p className="text-gray-400 text-[10px]">Frete grátis para Fortaleza acima de R$ 199,90</p>
+                )}
+                {freteStatus === 'pendente' && cep.replace(/\D/g, '').length < 8 && (
+                  <p className="text-gray-400 text-[10px]">Digite seu CEP para calcular o frete</p>
+                )}
+              </div>
+
               <div className="flex justify-between text-base font-black text-gray-900 pt-1 border-t">
                 <span>Total</span>
                 <span>{fmt(total)}</span>
@@ -154,12 +182,17 @@ export default function CartDrawer() {
                   ...lines,
                   '',
                   discount > 0 ? `Cupom: ${coupon?.code} (-${coupon?.percent}%)` : '',
+                  cep ? `📍 CEP: ${cep}` : '',
+                  freteGratis ? '🚚 Frete Grátis (Fortaleza)' : freteStatus === 'combinar' ? '📦 Frete a combinar' : '',
                   `*Total: ${fmt(total)}*`,
                   '',
                   'Olá! Gostaria de finalizar este pedido 🙂',
                 ]
                   .filter(Boolean)
                   .join('%0A')
+                // Marcar cupom como usado neste dispositivo
+                markCouponUsed()
+                clearCart()
                 window.open(`https://wa.me/5585991470709?text=${msg}`, '_blank')
               }}
               className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm flex items-center justify-center gap-2"

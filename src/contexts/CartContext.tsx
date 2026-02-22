@@ -29,6 +29,10 @@ interface CartCtx {
   subtotal: number
   discount: number
   total: number
+  freteGratis: boolean
+  freteStatus: 'gratis' | 'combinar' | 'pendente'
+  cep: string
+  setCep: (cep: string) => void
   open: () => void
   close: () => void
   toggle: () => void
@@ -38,6 +42,7 @@ interface CartCtx {
   applyCoupon: (code: string) => void
   removeCoupon: () => void
   clearCart: () => void
+  markCouponUsed: () => void
 }
 
 const CartContext = createContext<CartCtx | null>(null)
@@ -56,6 +61,15 @@ function parsePrice(s: string): number {
 /* ── localStorage helpers ── */
 const CART_KEY = 'ben_cart_items'
 const COUPON_KEY = 'ben_cart_coupon'
+const USED_COUPONS_KEY = 'ben_used_coupons'
+const CEP_KEY = 'ben_cart_cep'
+const FRETE_GRATIS_MIN = 199.90
+
+/** CEPs de Fortaleza e região metropolitana: 60000-000 a 61599-999 */
+function isCepFortaleza(cep: string): boolean {
+  const num = parseInt(cep.replace(/\D/g, ''), 10)
+  return num >= 60000000 && num <= 61599999
+}
 
 function loadItems(): CartItem[] {
   try {
@@ -71,11 +85,35 @@ function loadCoupon(): Coupon | null {
   } catch { return null }
 }
 
+function loadUsedCoupons(): string[] {
+  try {
+    const raw = localStorage.getItem(USED_COUPONS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveUsedCoupon(code: string) {
+  const used = loadUsedCoupons()
+  if (!used.includes(code)) {
+    used.push(code)
+    localStorage.setItem(USED_COUPONS_KEY, JSON.stringify(used))
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(loadItems)
   const [isOpen, setIsOpen] = useState(false)
   const [coupon, setCoupon] = useState<Coupon | null>(loadCoupon)
   const [couponError, setCouponError] = useState('')
+  const [cep, setCepState] = useState(() => localStorage.getItem(CEP_KEY) || '')
+
+  const setCep = useCallback((v: string) => {
+    const clean = v.replace(/\D/g, '').slice(0, 8)
+    // formata XXXXX-XXX
+    const formatted = clean.length > 5 ? clean.slice(0, 5) + '-' + clean.slice(5) : clean
+    setCepState(formatted)
+    localStorage.setItem(CEP_KEY, formatted)
+  }, [])
 
   /* Persistir items no localStorage */
   useEffect(() => {
@@ -120,14 +158,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const applyCoupon = useCallback((code: string) => {
     const upper = code.trim().toUpperCase()
     const percent = VALID_COUPONS[upper]
-    if (percent) {
-      setCoupon({ code: upper, percent })
-      setCouponError('')
-    } else {
+    if (!percent) {
       setCoupon(null)
       setCouponError('Cupom inválido')
+      return
     }
+    // Verificar se já foi usado neste aparelho
+    const used = loadUsedCoupons()
+    if (used.includes(upper)) {
+      setCoupon(null)
+      setCouponError('Este cupom já foi utilizado neste dispositivo')
+      return
+    }
+    setCoupon({ code: upper, percent })
+    setCouponError('')
   }, [])
+
+  const markCouponUsed = useCallback(() => {
+    if (coupon) {
+      saveUsedCoupon(coupon.code)
+    }
+  }, [coupon])
 
   const removeCoupon = useCallback(() => {
     setCoupon(null)
@@ -145,12 +196,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const discount = coupon ? subtotal * (coupon.percent / 100) : 0
   const total = subtotal - discount
 
+  const cepDigits = cep.replace(/\D/g, '')
+  const cepCompleto = cepDigits.length === 8
+  const isFortaleza = cepCompleto && isCepFortaleza(cepDigits)
+  const freteGratis = isFortaleza && subtotal >= FRETE_GRATIS_MIN
+  const freteStatus: 'gratis' | 'combinar' | 'pendente' =
+    !cepCompleto ? 'pendente' : isFortaleza && subtotal >= FRETE_GRATIS_MIN ? 'gratis' : isFortaleza ? 'pendente' : 'combinar'
+
   return (
     <CartContext.Provider value={{
       items, isOpen, coupon, couponError,
-      totalItems, subtotal, discount, total,
+      totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
       open, close, toggle, addItem, removeItem, updateQty,
-      applyCoupon, removeCoupon, clearCart,
+      applyCoupon, removeCoupon, clearCart, markCouponUsed,
     }}>
       {children}
     </CartContext.Provider>
