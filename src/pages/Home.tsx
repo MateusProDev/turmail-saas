@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
-import { FaShoppingCart, FaLeaf, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
+import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 import { listFeaturedProducts, formatBRL, type Product } from '../lib/productService'
 import './Home.css'
@@ -157,9 +157,7 @@ export default function Home() {
           <div className="flex items-center justify-between h-12 sm:h-14">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-1.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <FaLeaf className="w-4 h-4 text-white" />
-              </div>
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
               <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
 
@@ -449,9 +447,7 @@ export default function Home() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <Link to="/" className="flex items-center gap-1.5 mb-3">
-                <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                  <FaLeaf className="w-3.5 h-3.5 text-white" />
-                </div>
+                <img src="/android-icon-36x36.png" alt="BenSuplementos" className="w-7 h-7 rounded-lg object-contain" />
                 <span className="text-sm font-extrabold text-white">Ben<span className="text-green-400">Suplementos</span></span>
               </Link>
               <p className="text-gray-500 text-xs leading-relaxed">Qualidade, preço justo e entrega rápida.</p>

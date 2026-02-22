@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { FaLeaf, FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes } from 'react-icons/fa'
 import {
   listProducts,
   createProduct,
@@ -174,9 +174,7 @@ export default function StoreDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-1.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <FaLeaf className="w-4 h-4 text-white" />
-              </div>
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
               <span className="text-lg font-extrabold text-white leading-none hidden sm:block">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
             <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded font-bold">ADMIN</span>

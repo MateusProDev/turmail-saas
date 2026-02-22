@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaShoppingCart, FaLeaf, FaStar, FaArrowLeft, FaSpinner, FaSearch } from 'react-icons/fa'
+import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 import { listProducts, formatBRL, type Product } from '../lib/productService'
 
@@ -96,9 +96,7 @@ export default function Products() {
         <header className="sticky top-0 z-50 bg-black">
           <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-12 sm:h-14">
             <Link to="/" className="flex items-center gap-1.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <FaLeaf className="w-4 h-4 text-white" />
-              </div>
+              <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
               <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
             </Link>
             <button onClick={toggle} className="relative flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
@@ -162,9 +160,7 @@ export default function Products() {
       <header className="sticky top-0 z-50 bg-black">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between h-12 sm:h-14">
           <Link to="/" className="flex items-center gap-1.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-              <FaLeaf className="w-4 h-4 text-white" />
-            </div>
+            <img src="/android-icon-48x48.png" alt="BenSuplementos" className="w-8 h-8 rounded-lg object-contain" />
             <span className="text-base sm:text-lg font-extrabold text-white leading-none">Ben<span className="text-green-400">Suplementos</span></span>
           </Link>
           <div className="flex items-center gap-3">
