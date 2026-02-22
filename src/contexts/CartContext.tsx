@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
 export interface CartItem {
   id: string | number
@@ -53,11 +53,43 @@ function parsePrice(s: string): number {
   return parseFloat(s.replace(/[^\d,]/g, '').replace(',', '.')) || 0
 }
 
+/* ── localStorage helpers ── */
+const CART_KEY = 'ben_cart_items'
+const COUPON_KEY = 'ben_cart_coupon'
+
+function loadItems(): CartItem[] {
+  try {
+    const raw = localStorage.getItem(CART_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function loadCoupon(): Coupon | null {
+  try {
+    const raw = localStorage.getItem(COUPON_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
+  const [items, setItems] = useState<CartItem[]>(loadItems)
   const [isOpen, setIsOpen] = useState(false)
-  const [coupon, setCoupon] = useState<Coupon | null>(null)
+  const [coupon, setCoupon] = useState<Coupon | null>(loadCoupon)
   const [couponError, setCouponError] = useState('')
+
+  /* Persistir items no localStorage */
+  useEffect(() => {
+    localStorage.setItem(CART_KEY, JSON.stringify(items))
+  }, [items])
+
+  /* Persistir cupom no localStorage */
+  useEffect(() => {
+    if (coupon) {
+      localStorage.setItem(COUPON_KEY, JSON.stringify(coupon))
+    } else {
+      localStorage.removeItem(COUPON_KEY)
+    }
+  }, [coupon])
 
   const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
