@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaShoppingCart } from 'react-icons/fa'
+import { FaShoppingCart, FaWhatsapp } from 'react-icons/fa'
 import { useEffect, useState } from 'react'
 import { useCart } from '../contexts/CartContext'
 import { listProducts, formatBRL, type Product } from '../lib/productService'
@@ -51,10 +51,19 @@ export default function Ofertas() {
       <main className="max-w-7xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black">Ofertas BenSuplementos</h1>
-            <p className="text-gray-600">Promoções e combos com tag promocional — entre no grupo do WhatsApp para cupons exclusivos.</p>
+            <h1 className="text-2xl sm:text-3xl font-black">Ofertas — BenSuplementos</h1>
+            <p className="text-gray-600 max-w-xl">Aproveite produtos com desconto: listamos os itens marcados como promoção. Entre no nosso grupo do WhatsApp para resgatar cupons exclusivos, lançamentos e ofertas relâmpago.</p>
           </div>
-          <a href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t" target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-black text-white rounded-lg font-bold">Entrar no Grupo</a>
+          <a
+            href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Entrar no grupo de promoções do WhatsApp"
+            className="mt-3 md:mt-0 block md:inline-flex w-full md:w-auto items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold shadow-sm text-center"
+          >
+            <FaWhatsapp className="w-4 h-4" />
+            Entrar no Grupo
+          </a>
         </div>
 
         {loading ? (
