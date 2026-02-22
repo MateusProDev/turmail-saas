@@ -165,7 +165,7 @@ export default function Home() {
             <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-gray-300">
               <Link to="/" className="hover:text-green-400 transition-colors">Início</Link>
               <Link to="/produtos" className="hover:text-green-400 transition-colors">Produtos</Link>
-              <Link to="/produtos" className="hover:text-green-400 transition-colors">Ofertas</Link>
+              <Link to="/ofertas" className="hover:text-green-400 transition-colors">Ofertas</Link>
               <Link to="/about" className="hover:text-green-400 transition-colors">Sobre</Link>
               {/* Search inline */}
               <div className="relative">
@@ -208,7 +208,7 @@ export default function Home() {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
               {/* Mobile search toggle */}
               <button
                 onClick={() => setSearchOpen(v => !v)}
@@ -217,7 +217,7 @@ export default function Home() {
               >
                 <FaSearch className="w-4 h-4" />
               </button>
-              <Link to="/login" className="hidden md:block text-sm text-gray-300 hover:text-green-400 transition-colors">Entrar</Link>
+              <a href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t" target="_blank" rel="noopener noreferrer" className="hidden md:block text-sm text-gray-300 hover:text-green-400 transition-colors">Entrar</a>
               <button onClick={toggle} className="relative flex items-center gap-1.5 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-500 transition-colors">
                 <FaShoppingCart className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Carrinho</span>
@@ -243,13 +243,13 @@ export default function Home() {
         {mobileOpen && (
           <nav className="md:hidden bg-black border-t border-gray-800 px-4 py-3 space-y-2 text-sm">
             {['Início', 'Produtos', 'Ofertas', 'Sobre'].map((label, i) => (
-              <Link key={i} to={['/', '/produtos', '/plans', '/about'][i]} className="block py-1.5 text-gray-300 hover:text-green-400" onClick={() => setMobileOpen(false)}>
+              <Link key={i} to={['/', '/produtos', '/ofertas', '/about'][i]} className="block py-1.5 text-gray-300 hover:text-green-400" onClick={() => setMobileOpen(false)}>
                 {label}
               </Link>
             ))}
-            <Link to="/login" className="block text-center py-2 mt-2 bg-green-600 text-white font-bold rounded-lg" onClick={() => setMobileOpen(false)}>
+            <a href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t" target="_blank" rel="noopener noreferrer" className="block text-center py-2 mt-2 bg-green-600 text-white font-bold rounded-lg" onClick={() => setMobileOpen(false)}>
               Entrar
-            </Link>
+            </a>
           </nav>
         )}
 

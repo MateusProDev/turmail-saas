@@ -13,6 +13,7 @@ import TenantMembers from './pages/TenantMembers'
 import Features from './pages/Features'
 import Templates from './pages/Templates'
 import About from './pages/About'
+import Ofertas from './pages/Ofertas'
 // import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="/features" element={<Features />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/about" element={<About />} />
+            <Route path="/ofertas" element={<Ofertas />} />
             {/* <Route path="/contact" element={<Contact />} /> */}
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
