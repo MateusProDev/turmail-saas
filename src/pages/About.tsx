@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { FaWhatsapp, FaInstagram, FaLeaf } from 'react-icons/fa'
 import './PagePlaceholder.css'
 
 export default function About() {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaShoppingCart, FaTag } from 'react-icons/fa'
+import { FaShoppingCart } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 
 export default function Ofertas() {
