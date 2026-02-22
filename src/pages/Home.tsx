@@ -425,7 +425,7 @@ export default function Home() {
         {/* ═══════ CTA FINAL ═══════ */}
         <section className="py-10 sm:py-16 bg-black text-center px-4">
           <h2 className="text-xl sm:text-3xl font-black text-white mb-2">
-            Ganhe <span className="text-green-400">15% OFF</span> nos Combos
+            Ganhe <span className="text-green-400">10% OFF</span> nos Combos
           </h2>
           <p className="text-sm text-gray-400 mb-5 max-w-md mx-auto">Entre no nosso grupo do WhatsApp e resgate seu cupom na descrição do grupo!</p>
           <a
