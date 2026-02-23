@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -26,16 +24,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   console.log('[AuthContext] AuthProvider initialized, loading:', loading, 'user:', !!user)
 
   useEffect(() => {
-    console.log('[AuthContext] Setting up onAuthStateChanged listener')
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('[AuthContext] onAuthStateChanged fired - user:', !!firebaseUser, 'userId:', firebaseUser?.uid)
-      setUser(firebaseUser);
-      setLoading(false);
-      console.log('[AuthContext] Auth state updated - loading set to false')
-    });
+    console.log('[AuthContext] Setting up onAuthStateChanged listener (dynamic import)')
+    let unsub: any
+    let cancelled = false
+    ;(async () => {
+      try {
+        const mod = await import('firebase/auth')
+        if (cancelled) return
+        const { onAuthStateChanged, getAuth } = mod
+        const auth = getAuth()
+        unsub = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+          console.log('[AuthContext] onAuthStateChanged fired - user:', !!firebaseUser, 'userId:', firebaseUser?.uid)
+          setUser(firebaseUser)
+          setLoading(false)
+        })
+      } catch (err) {
+        console.warn('[AuthContext] Failed to load firebase/auth dynamically', err)
+        if (!cancelled) setLoading(false)
+      }
+    })()
     return () => {
       console.log('[AuthContext] Cleaning up auth listener')
-      unsubscribe();
+      cancelled = true
+      if (unsub) unsub()
     }
   }, []);
 
