@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
-import { listFeaturedProducts, formatBRL, type Product } from '../lib/productService'
+import { listFeaturedProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -194,7 +194,7 @@ export default function Home() {
                               onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
                               className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                             >
-                              <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img src={optimizedImage(p.image, 160)} srcSet={`${optimizedImage(p.image,160)} 160w, ${optimizedImage(p.image,360)} 360w`} sizes="64px" alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                               <div>
                                 <p className="text-xs font-bold text-gray-900">{p.name}</p>
                                 <p className="text-xs font-black text-green-700">{p.price}</p>
@@ -283,7 +283,7 @@ export default function Home() {
                           onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
                           className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                         >
-                          <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                          <img src={optimizedImage(p.image, 160)} srcSet={`${optimizedImage(p.image,160)} 160w, ${optimizedImage(p.image,360)} 360w`} sizes="64px" alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                           <div>
                             <p className="text-xs font-bold text-gray-900">{p.name}</p>
                             <p className="text-xs font-black text-green-700">{p.price}</p>
@@ -305,10 +305,19 @@ export default function Home() {
             className="flex transition-transform duration-500 ease-out h-full"
             style={{ transform: `translateX(-${current * 100}%)` }}
           >
-            {banners.map(b => (
+            {banners.map((b, i) => (
               <div key={b.id} data-banner className={`relative flex-shrink-0 w-full h-full bg-gradient-to-r ${b.bg}`}>
                 {/* bg image */}
-                <img src={b.image} alt="" onError={handleImgError} className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-luminosity" />
+                <img
+                  src={i === current ? optimizedImage(b.image, 1200) : optimizedImage(b.image, 720)}
+                  srcSet={`${optimizedImage(b.image, 720)} 720w, ${optimizedImage(b.image, 1200)} 1200w`}
+                  sizes="(max-width: 640px) 100vw, 1200px"
+                  alt=""
+                  onError={handleImgError}
+                  className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-luminosity"
+                  fetchPriority={i === current ? 'high' : 'low'}
+                  loading={i === current ? 'eager' : 'lazy'}
+                />
                 {/* content */}
                 <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
                   <p className="text-green-400 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-1">{b.subtitle}</p>
@@ -369,7 +378,7 @@ export default function Home() {
               <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Imagem - clique leva para página de produtos */}
                 <Link to="/produtos" className="block relative aspect-square bg-gray-50 overflow-hidden">
-                  <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  <img src={optimizedImage(p.image, 720)} srcSet={`${optimizedImage(p.image,720)} 720w, ${optimizedImage(p.image,1200)} 1200w`} sizes="(max-width: 640px) 100vw, 329px" alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                   <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">
                     {p.tag}
                   </span>

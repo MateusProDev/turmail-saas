@@ -42,6 +42,32 @@ export function formatBRL(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+/**
+ * Gera URL otimizada para provedores comuns (Cloudinary, Unsplash).
+ * - Para Cloudinary injeta `f_auto,q_auto,w_{width}` nas transformations
+ * - Para Unsplash adiciona `auto=format&fit=crop&w={width}&q=80`
+ */
+export function optimizedImage(url: string, width = 720): string {
+  if (!url) return url
+  try {
+    if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+      return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`)
+    }
+    if (url.includes('images.unsplash.com')) {
+      const sep = url.includes('?') ? '&' : '?'
+      return `${url}${sep}auto=format&fit=crop&w=${width}&q=80`
+    }
+    return url
+  } catch {
+    return url
+  }
+}
+
+/** Gera um srcset com 3 larguras (360,720,1200) usando optimizedImage */
+export function imageSrcSet(url: string): string {
+  return `${optimizedImage(url, 360)} 360w, ${optimizedImage(url, 720)} 720w, ${optimizedImage(url, 1200)} 1200w`
+}
+
 /* ── CRUD ── */
 
 /** Lista todos os produtos (opcionalmente filtra por ativos) */

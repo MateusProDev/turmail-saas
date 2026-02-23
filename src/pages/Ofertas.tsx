@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { FaShoppingCart, FaWhatsapp } from 'react-icons/fa'
 import { useEffect, useState } from 'react'
 import { useCart } from '../contexts/CartContext'
-import { listProducts, formatBRL, type Product } from '../lib/productService'
+import { listProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
 
 function isPromoTag(tag?: string) {
   if (!tag) return false
@@ -75,7 +75,7 @@ export default function Ofertas() {
             {offers.map(o => (
               <div key={o.id} className="bg-white rounded-xl border p-3 shadow-sm">
                 <div className="relative">
-                  <img src={o.image} alt={o.name} className="w-full h-36 object-cover rounded-md mb-3" />
+                  <img src={optimizedImage(o.image, 720)} srcSet={`${optimizedImage(o.image,720)} 720w, ${optimizedImage(o.image,1200)} 1200w`} sizes="(max-width: 640px) 100vw, 329px" alt={o.name} loading="lazy" className="w-full h-36 object-cover rounded-md mb-3" />
                   {o.tag && <span className="absolute top-2 left-2 bg-green-600 text-white text-[11px] font-bold px-2 py-0.5 rounded">{o.tag}</span>}
                 </div>
                 <h3 className="text-sm font-bold">{o.name}</h3>
@@ -83,7 +83,7 @@ export default function Ofertas() {
                   <span className="text-green-700 font-black">{formatBRL(o.price)}</span>
                   {o.oldPrice && <span className="text-[11px] text-gray-400 line-through ml-2">{formatBRL(o.oldPrice)}</span>}
                 </div>
-                <button onClick={() => addItem({ id: o.id, name: o.name, price: formatBRL(o.price), priceNum: o.price, image: o.image })} className="mt-3 w-full py-2 bg-black text-white rounded-lg font-bold">Adicionar</button>
+                <button onClick={() => addItem({ id: o.id, name: o.name, price: formatBRL(o.price), priceNum: o.price, image: optimizedImage(o.image, 720) })} className="mt-3 w-full py-2 bg-black text-white rounded-lg font-bold">Adicionar</button>
               </div>
             ))}
           </div>
