@@ -1,5 +1,5 @@
-import { collection, getDocs, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore'
-import { db } from './firebase'
+// Carregamos o Firestore dinamicamente dentro das funções que precisam dele
+// para evitar puxar o SDK inteiro no bundle inicial.
 
 export type CopyOptions = {
   company?: string
@@ -585,12 +585,17 @@ export async function loadUserPatterns(uid: string): Promise<string[]> {
   if (!uid) return []
   
   try {
+    const [{ collection, getDocs, query, orderBy, limit }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+
     const patternsRef = collection(db, 'users', uid, 'ai_patterns')
     const q = query(patternsRef, orderBy('createdAt', 'desc'), limit(50))
     const snapshot = await getDocs(q)
-    
+
     return snapshot.docs
-      .map(doc => doc.data().pattern)
+      .map(d => d.data().pattern)
       .filter(pattern => pattern && typeof pattern === 'string')
   } catch (error) {
     console.warn('[AI Helper] Erro ao carregar padrões:', error)
@@ -608,11 +613,17 @@ export async function saveUserPattern(uid: string, patternData: string | Record<
     const patternDoc = {
       pattern: pattern.trim(),
       ownerUid: uid,
-      createdAt: serverTimestamp(),
+      createdAt: null,
       source: 'campaign_generator',
       ...(typeof patternData === 'object' ? patternData : {})
     }
-    
+    const [{ addDoc, collection, serverTimestamp }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+
+    patternDoc.createdAt = serverTimestamp()
+
     await addDoc(collection(db, 'users', uid, 'ai_patterns'), patternDoc)
     return true
   } catch (error) {
