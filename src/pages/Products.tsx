@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
@@ -56,6 +56,7 @@ export default function Products() {
   const [products, setProducts] = useState<DisplayProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const location = useLocation()
 
   /* Buscar produtos do Firestore */
   useEffect(() => {
@@ -78,6 +79,15 @@ export default function Products() {
     })()
     return () => { cancelled = true }
   }, [])
+
+  // Abrir detalhe quando navegamos com state from Home
+  useEffect(() => {
+    const s = (location.state as any) || {}
+    if (s.openProductId && products.length > 0) {
+      const found = products.find(p => String(p.id) === String(s.openProductId))
+      if (found) setDetail(found)
+    }
+  }, [location.state, products])
 
   const catFiltered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
   const filtered = searchTerm.trim()

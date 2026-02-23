@@ -27,7 +27,7 @@ export default function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-black text-white">
           <div className="flex items-center gap-2 font-bold text-sm">
-            🛒 Carrinho ({totalItems})
+            🛒 <span>{totalItems > 0 ? `Seu carrinho — ${totalItems} ${totalItems === 1 ? 'item' : 'itens'}` : 'Seu carrinho'}</span>
           </div>
           <button onClick={close} className="p-1.5 hover:bg-gray-800 rounded transition-colors">
             <FaTimes className="w-4 h-4" />
@@ -91,14 +91,17 @@ export default function CartDrawer() {
             {/* Coupon */}
             <div>
               {coupon ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2 text-green-700 text-xs font-bold">
-                    <FaTag className="w-3 h-3" />
-                    {coupon.code} (-{coupon.percent}%)
+                <div>
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 text-green-700 text-xs font-bold">
+                      <FaTag className="w-3 h-3" />
+                      {coupon.code} (-{coupon.percent}%)
+                    </div>
+                    <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
+                      <FaTimes className="w-3 h-3" />
+                    </button>
                   </div>
-                  <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
-                    <FaTimes className="w-3 h-3" />
-                  </button>
+                  <p className="text-green-700 text-[12px] mt-2">Cupom aplicado com sucesso: <span className="font-bold">{coupon.code}</span> — {coupon.percent}% OFF</p>
                 </div>
               ) : (
                 <div>
@@ -118,8 +121,8 @@ export default function CartDrawer() {
                       Aplicar
                     </button>
                   </div>
-                  {couponError && <p className="text-red-500 text-[10px] mt-1">{couponError}</p>}
-                  <p className="text-gray-400 text-[10px] mt-1">Use o cupom <b>BEN5</b> para 5% OFF</p>
+                  {couponError && <p className="text-red-500 text-[11px] mt-2">{couponError}</p>}
+                  <p className="text-gray-500 text-[11px] mt-2">Use o cupom <b>BEN5</b> para 5% OFF</p>
                 </div>
               )}
             </div>

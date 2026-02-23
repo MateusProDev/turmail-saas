@@ -610,19 +610,18 @@ export async function saveUserPattern(uid: string, patternData: string | Record<
     const pattern = typeof patternData === 'string' ? patternData : patternData.pattern
     if (!pattern?.trim()) return false
     
-    const patternDoc = {
-      pattern: pattern.trim(),
-      ownerUid: uid,
-      createdAt: null,
-      source: 'campaign_generator',
-      ...(typeof patternData === 'object' ? patternData : {})
-    }
     const [{ addDoc, collection, serverTimestamp }, { db }] = await Promise.all([
       import('firebase/firestore'),
       import('./firebase')
     ])
 
-    patternDoc.createdAt = serverTimestamp()
+    const patternDoc = {
+      pattern: pattern.trim(),
+      ownerUid: uid,
+      createdAt: serverTimestamp(),
+      source: 'campaign_generator',
+      ...(typeof patternData === 'object' ? patternData : {})
+    }
 
     await addDoc(collection(db, 'users', uid, 'ai_patterns'), patternDoc)
     return true

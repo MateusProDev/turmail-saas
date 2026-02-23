@@ -20,14 +20,14 @@ const banners = [
     id: 2,
     title: 'Creatinas com até 14% OFF',
     subtitle: 'Promoção por tempo limitado',
-    price: 'R$ 62,90',
+    price: 'R$ 69,90',
     cta: 'Aproveitar',
     bg: 'from-black via-gray-900 to-green-900',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
   },
   {
     id: 3,
-    title: 'Frete Grátis acima de R$199',
+    title: 'Frete Grátis acima de R$149,90',
     subtitle: 'Para toda Fortaleza',
     price: '',
     cta: 'Ver Ofertas',
@@ -188,12 +188,13 @@ export default function Home() {
                         products
                           .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
                           .map(p => (
-                            <Link
-                              key={p.id}
-                              to="/produtos"
-                              onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
-                              className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
-                            >
+                              <Link
+                                key={p.id}
+                                to="/produtos"
+                                state={{ openProductId: p.id }}
+                                onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
+                                className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                              >
                               <img src={optimizedImage(p.image, 160)} srcSet={`${optimizedImage(p.image,160)} 160w, ${optimizedImage(p.image,360)} 360w`} sizes="64px" alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                               <div>
                                 <p className="text-xs font-bold text-gray-900">{p.name}</p>
@@ -276,10 +277,11 @@ export default function Home() {
                   ) : (
                     products
                       .filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map(p => (
+                        .map(p => (
                         <Link
                           key={p.id}
                           to="/produtos"
+                          state={{ openProductId: p.id }}
                           onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
                           className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                         >
@@ -376,8 +378,8 @@ export default function Home() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {products.map(p => (
               <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                {/* Imagem - clique leva para página de produtos */}
-                <Link to="/produtos" className="block relative aspect-square bg-gray-50 overflow-hidden">
+                {/* Imagem - clique abre detalhe do produto */}
+                <Link to="/produtos" state={{ openProductId: p.id }} className="block relative aspect-square bg-gray-50 overflow-hidden">
                   <img src={optimizedImage(p.image, 720)} srcSet={`${optimizedImage(p.image,720)} 720w, ${optimizedImage(p.image,1200)} 1200w`} sizes="(max-width: 640px) 100vw, 329px" alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                   <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">
                     {p.tag}
@@ -385,7 +387,7 @@ export default function Home() {
                 </Link>
                 {/* Info */}
                 <div className="p-2.5 sm:p-4">
-                  <Link to="/produtos" className="block">
+                  <Link to="/produtos" state={{ openProductId: p.id }} className="block">
                     <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight line-clamp-2 hover:text-green-600 transition-colors">{p.name}</h3>
                   </Link>
                   <div className="flex items-baseline gap-1.5 mt-1">

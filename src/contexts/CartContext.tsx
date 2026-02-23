@@ -112,7 +112,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const formatted = clean.length > 5 ? clean.slice(0, 5) + '-' + clean.slice(5) : clean
     setCepState(formatted)
     localStorage.setItem(CEP_KEY, formatted)
-  }, [])
+  }, [setIsOpen])
 
   /* Persistir items no localStorage */
   useEffect(() => {
@@ -143,6 +143,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, priceNum, qty: 1 }]
     })
+    // Abrir o drawer ao adicionar um item para dar feedback ao usuário
+    setIsOpen(true)
   }, [])
 
   const removeItem = useCallback((id: string | number) => {
