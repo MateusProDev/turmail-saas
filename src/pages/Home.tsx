@@ -20,7 +20,7 @@ const banners = [
     id: 2,
     title: 'Creatinas com até 14% OFF',
     subtitle: 'Promoção por tempo limitado',
-    price: 'R$ 69,90',
+    price: 'R$ 64,90',
     cta: 'Aproveitar',
     bg: 'from-black via-gray-900 to-green-900',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
@@ -146,7 +146,7 @@ export default function Home() {
 
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
-        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> acima de R$199 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF
+        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$149,90 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF
       </div>
 
       {/* ─── Header ─── */}
