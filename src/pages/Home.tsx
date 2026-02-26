@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
-import { listFeaturedProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
+import { listFeaturedProducts, listProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -106,6 +106,7 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false)
   const [current, setCurrent] = useState(0)
   const [products, setProducts] = useState(fallbackProducts)
+  const [categoriesList, setCategoriesList] = useState<{ name: string; image: string }[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -121,6 +122,27 @@ export default function Home() {
         }
       } catch { /* usa fallback */ }
       finally { if (!cancelled) setLoadingProducts(false) }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  /* Buscar categorias existentes (uma imagem por categoria) */
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const all = await listProducts(true)
+        if (cancelled) return
+        const map = new Map<string, string>()
+        for (const p of all) {
+          if (!p.category) continue
+          if (!map.has(p.category)) map.set(p.category, p.image)
+        }
+        const out = Array.from(map.entries()).map(([name, image]) => ({ name, image }))
+        if (out.length > 0) setCategoriesList(out)
+      } catch {
+        /* ignore */
+      }
     })()
     return () => { cancelled = true }
   }, [])
@@ -364,6 +386,28 @@ export default function Home() {
         </section>
 
         {/* ═══════ PRODUTOS EM DESTAQUE ═══════ */}
+        {/* ═══════ CATEGORIAS (círculos horizontais) ═══════ */}
+        {categoriesList.length > 0 && (
+          <section className="py-4 sm:py-6 px-3 sm:px-6 max-w-7xl mx-auto">
+            <h3 className="text-sm sm:text-base font-bold mb-3">Categorias</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {categoriesList.map(cat => (
+                <Link
+                  key={cat.name}
+                  to="/produtos"
+                  state={{ initialCategory: cat.name }}
+                  className="flex-shrink-0 w-20 sm:w-24 text-center"
+                >
+                  <div className="w-20 sm:w-24 h-20 sm:h-24 rounded-full overflow-hidden mx-auto border border-gray-100 shadow-sm">
+                    <img src={optimizedImage(cat.image, 360)} alt={cat.name} onError={handleImgError} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-xs mt-2 text-gray-700 font-semibold">{cat.name}</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="py-6 sm:py-10 px-3 sm:px-6 max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-2xl font-black">Mais Vendidos</h2>

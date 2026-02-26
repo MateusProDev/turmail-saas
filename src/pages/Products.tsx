@@ -87,6 +87,11 @@ export default function Products() {
       const found = products.find(p => String(p.id) === String(s.openProductId))
       if (found) setDetail(found)
     }
+    // Se navegamos a partir da Home com uma categoria inicial, aplica o filtro
+    if (s.initialCategory && products.length > 0) {
+      const exists = products.some(p => p.cat === s.initialCategory)
+      if (exists) setFilter(s.initialCategory)
+    }
   }, [location.state, products])
 
   const catFiltered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
