@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useCart } from '../contexts/CartContext'
 import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart, FaTruck } from 'react-icons/fa'
 import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateService'
-import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateService'
 
 export default function CartDrawer() {
   const {
