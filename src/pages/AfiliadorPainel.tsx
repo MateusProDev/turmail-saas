@@ -13,6 +13,7 @@ import {
   type Affiliate,
   type AffiliateOrder,
 } from '../lib/affiliateService'
+import { listProducts, formatBRL as fmtBRL, type Product } from '../lib/productService'
 
 const fmt = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -31,6 +32,8 @@ export default function AfiliadorPainel() {
   const [orders, setOrders] = useState<AffiliateOrder[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [error, setError] = useState('')
+  const [products, setProducts] = useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
 
   /* ── Verificar auth ── */
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function AfiliadorPainel() {
     return () => unsub()
   }, [])
 
-  /* ── Buscar pedidos quando o afiliado é conhecido ── */
+  /* ── Buscar pedidos + produtos quando o afiliado é conhecido ── */
   useEffect(() => {
     if (!affiliate?.coupon) return
     setLoadingOrders(true)
@@ -64,6 +67,12 @@ export default function AfiliadorPainel() {
       .then(setOrders)
       .catch(() => setError('Erro ao carregar pedidos.'))
       .finally(() => setLoadingOrders(false))
+
+    setLoadingProducts(true)
+    listProducts(true)
+      .then(prods => setProducts(prods.filter(p => (p as any).repassePrice > 0)))
+      .catch(() => {})
+      .finally(() => setLoadingProducts(false))
   }, [affiliate])
 
   async function handleLogout() {
@@ -215,6 +224,59 @@ export default function AfiliadorPainel() {
             <p className="text-xs text-gray-500">Cupom</p>
             <p className="text-lg font-black text-white font-mono tracking-widest">{affiliate.coupon}</p>
           </div>
+        </div>
+
+        {/* ── Tabela de produtos para revenda ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+            <FaBoxOpen className="w-4 h-4 text-green-400" />
+            <h2 className="text-sm font-bold text-white">Produtos disponíveis para revenda</h2>
+          </div>
+          {loadingProducts ? (
+            <div className="flex justify-center py-6"><FaSpinner className="w-5 h-5 text-green-400 animate-spin" /></div>
+          ) : products.length === 0 ? (
+            <p className="text-xs text-gray-500 px-4 py-5">Nenhum produto configurado pelo administrador ainda.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left px-4 py-2.5 text-gray-400 font-semibold">Produto</th>
+                    <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Preço na loja</th>
+                    <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Seu preço de repasse</th>
+                    <th className="text-right px-4 py-2.5 text-green-400 font-semibold">Seu lucro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map(p => {
+                    const repasse = (p as any).repassePrice as number
+                    const lucro = p.price - repasse
+                    return (
+                      <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                        <td className="px-4 py-3 flex items-center gap-2">
+                          {p.image && <img src={p.image} alt={p.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />}
+                          <div>
+                            <p className="text-white font-semibold">{p.name}</p>
+                            <p className="text-gray-500 text-[10px]">{p.category}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-300">{fmtBRL(p.price)}</td>
+                        <td className="px-4 py-3 text-right text-blue-400 font-bold">{fmtBRL(repasse)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={`font-black ${lucro >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {fmtBRL(lucro)}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              <p className="text-[10px] text-gray-600 px-4 py-2 border-t border-gray-800">
+                💡 Lucro = Preço na loja − Seu preço de repasse (por venda realizada)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ── Perfil do afiliado ── */}

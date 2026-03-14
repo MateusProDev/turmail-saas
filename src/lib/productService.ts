@@ -14,6 +14,8 @@ export interface Product {
   description?: string
   featured?: boolean     // aparece na Home
   active?: boolean       // visível na loja
+  wholesalePrice?: number // custo interno (atacado) — NÃO exibido na loja
+  repassePrice?: number   // valor de repasse ao afiliado — NÃO exibido na loja
   createdAt?: any
   updatedAt?: any
 }

@@ -29,6 +29,8 @@ const emptyForm: ProductInput = {
   name: '',
   price: 0,
   oldPrice: 0,
+  wholesalePrice: 0,
+  repassePrice: 0,
   image: '',
   tag: '',
   category: CATEGORIES[0],
@@ -159,6 +161,8 @@ export default function StoreDashboard() {
       name: p.name,
       price: p.price,
       oldPrice: p.oldPrice || 0,
+      wholesalePrice: p.wholesalePrice || 0,
+      repassePrice: p.repassePrice || 0,
       image: p.image,
       tag: p.tag || '',
       category: p.category,
@@ -640,6 +644,56 @@ export default function StoreDashboard() {
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Preços internos (atacado / repasse) */}
+              <div className="rounded-xl border border-dashed border-orange-300 bg-orange-50 p-3 space-y-3">
+                <p className="text-[11px] font-bold text-orange-700 uppercase tracking-wide flex items-center gap-1.5">
+                  🔒 Preços internos — não aparecem na loja
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Custo / Atacado (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={(form as any).wholesalePrice || ''}
+                      onChange={e => handleChange('wholesalePrice' as any, parseFloat(e.target.value) || 0)}
+                      placeholder="80.00"
+                      className="w-full px-4 py-2.5 border border-orange-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none bg-white"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-0.5">Seu custo real (base de cálculo do lucro)</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Preço de Repasse (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={(form as any).repassePrice || ''}
+                      onChange={e => handleChange('repassePrice' as any, parseFloat(e.target.value) || 0)}
+                      placeholder="120.00"
+                      className="w-full px-4 py-2.5 border border-orange-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none bg-white"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-0.5">Valor que o afiliado compra / recebe</p>
+                  </div>
+                </div>
+                {/* Cálculo de margens em tempo real */}
+                {((form as any).repassePrice > 0 || (form as any).wholesalePrice > 0) && (
+                  <div className="flex flex-wrap gap-4 pt-1 border-t border-orange-200 text-xs">
+                    {(form as any).wholesalePrice > 0 && (form as any).repassePrice > 0 && (
+                      <span className="text-blue-700">
+                        💼 Seu lucro: <strong>{formatBRL((form as any).repassePrice - (form as any).wholesalePrice)}</strong>
+                      </span>
+                    )}
+                    {(form as any).repassePrice > 0 && form.price > 0 && (
+                      <span className="text-green-700">
+                        🤝 Lucro do afiliado: <strong>{formatBRL(form.price - (form as any).repassePrice)}</strong>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Categoria */}
