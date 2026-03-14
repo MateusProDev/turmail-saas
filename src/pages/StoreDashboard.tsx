@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaTag, FaUsers, FaBoxOpen, FaCheckCircle } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle } from 'react-icons/fa'
 import {
   listProducts,
   createProduct,
@@ -803,6 +803,86 @@ export default function StoreDashboard() {
                 className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {saving ? <><FaSpinner className="w-3 h-3 animate-spin" /> Salvando...</> : (editId ? 'Salvar Alterações' : 'Criar Produto')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ AFFILIATE EDIT MODAL ═══════ */}
+      {editingAff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60" onClick={() => setEditingAff(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-black text-gray-900">Editar Afiliado: {editingAff.name}</h3>
+              <button onClick={() => setEditingAff(null)} className="text-gray-400 hover:text-gray-600"><FaTimes className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-4">
+              {/* Desconto */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Desconto do cupom (%)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={affForm.couponPercent}
+                  onChange={e => setAffForm(prev => ({ ...prev, couponPercent: parseInt(e.target.value) || 1 }))}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                />
+              </div>
+              {/* Categorias */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-2">Categorias (vazio = todas)</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map(cat => (
+                    <label key={cat} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={affForm.couponCategories.includes(cat)}
+                        onChange={e => setAffForm(prev => ({
+                          ...prev,
+                          couponCategories: e.target.checked
+                            ? [...prev.couponCategories, cat]
+                            : prev.couponCategories.filter(c => c !== cat)
+                        }))}
+                        className="accent-green-600"
+                      />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {/* Status */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-2">Status</label>
+                <div className="flex gap-4">
+                  {(['active', 'suspended'] as const).map(s => (
+                    <label key={s} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input
+                        type="radio"
+                        name="affStatus"
+                        value={s}
+                        checked={affForm.status === s}
+                        onChange={() => setAffForm(prev => ({ ...prev, status: s }))}
+                        className="accent-green-600"
+                      />
+                      {s === 'active' ? 'Ativo' : 'Suspenso'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setEditingAff(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveAff}
+                disabled={savingAff}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-60 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+              >
+                {savingAff ? <><FaSpinner className="w-3.5 h-3.5 animate-spin" /> Salvando...</> : 'Salvar'}
               </button>
             </div>
           </div>

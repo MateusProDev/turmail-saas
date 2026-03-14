@@ -187,7 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // 2. Verificar cupons de afiliado no Firestore
     setCouponLoading(true)
     try {
-      const { getAffiliateByCoupon } = await import('./affiliateService')
+      const { getAffiliateByCoupon } = await import('../lib/affiliateService')
       const aff = await getAffiliateByCoupon(upper)
       if (!aff) {
         setCoupon(null)
