@@ -144,16 +144,11 @@ export async function saveAffiliateOrder(order: Omit<AffiliateOrder, 'id'>): Pro
 export async function getOrdersByCoupon(couponCode: string): Promise<AffiliateOrder[]> {
   const q = query(
     collection(db, 'affiliate_orders'),
-    where('couponCode', '==', couponCode.toUpperCase())
+    where('couponCode', '==', couponCode.toUpperCase()),
+    orderBy('createdAt', 'desc')
   )
   const snap = await getDocs(q)
-  const results = snap.docs.map(d => ({ id: d.id, ...d.data() } as AffiliateOrder))
-  // Ordena client-side para evitar necessidade de índice composto no Firestore
-  return results.sort((a, b) => {
-    const ta = a.createdAt?.toMillis?.() ?? 0
-    const tb = b.createdAt?.toMillis?.() ?? 0
-    return tb - ta
-  })
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as AffiliateOrder))
 }
 
 /* ── Admin: listar todos os pedidos de afiliados ── */
