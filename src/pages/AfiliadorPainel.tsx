@@ -147,7 +147,7 @@ export default function AfiliadorPainel() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
         {/* ── Boas-vindas ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -212,17 +212,17 @@ export default function AfiliadorPainel() {
         </div>
 
         {/* ── Desconto gerado ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-green-900/40 border border-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-4 flex items-center gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-900/40 border border-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
             <FaTag className="w-4 h-4 text-green-400" />
           </div>
-          <div>
-            <p className="text-xs text-gray-400">Total de descontos oferecidos com seu cupom</p>
-            <p className="text-xl font-black text-green-400">{fmt(totalDiscountGiven)}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-gray-400">Descontos oferecidos com seu cupão</p>
+            <p className="text-lg sm:text-xl font-black text-green-400">{fmt(totalDiscountGiven)}</p>
           </div>
-          <div className="ml-auto text-right">
-            <p className="text-xs text-gray-500">Cupom</p>
-            <p className="text-lg font-black text-white font-mono tracking-widest">{affiliate.coupon}</p>
+          <div className="text-right flex-shrink-0">
+            <p className="text-[10px] text-gray-500">Cupão</p>
+            <p className="text-sm sm:text-lg font-black text-white font-mono tracking-widest">{affiliate.coupon}</p>
           </div>
         </div>
 
@@ -237,45 +237,80 @@ export default function AfiliadorPainel() {
           ) : products.length === 0 ? (
             <p className="text-xs text-gray-500 px-4 py-5">Nenhum produto configurado pelo administrador ainda.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="text-left px-4 py-2.5 text-gray-400 font-semibold">Produto</th>
-                    <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Preço na loja</th>
-                    <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Seu preço de repasse</th>
-                    <th className="text-right px-4 py-2.5 text-green-400 font-semibold">Seu lucro</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map(p => {
-                    const repasse = (p as any).repassePrice as number
-                    const lucro = p.price - repasse
-                    return (
-                      <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                        <td className="px-4 py-3 flex items-center gap-2">
-                          {p.image && <img src={p.image} alt={p.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />}
+            <>
+              {/* Mobile: cards */}
+              <div className="sm:hidden divide-y divide-gray-800">
+                {products.map(p => {
+                  const repasse = (p as any).repassePrice as number
+                  const lucro = p.price - repasse
+                  return (
+                    <div key={p.id} className="px-4 py-3 flex gap-3 items-start">
+                      {p.image && <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-semibold text-sm leading-tight">{p.name}</p>
+                        <p className="text-gray-500 text-[11px] mb-2">{p.category}</p>
+                        <div className="grid grid-cols-3 gap-1 text-[11px]">
                           <div>
-                            <p className="text-white font-semibold">{p.name}</p>
-                            <p className="text-gray-500 text-[10px]">{p.category}</p>
+                            <p className="text-gray-600">Loja</p>
+                            <p className="text-gray-300 font-semibold">{fmtBRL(p.price)}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-300">{fmtBRL(p.price)}</td>
-                        <td className="px-4 py-3 text-right text-blue-400 font-bold">{fmtBRL(repasse)}</td>
-                        <td className="px-4 py-3 text-right">
-                          <span className={`font-black ${lucro >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {fmtBRL(lucro)}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          <div>
+                            <p className="text-gray-600">Repasse</p>
+                            <p className="text-blue-400 font-bold">{fmtBRL(repasse)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">Seu lucro</p>
+                            <p className={`font-black ${lucro >= 0 ? 'text-green-400' : 'text-red-400'}`}>{fmtBRL(lucro)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {/* Desktop: tabela */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="text-left px-4 py-2.5 text-gray-400 font-semibold">Produto</th>
+                      <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Preço na loja</th>
+                      <th className="text-right px-4 py-2.5 text-gray-400 font-semibold">Seu repasse</th>
+                      <th className="text-right px-4 py-2.5 text-green-400 font-semibold">Seu lucro</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map(p => {
+                      const repasse = (p as any).repassePrice as number
+                      const lucro = p.price - repasse
+                      return (
+                        <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {p.image && <img src={p.image} alt={p.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />}
+                              <div>
+                                <p className="text-white font-semibold">{p.name}</p>
+                                <p className="text-gray-500 text-[10px]">{p.category}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-300">{fmtBRL(p.price)}</td>
+                          <td className="px-4 py-3 text-right text-blue-400 font-bold">{fmtBRL(repasse)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`font-black ${lucro >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {fmtBRL(lucro)}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
               <p className="text-[10px] text-gray-600 px-4 py-2 border-t border-gray-800">
                 💡 Lucro = Preço na loja − Seu preço de repasse (por venda realizada)
               </p>
-            </div>
+            </>
           )}
         </div>
 
@@ -316,7 +351,7 @@ export default function AfiliadorPainel() {
 
         {/* ── Tabela de pedidos ── */}
         <div>
-          <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2 flex-wrap">
             <FaBoxOpen className="w-4 h-4 text-green-400" />
             Pedidos com o cupom <span className="font-mono text-green-400">{affiliate.coupon}</span>
           </h2>
@@ -344,11 +379,10 @@ export default function AfiliadorPainel() {
 
               <div className="divide-y divide-gray-800">
                 {orders.map(order => (
-                  <div key={order.id} className="px-4 py-3">
-                    {/* Mobile: stack */}
+                  <div key={order.id} className="px-3 sm:px-4 py-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                             order.status === 'confirmed'
                               ? 'bg-green-900/40 border-green-700 text-green-400'
@@ -360,16 +394,16 @@ export default function AfiliadorPainel() {
                         </div>
                         <ul className="text-xs text-gray-400 space-y-0.5">
                           {order.items?.map((it, i) => (
-                            <li key={i}>{it.qty}x {it.name}</li>
+                            <li key={i} className="truncate">{it.qty}x {it.name}</li>
                           ))}
                         </ul>
                       </div>
-                      <div className="text-right flex-shrink-0 text-xs space-y-0.5">
-                        <p className="text-gray-500">Sub: {fmt(order.subtotal)}</p>
+                      <div className="text-right flex-shrink-0 text-xs space-y-0.5 ml-2">
+                        <p className="text-gray-500 whitespace-nowrap">Sub: {fmt(order.subtotal)}</p>
                         {order.discount > 0 && (
-                          <p className="text-green-500">-{fmt(order.discount)}</p>
+                          <p className="text-green-500 whitespace-nowrap">-{fmt(order.discount)}</p>
                         )}
-                        <p className="text-white font-bold">{fmt(order.total)}</p>
+                        <p className="text-white font-bold whitespace-nowrap">{fmt(order.total)}</p>
                       </div>
                     </div>
                   </div>
@@ -402,9 +436,9 @@ function StatCard({
 }: { icon: React.ReactNode; label: string; value: string; color: string; bg: string }) {
   return (
     <div className={`rounded-xl border px-3 py-3 ${bg}`}>
-      <div className={`mb-2 ${color}`}>{icon}</div>
-      <p className="text-[11px] text-gray-400 leading-snug">{label}</p>
-      <p className={`text-lg font-extrabold mt-0.5 ${color} leading-none`}>{value}</p>
+      <div className={`mb-1.5 ${color}`}>{icon}</div>
+      <p className="text-[10px] sm:text-[11px] text-gray-400 leading-snug">{label}</p>
+      <p className={`text-base sm:text-lg font-extrabold mt-0.5 ${color} leading-none`}>{value}</p>
     </div>
   )
 }
