@@ -105,6 +105,15 @@ export default function Home() {
   const { addItem, toggle, totalItems } = useCart()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [userCity, setUserCity] = useState<string>('')
+
+  /* detectar cidade do usuário (IP geolocation) */
+  useEffect(() => {
+    fetch('https://ipwho.is/')
+      .then(r => r.json())
+      .then(d => { if (d?.city) setUserCity(d.city) })
+      .catch(() => {})
+  }, [])
   const [current, setCurrent] = useState(0)
   const [products, setProducts] = useState(fallbackProducts)
   const [categoriesList, setCategoriesList] = useState<{ name: string; image: string }[]>([])
@@ -169,7 +178,11 @@ export default function Home() {
 
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
-        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$149,90 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF &nbsp;|&nbsp; Cupom <span className="text-yellow-400 font-bold">GUGU5</span> = 5% OFF em Pré-Treino
+        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$199,90
+        &nbsp;|&nbsp; Vendas por indicação — peça seu cupom ao parceiro
+        {userCity && (
+          <>&nbsp;|&nbsp; 📍 <span className="text-blue-400">{userCity}</span></>
+        )}
       </div>
 
       {/* ─── Header ─── */}

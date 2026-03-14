@@ -30,7 +30,9 @@ interface CartCtx {
   discount: number
   total: number
   freteGratis: boolean
-  freteStatus: 'gratis' | 'combinar' | 'pendente'
+  freteStatus: 'gratis' | 'calculado' | 'calculando' | 'pendente' | 'erro'
+  freteValor: number | null
+  freteLoading: boolean
   cep: string
   setCep: (cep: string) => void
   open: () => void
@@ -65,10 +67,45 @@ const USED_COUPONS_KEY = 'ben_used_coupons'
 const CEP_KEY = 'ben_cart_cep'
 const FRETE_GRATIS_MIN = 199.90
 
-/** CEPs de Fortaleza e região metropolitana: 60000-000 a 61599-999 */
-function isCepFortaleza(cep: string): boolean {
-  const num = parseInt(cep.replace(/\D/g, ''), 10)
-  return num >= 60000000 && num <= 61599999
+/** ── CEP da loja (origem do frete) ── */
+const STORE_CEP = '60835225'
+
+/** Fórmula de Haversine — retorna distância em km */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/** Taxa por km: ≤15km → R$1,00 | 15-20km → R$0,90 | >20km → R$0,80 */
+function taxaKm(km: number): number {
+  if (km <= 15) return 1.00
+  if (km <= 20) return 0.90
+  return 0.80
+}
+
+/** Busca lat/lon de um CEP na BrasilAPI v2 */
+async function getCepCoords(cep: string): Promise<{ lat: number; lon: number } | null> {
+  try {
+    const r = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep.replace(/\D/g, '')}`)
+    if (!r.ok) return null
+    const d = await r.json()
+    const lat = d?.location?.coordinates?.latitude
+    const lon = d?.location?.coordinates?.longitude
+    if (!lat || !lon) return null
+    return { lat: parseFloat(lat), lon: parseFloat(lon) }
+  } catch { return null }
+}
+
+// Cache das coordenadas da loja
+let _storeCoordsCache: { lat: number; lon: number } | null = null
+async function getStoreCoords() {
+  if (_storeCoordsCache) return _storeCoordsCache
+  _storeCoordsCache = await getCepCoords(STORE_CEP)
+  return _storeCoordsCache
 }
 
 function loadItems(): CartItem[] {
@@ -107,6 +144,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
   const [cep, setCepState] = useState(() => localStorage.getItem(CEP_KEY) || '')
+  const [freteValor, setFreteValor] = useState<number | null>(null)
+  const [freteLoading, setFreteLoading] = useState(false)
 
   const setCep = useCallback((v: string) => {
     const clean = v.replace(/\D/g, '').slice(0, 8)
@@ -129,6 +168,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(COUPON_KEY)
     }
   }, [coupon])
+
+  /* ── Calcular frete por distância ── */
+  useEffect(() => {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) { setFreteValor(null); return }
+    // já carregado como grátis acima do mínimo
+    if (subtotal >= FRETE_GRATIS_MIN) { setFreteValor(0); return }
+    let cancelled = false
+    setFreteLoading(true)
+    ;(async () => {
+      try {
+        const [store, customer] = await Promise.all([getStoreCoords(), getCepCoords(digits)])
+        if (cancelled) return
+        if (!store || !customer) { setFreteValor(null); setFreteLoading(false); return }
+        const km = haversineKm(store.lat, store.lon, customer.lat, customer.lon)
+        const valor = Math.round(km * taxaKm(km) * 100) / 100
+        setFreteValor(valor)
+      } catch {
+        if (!cancelled) setFreteValor(null)
+      } finally {
+        if (!cancelled) setFreteLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [cep, subtotal])
 
   const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
@@ -222,15 +286,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const cepDigits = cep.replace(/\D/g, '')
   const cepCompleto = cepDigits.length === 8
-  const isFortaleza = cepCompleto && isCepFortaleza(cepDigits)
-  const freteGratis = isFortaleza && subtotal >= FRETE_GRATIS_MIN
-  const freteStatus: 'gratis' | 'combinar' | 'pendente' =
-    !cepCompleto ? 'pendente' : isFortaleza && subtotal >= FRETE_GRATIS_MIN ? 'gratis' : isFortaleza ? 'pendente' : 'combinar'
+  const freteGratis = subtotal >= FRETE_GRATIS_MIN
+  const freteStatus: 'gratis' | 'calculado' | 'calculando' | 'pendente' | 'erro' =
+    !cepCompleto ? 'pendente' :
+    freteGratis ? 'gratis' :
+    freteLoading ? 'calculando' :
+    freteValor !== null ? 'calculado' : 'erro'
 
   return (
     <CartContext.Provider value={{
       items, isOpen, coupon, couponError, couponLoading,
-      totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
+      totalItems, subtotal, discount, total, freteGratis, freteStatus, freteValor, freteLoading, cep, setCep,
       open, close, toggle, addItem, removeItem, updateQty,
       applyCoupon, removeCoupon, clearCart, markCouponUsed,
     }}>

@@ -6,7 +6,7 @@ import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateServic
 export default function CartDrawer() {
   const {
     items, isOpen, coupon, couponError, couponLoading,
-    totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
+    totalItems, subtotal, discount, total, freteGratis, freteStatus, freteValor, freteLoading, cep, setCep,
     close, removeItem, updateQty,
     applyCoupon, removeCoupon, markCouponUsed, clearCart,
   } = useCart()
@@ -181,23 +181,36 @@ export default function CartDrawer() {
                   />
                 </div>
                 {freteStatus === 'gratis' && (
-                  <p className="text-green-600 font-bold text-[11px] flex items-center gap-1">✅ Frete GRÁTIS para Fortaleza!</p>
+                  <p className="text-green-600 font-bold text-[11px] flex items-center gap-1">✅ Frete GRÁTIS! (acima de R$199,90)</p>
                 )}
-                {freteStatus === 'combinar' && (
-                  <p className="text-yellow-600 font-semibold text-[11px]">📦 Frete a combinar (fora de Fortaleza)</p>
+                {freteStatus === 'calculando' && (
+                  <p className="text-blue-500 text-[11px] flex items-center gap-1"><FaSpinner className="w-3 h-3 animate-spin" /> Calculando frete...</p>
                 )}
-                {freteStatus === 'pendente' && cep.replace(/\D/g, '').length === 8 && subtotal < 199.90 && (
-                  <p className="text-gray-400 text-[10px]">Frete grátis para Fortaleza acima de R$ 199,90</p>
+                {freteStatus === 'calculado' && freteValor !== null && (
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-gray-500 flex items-center gap-1"><FaTruck className="w-3 h-3" /> Frete estimado</span>
+                    <span className="text-blue-600 font-bold">{fmt(freteValor)}</span>
+                  </div>
+                )}
+                {freteStatus === 'erro' && (
+                  <p className="text-yellow-600 font-semibold text-[11px]">📦 Frete a combinar — confirmaremos no WhatsApp</p>
                 )}
                 {freteStatus === 'pendente' && cep.replace(/\D/g, '').length < 8 && (
                   <p className="text-gray-400 text-[10px]">Digite seu CEP para calcular o frete</p>
                 )}
+                <p className="text-[9px] text-gray-300">Frete grátis a partir de R$199,90</p>
               </div>
 
               <div className="flex justify-between text-base font-black text-gray-900 pt-1 border-t">
-                <span>Total</span>
+                <span>Total (produtos)</span>
                 <span>{fmt(total)}</span>
               </div>
+              {freteStatus === 'calculado' && freteValor !== null && freteValor > 0 && (
+                <div className="flex justify-between text-sm font-bold text-gray-700">
+                  <span>+ Frete</span>
+                  <span className="text-blue-600">{fmt(freteValor)}</span>
+                </div>
+              )}
             </div>
 
             {/* Checkout via WhatsApp */}
@@ -213,8 +226,8 @@ export default function CartDrawer() {
                   '',
                   discount > 0 ? `Cupom: ${coupon?.code} (-${coupon?.percent}%)` : '',
                   cep ? `📍 CEP: ${cep}` : '',
-                  freteGratis ? '🚚 Frete Grátis (Fortaleza)' : freteStatus === 'combinar' ? '📦 Frete a combinar' : '',
-                  `*Total: ${fmt(total)}*`,
+                  freteStatus === 'gratis' ? '🚚 Frete GRÁTIS' : freteStatus === 'calculado' && freteValor ? `📦 Frete: ${fmt(freteValor)}` : freteStatus === 'erro' ? '📦 Frete a combinar' : '',
+                  freteStatus === 'calculado' && freteValor ? `*Total geral: ${fmt(total + freteValor)}*` : `*Total: ${fmt(total)}*`,
                   '',
                   'Olá! Gostaria de finalizar este pedido 🙂',
                 ]
