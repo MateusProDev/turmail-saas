@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useCart } from '../contexts/CartContext'
-import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart, FaTruck } from 'react-icons/fa'
+import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart, FaTruck, FaSpinner } from 'react-icons/fa'
 import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateService'
 
 export default function CartDrawer() {
   const {
-    items, isOpen, coupon, couponError,
+    items, isOpen, coupon, couponError, couponLoading,
     totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
     close, removeItem, updateQty,
     applyCoupon, removeCoupon, markCouponUsed, clearCart,
@@ -94,10 +94,11 @@ export default function CartDrawer() {
               {coupon ? (
                 <div>
                   {(() => {
-                    const hasCategory = !!coupon.category
-                    const hasCatItems = hasCategory
-                      ? items.some(i => i.category === coupon.category)
+                    const hasCategories = !!(coupon.categories && coupon.categories.length > 0)
+                    const hasCatItems = hasCategories
+                      ? items.some(i => coupon.categories!.includes(i.category || ''))
                       : true
+                    const catLabel = hasCategories ? coupon.categories!.join(', ') : null
                     return (
                       <>
                         <div className={`flex items-center justify-between rounded-lg px-3 py-2 border ${
@@ -109,7 +110,7 @@ export default function CartDrawer() {
                             <FaTag className="w-3 h-3" />
                             {coupon.code}
                             {coupon.affiliate && <span className="text-[9px] font-normal bg-yellow-100 text-yellow-700 border border-yellow-300 px-1 rounded">AFILIADO</span>}
-                            {hasCatItems && <span>(-{coupon.percent}% em {coupon.category})</span>}
+                            {hasCatItems && <span>(-{coupon.percent}%{catLabel ? ` em ${catLabel}` : ''})</span>}
                           </div>
                           <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
                             <FaTimes className="w-3 h-3" />
@@ -117,11 +118,11 @@ export default function CartDrawer() {
                         </div>
                         {hasCatItems ? (
                           <p className="text-green-700 text-[12px] mt-2">
-                            Cupom <span className="font-bold">{coupon.code}</span> aplicado — {coupon.percent}% OFF em <span className="font-bold">{coupon.category}</span>
+                            Cupom <span className="font-bold">{coupon.code}</span> aplicado — {coupon.percent}% OFF{catLabel ? <> em <span className="font-bold">{catLabel}</span></> : ' em todos os produtos'}
                           </p>
                         ) : (
                           <p className="text-yellow-700 text-[12px] mt-2">
-                            Cupom <span className="font-bold">{coupon.code}</span> registrado (afiliado). Desconto de {coupon.percent}% aplica em itens <span className="font-bold">{coupon.category}</span>.
+                            Cupom <span className="font-bold">{coupon.code}</span> registrado. Desconto de {coupon.percent}% aplica em <span className="font-bold">{catLabel}</span>.
                           </p>
                         )}
                       </>
@@ -137,17 +138,18 @@ export default function CartDrawer() {
                       onChange={e => setCouponInput(e.target.value)}
                       placeholder="Cupom de desconto"
                       className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      onKeyDown={e => e.key === 'Enter' && (applyCoupon(couponInput), setCouponInput(''))}
+                      onKeyDown={e => { if (e.key === 'Enter') { applyCoupon(couponInput); setCouponInput('') } }}
                     />
                     <button
                       onClick={() => { applyCoupon(couponInput); setCouponInput('') }}
-                      className="px-3 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-colors"
+                      disabled={couponLoading}
+                      className="px-3 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-60 flex items-center gap-1"
                     >
-                      Aplicar
+                      {couponLoading ? <FaSpinner className="w-3 h-3 animate-spin" /> : 'Aplicar'}
                     </button>
                   </div>
                   {couponError && <p className="text-red-500 text-[11px] mt-2">{couponError}</p>}
-                  <p className="text-gray-500 text-[11px] mt-2">Use <b>BEN5</b> = 5% OFF em tudo &nbsp;|&nbsp; <b>GUGU5</b> = 5% OFF em Pré-Treino</p>
+                  <p className="text-gray-500 text-[11px] mt-2">Use <b>BEN5</b> = 5% OFF · <b>BEN10</b> = 10% OFF · ou cupom de afiliado</p>
                 </div>
               )}
             </div>

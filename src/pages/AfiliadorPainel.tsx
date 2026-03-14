@@ -158,9 +158,9 @@ export default function AfiliadorPainel() {
           </div>
         </div>
 
-        {affiliate.status === 'pending' && (
-          <div className="bg-yellow-900/20 border border-yellow-700/50 rounded-xl px-4 py-3 text-yellow-300 text-sm">
-            ⏳ Sua conta está <strong>aguardando aprovação</strong>. A equipe BenSuplementos entrará em contato pelo WhatsApp em breve.
+        {affiliate.status === 'suspended' && (
+          <div className="bg-red-900/20 border border-red-700/50 rounded-xl px-4 py-3 text-red-300 text-sm">
+            🚫 Sua conta está <strong>suspensa</strong>. Entre em contato com a equipe BenSuplementos pelo WhatsApp.
           </div>
         )}
 

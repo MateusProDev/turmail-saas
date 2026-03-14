@@ -13,20 +13,19 @@ export interface CartItem {
 interface Coupon {
   code: string
   percent: number
-  category?: string   // se definido, desconto aplica só a itens dessa categoria
-  affiliate?: boolean // cupom de afiliado: sem restrição de uso único
+  categories?: string[] // se definido e não-vazio, aplica só nessas categorias
+  affiliate?: boolean   // cupom de afiliado: sem restrição de uso único
 }
 
 interface CouponDef {
   percent: number
-  category?: string
   affiliate?: boolean
 }
 
+// Cupons fixos da loja (sem categoria). Cupons de afiliado são resolvidos via Firestore.
 const COUPON_DEFS: Record<string, CouponDef> = {
   BEN5:  { percent: 5 },
   BEN10: { percent: 10 },
-  GUGU5: { percent: 5, category: 'Pré-Treino', affiliate: true },
 }
 
 interface CartCtx {
@@ -34,6 +33,7 @@ interface CartCtx {
   isOpen: boolean
   coupon: Coupon | null
   couponError: string
+  couponLoading: boolean
   totalItems: number
   subtotal: number
   discount: number
@@ -48,7 +48,7 @@ interface CartCtx {
   addItem: (item: Omit<CartItem, 'qty'>) => void
   removeItem: (id: string | number) => void
   updateQty: (id: string | number, qty: number) => void
-  applyCoupon: (code: string) => void
+  applyCoupon: (code: string) => Promise<void>
   removeCoupon: () => void
   clearCart: () => void
   markCouponUsed: () => void
@@ -114,6 +114,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const [coupon, setCoupon] = useState<Coupon | null>(loadCoupon)
   const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
   const [cep, setCepState] = useState(() => localStorage.getItem(CEP_KEY) || '')
 
   const setCep = useCallback((v: string) => {
@@ -166,25 +167,50 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
   }, [removeItem])
 
-  const applyCoupon = useCallback((code: string) => {
+  const applyCoupon = useCallback(async (code: string): Promise<void> => {
     const upper = code.trim().toUpperCase()
+
+    // 1. Verificar cupons fixos da loja
     const def = COUPON_DEFS[upper]
-    if (!def) {
-      setCoupon(null)
-      setCouponError('Cupom inválido')
-      return
-    }
-    // Cupons de afiliado não têm restrição de uso único (rastreamento de comissão)
-    if (!def.affiliate) {
+    if (def) {
       const used = loadUsedCoupons()
       if (used.includes(upper)) {
         setCoupon(null)
         setCouponError('Este cupom já foi utilizado neste dispositivo')
         return
       }
+      setCoupon({ code: upper, percent: def.percent })
+      setCouponError('')
+      return
     }
-    setCoupon({ code: upper, percent: def.percent, category: def.category, affiliate: def.affiliate })
-    setCouponError('')
+
+    // 2. Verificar cupons de afiliado no Firestore
+    setCouponLoading(true)
+    try {
+      const { getAffiliateByCoupon } = await import('./affiliateService')
+      const aff = await getAffiliateByCoupon(upper)
+      if (!aff) {
+        setCoupon(null)
+        setCouponError('Cupom inválido')
+        return
+      }
+      if (aff.status !== 'active') {
+        setCoupon(null)
+        setCouponError('Este cupom não está ativo no momento')
+        return
+      }
+      setCoupon({
+        code: upper,
+        percent: aff.couponPercent ?? 5,
+        categories: aff.couponCategories?.length ? aff.couponCategories : undefined,
+        affiliate: true,
+      })
+      setCouponError('')
+    } catch {
+      setCouponError('Erro ao verificar cupom. Tente novamente.')
+    } finally {
+      setCouponLoading(false)
+    }
   }, [])
 
   const markCouponUsed = useCallback(() => {
@@ -207,10 +233,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((s, i) => s + i.qty, 0)
   const subtotal = items.reduce((s, i) => s + i.priceNum * i.qty, 0)
   const discount = coupon
-    ? coupon.category
-      // desconto apenas nos itens da categoria do cupom
+    ? (coupon.categories && coupon.categories.length > 0)
+      // desconto apenas nas categorias configuradas
       ? items.reduce((s, i) => {
-          if (i.category === coupon.category) return s + i.priceNum * i.qty * (coupon.percent / 100)
+          if (coupon.categories!.includes(i.category || '')) return s + i.priceNum * i.qty * (coupon.percent / 100)
           return s
         }, 0)
       : subtotal * (coupon.percent / 100)
@@ -226,7 +252,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={{
-      items, isOpen, coupon, couponError,
+      items, isOpen, coupon, couponError, couponLoading,
       totalItems, subtotal, discount, total, freteGratis, freteStatus, cep, setCep,
       open, close, toggle, addItem, removeItem, updateQty,
       applyCoupon, removeCoupon, clearCart, markCouponUsed,

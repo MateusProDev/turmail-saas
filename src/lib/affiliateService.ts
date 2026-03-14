@@ -31,7 +31,9 @@ export interface Affiliate {
   email: string
   phone: string
   instagram?: string
-  coupon: string       // código do cupom associado (ex: "GUGU5")
+  coupon: string            // código do cupom associado (ex: "GUGU5")
+  couponPercent: number     // % de desconto (ex: 5)
+  couponCategories: string[] // categorias onde aplica; vazio = todas
   status: 'pending' | 'active' | 'suspended'
   createdAt?: any
 }
@@ -80,7 +82,9 @@ export async function registerAffiliate(data: {
     phone,
     instagram: instagram || '',
     coupon: couponUpper,
-    status: 'pending',
+    couponPercent: 5,
+    couponCategories: [],
+    status: 'active',
     createdAt: serverTimestamp(),
   }
 
@@ -176,4 +180,14 @@ export async function updateAffiliateStatus(
   status: 'pending' | 'active' | 'suspended'
 ): Promise<void> {
   await updateDoc(doc(db, 'affiliates', uid), { status })
+}
+
+/* ── Admin: atualizar configuração do cupom do afiliado ── */
+
+export async function updateAffiliateCouponConfig(
+  uid: string,
+  couponPercent: number,
+  couponCategories: string[]
+): Promise<void> {
+  await updateDoc(doc(db, 'affiliates', uid), { couponPercent, couponCategories })
 }
