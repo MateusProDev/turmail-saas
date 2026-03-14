@@ -106,12 +106,16 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [userCity, setUserCity] = useState<string>('')
+  const [userRegion, setUserRegion] = useState<string>('')
 
-  /* detectar cidade do usuário (IP geolocation) */
+  /* detectar cidade/estado do usuário (IP geolocation) */
   useEffect(() => {
     fetch('https://ipwho.is/')
       .then(r => r.json())
-      .then(d => { if (d?.city) setUserCity(d.city) })
+      .then(d => {
+        if (d?.city) setUserCity(d.city)
+        if (d?.region) setUserRegion(d.region)
+      })
       .catch(() => {})
   }, [])
   const [current, setCurrent] = useState(0)
@@ -179,9 +183,8 @@ export default function Home() {
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
         <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$199,90
-        &nbsp;|&nbsp; Vendas por indicação — peça seu cupom ao parceiro
-        {userCity && (
-          <>&nbsp;|&nbsp; 📍 <span className="text-blue-400">{userCity}</span></>
+        {(userCity || userRegion) && (
+          <>&nbsp;|&nbsp; 📍 <span className="text-blue-400">{userCity}{userCity && userRegion ? ', ' : ''}{userRegion}</span></>
         )}
       </div>
 
