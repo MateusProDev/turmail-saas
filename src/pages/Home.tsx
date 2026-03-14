@@ -97,6 +97,7 @@ function toHomeProduct(p: Product) {
     oldPrice: p.oldPrice ? formatBRL(p.oldPrice) : '',
     image: p.image,
     tag: p.tag || '',
+    category: p.category,
   }
 }
 
@@ -168,7 +169,7 @@ export default function Home() {
 
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
-        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$149,90 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF
+        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$149,90 &nbsp;|&nbsp; Cupom <span className="text-green-400 font-bold">BEN5</span> = 5% OFF &nbsp;|&nbsp; Cupom <span className="text-yellow-400 font-bold">GUGU5</span> = 5% OFF em Pré-Treino
       </div>
 
       {/* ─── Header ─── */}
@@ -439,7 +440,7 @@ export default function Home() {
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
                   <button
-                    onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image })}
+                    onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: (p as any).category })}
                     className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
                   >
                     <FaShoppingCart className="w-3 h-3" />
@@ -531,6 +532,7 @@ export default function Home() {
                 <li><Link to="/privacy" className="hover:text-green-400">Privacidade</Link></li>
                 <li><Link to="/terms" className="hover:text-green-400">Termos</Link></li>
                 <li><a href="#" className="hover:text-green-400">Trocas</a></li>
+                <li><Link to="/afiliado/cadastro" className="hover:text-green-400 text-green-500 font-semibold">Seja Afiliado</Link></li>
               </ul>
             </div>
 

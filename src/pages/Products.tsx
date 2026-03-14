@@ -100,7 +100,7 @@ export default function Products() {
     : catFiltered
 
   const handleAdd = (p: DisplayProduct) => {
-    addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image })
+    addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: p.cat })
   }
 
   /* ── Product Detail View ── */

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useCart } from '../contexts/CartContext'
 import { FaTimes, FaPlus, FaMinus, FaTrash, FaTag, FaWhatsapp, FaShoppingCart, FaTruck } from 'react-icons/fa'
+import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateService'
+import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateService'
 
 export default function CartDrawer() {
   const {
@@ -92,16 +94,40 @@ export default function CartDrawer() {
             <div>
               {coupon ? (
                 <div>
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-2 text-green-700 text-xs font-bold">
-                      <FaTag className="w-3 h-3" />
-                      {coupon.code} (-{coupon.percent}%)
-                    </div>
-                    <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
-                      <FaTimes className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <p className="text-green-700 text-[12px] mt-2">Cupom aplicado com sucesso: <span className="font-bold">{coupon.code}</span> — {coupon.percent}% OFF</p>
+                  {(() => {
+                    const hasCategory = !!coupon.category
+                    const hasCatItems = hasCategory
+                      ? items.some(i => i.category === coupon.category)
+                      : true
+                    return (
+                      <>
+                        <div className={`flex items-center justify-between rounded-lg px-3 py-2 border ${
+                          hasCatItems ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+                        }`}>
+                          <div className={`flex items-center gap-2 text-xs font-bold ${
+                            hasCatItems ? 'text-green-700' : 'text-yellow-700'
+                          }`}>
+                            <FaTag className="w-3 h-3" />
+                            {coupon.code}
+                            {coupon.affiliate && <span className="text-[9px] font-normal bg-yellow-100 text-yellow-700 border border-yellow-300 px-1 rounded">AFILIADO</span>}
+                            {hasCatItems && <span>(-{coupon.percent}% em {coupon.category})</span>}
+                          </div>
+                          <button onClick={removeCoupon} className="text-gray-400 hover:text-red-500">
+                            <FaTimes className="w-3 h-3" />
+                          </button>
+                        </div>
+                        {hasCatItems ? (
+                          <p className="text-green-700 text-[12px] mt-2">
+                            Cupom <span className="font-bold">{coupon.code}</span> aplicado — {coupon.percent}% OFF em <span className="font-bold">{coupon.category}</span>
+                          </p>
+                        ) : (
+                          <p className="text-yellow-700 text-[12px] mt-2">
+                            Cupom <span className="font-bold">{coupon.code}</span> registrado (afiliado). Desconto de {coupon.percent}% aplica em itens <span className="font-bold">{coupon.category}</span>.
+                          </p>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <div>
@@ -122,7 +148,7 @@ export default function CartDrawer() {
                     </button>
                   </div>
                   {couponError && <p className="text-red-500 text-[11px] mt-2">{couponError}</p>}
-                  <p className="text-gray-500 text-[11px] mt-2">Use o cupom <b>BEN5</b> para 5% OFF</p>
+                  <p className="text-gray-500 text-[11px] mt-2">Use <b>BEN5</b> = 5% OFF em tudo &nbsp;|&nbsp; <b>GUGU5</b> = 5% OFF em Pré-Treino</p>
                 </div>
               )}
             </div>
@@ -175,7 +201,7 @@ export default function CartDrawer() {
 
             {/* Checkout via WhatsApp */}
             <button
-              onClick={() => {
+              onClick={async () => {
                 const lines = items.map(
                   (it) => `• ${it.qty}x ${it.name} — ${it.price}`
                 )
@@ -193,6 +219,29 @@ export default function CartDrawer() {
                 ]
                   .filter(Boolean)
                   .join('%0A')
+
+                // Rastrear pedido de afiliado (fire & forget, não bloqueia checkout)
+                if (coupon?.affiliate && coupon?.code) {
+                  try {
+                    const aff = await getAffiliateByCoupon(coupon.code)
+                    if (aff) {
+                      await saveAffiliateOrder({
+                        couponCode: coupon.code,
+                        affiliateId: aff.uid,
+                        affiliateName: aff.name,
+                        items: items.map(it => ({ name: it.name, qty: it.qty, price: it.price })),
+                        subtotal,
+                        discount,
+                        total,
+                        status: 'pending',
+                        cep: cep || '',
+                      })
+                    }
+                  } catch {
+                    // não bloquear o checkout por falha no tracking
+                  }
+                }
+
                 // Marcar cupom como usado neste dispositivo
                 markCouponUsed()
                 clearCart()

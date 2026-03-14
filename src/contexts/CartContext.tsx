@@ -7,16 +7,26 @@ export interface CartItem {
   priceNum: number    // 189.90
   image: string
   qty: number
+  category?: string   // ex: "Pré-Treino", "Whey Protein"
 }
 
 interface Coupon {
   code: string
   percent: number
+  category?: string   // se definido, desconto aplica só a itens dessa categoria
+  affiliate?: boolean // cupom de afiliado: sem restrição de uso único
 }
 
-const VALID_COUPONS: Record<string, number> = {
-  BEN5: 5,
-  BEN10: 10,
+interface CouponDef {
+  percent: number
+  category?: string
+  affiliate?: boolean
+}
+
+const COUPON_DEFS: Record<string, CouponDef> = {
+  BEN5:  { percent: 5 },
+  BEN10: { percent: 10 },
+  GUGU5: { percent: 5, category: 'Pré-Treino', affiliate: true },
 }
 
 interface CartCtx {
@@ -158,20 +168,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const applyCoupon = useCallback((code: string) => {
     const upper = code.trim().toUpperCase()
-    const percent = VALID_COUPONS[upper]
-    if (!percent) {
+    const def = COUPON_DEFS[upper]
+    if (!def) {
       setCoupon(null)
       setCouponError('Cupom inválido')
       return
     }
-    // Verificar se já foi usado neste aparelho
-    const used = loadUsedCoupons()
-    if (used.includes(upper)) {
-      setCoupon(null)
-      setCouponError('Este cupom já foi utilizado neste dispositivo')
-      return
+    // Cupons de afiliado não têm restrição de uso único (rastreamento de comissão)
+    if (!def.affiliate) {
+      const used = loadUsedCoupons()
+      if (used.includes(upper)) {
+        setCoupon(null)
+        setCouponError('Este cupom já foi utilizado neste dispositivo')
+        return
+      }
     }
-    setCoupon({ code: upper, percent })
+    setCoupon({ code: upper, percent: def.percent, category: def.category, affiliate: def.affiliate })
     setCouponError('')
   }, [])
 
@@ -194,7 +206,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.reduce((s, i) => s + i.qty, 0)
   const subtotal = items.reduce((s, i) => s + i.priceNum * i.qty, 0)
-  const discount = coupon ? subtotal * (coupon.percent / 100) : 0
+  const discount = coupon
+    ? coupon.category
+      // desconto apenas nos itens da categoria do cupom
+      ? items.reduce((s, i) => {
+          if (i.category === coupon.category) return s + i.priceNum * i.qty * (coupon.percent / 100)
+          return s
+        }, 0)
+      : subtotal * (coupon.percent / 100)
+    : 0
   const total = subtotal - discount
 
   const cepDigits = cep.replace(/\D/g, '')

@@ -23,6 +23,8 @@ const DnsCheck = lazy(() => import('./pages/DnsCheck'))
 const DomainSenderPage = lazy(() => import('./pages/DomainSenderPage'))
 const Products = lazy(() => import('./pages/Products'))
 const StoreDashboard = lazy(() => import('./pages/StoreDashboard'))
+const AfiliadorCadastro = lazy(() => import('./pages/AfiliadorCadastro'))
+const AfiliadorPainel = lazy(() => import('./pages/AfiliadorPainel'))
 import './App.css'
 
 import AccountCreationProgress from './components/AccountCreationProgress';
@@ -44,6 +46,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/produtos" element={<Products />} />
             <Route path="/admin/loja" element={<StoreDashboard />} />
+            <Route path="/afiliado/cadastro" element={<AfiliadorCadastro />} />
+            <Route path="/afiliado/painel" element={<AfiliadorPainel />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/campaigns" element={<Campaigns />} />
