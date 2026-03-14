@@ -176,6 +176,23 @@ service cloud.firestore {
       allow create, update, delete: if request.auth != null;
     }
 
+    // Affiliates: qualquer auth pode criar a própria conta; leitura pública por cupom;
+    // o próprio afiliado lê/atualiza; admin (qualquer auth) pode ler/escrever tudo
+    match /affiliates/{uid} {
+      // Criação: o próprio usuário cria seu doc (uid bate com auth.uid)
+      allow create: if request.auth != null && request.auth.uid == uid;
+      // Leitura: o próprio afiliado ou qualquer auth (admin da loja)
+      allow read: if request.auth != null;
+      // Update/delete: o próprio afiliado ou qualquer auth autenticado (admin)
+      allow update, delete: if request.auth != null;
+    }
+
+    // Affiliate orders: criação pública (checkout sem login); leitura/escrita por auth
+    match /affiliate_orders/{orderId} {
+      allow create: if true;  // Checkout pode ser feito sem login
+      allow read, update, delete: if request.auth != null;
+    }
+
     // Fallback: deny everything else
     match /{document=**} {
       allow read, write: if false;
