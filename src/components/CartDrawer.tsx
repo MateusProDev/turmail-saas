@@ -149,7 +149,7 @@ export default function CartDrawer() {
                     </button>
                   </div>
                   {couponError && <p className="text-red-500 text-[11px] mt-2">{couponError}</p>}
-                  <p className="text-gray-500 text-[11px] mt-2">Use <b>BEN5</b> = 5% OFF · <b>BEN10</b> = 10% OFF · ou cupom de afiliado</p>
+                  <p className="text-gray-500 text-[11px] mt-2">Insira o cupom do seu afiliado para ganhar desconto</p>
                 </div>
               )}
             </div>

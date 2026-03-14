@@ -17,16 +17,7 @@ interface Coupon {
   affiliate?: boolean   // cupom de afiliado: sem restrição de uso único
 }
 
-interface CouponDef {
-  percent: number
-  affiliate?: boolean
-}
-
-// Cupons fixos da loja (sem categoria). Cupons de afiliado são resolvidos via Firestore.
-const COUPON_DEFS: Record<string, CouponDef> = {
-  BEN5:  { percent: 5 },
-  BEN10: { percent: 10 },
-}
+// Cupons são gerenciados exclusivamente via Firestore (sistema de afiliados)
 
 interface CartCtx {
   items: CartItem[]
@@ -170,21 +161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const applyCoupon = useCallback(async (code: string): Promise<void> => {
     const upper = code.trim().toUpperCase()
 
-    // 1. Verificar cupons fixos da loja
-    const def = COUPON_DEFS[upper]
-    if (def) {
-      const used = loadUsedCoupons()
-      if (used.includes(upper)) {
-        setCoupon(null)
-        setCouponError('Este cupom já foi utilizado neste dispositivo')
-        return
-      }
-      setCoupon({ code: upper, percent: def.percent })
-      setCouponError('')
-      return
-    }
-
-    // 2. Verificar cupons de afiliado no Firestore
+    // Buscar cupom de afiliado no Firestore
     setCouponLoading(true)
     try {
       const { getAffiliateByCoupon } = await import('../lib/affiliateService')
