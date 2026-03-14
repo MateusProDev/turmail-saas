@@ -6,7 +6,7 @@ import { getAffiliateByCoupon, saveAffiliateOrder } from '../lib/affiliateServic
 export default function CartDrawer() {
   const {
     items, isOpen, coupon, couponError, couponLoading,
-    totalItems, subtotal, discount, total, freteGratis, freteStatus, freteValor, freteLoading, cep, setCep,
+    totalItems, subtotal, discount, total, freteStatus, freteValor, cep, setCep,
     close, removeItem, updateQty,
     applyCoupon, removeCoupon, markCouponUsed, clearCart,
   } = useCart()

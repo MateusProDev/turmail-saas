@@ -169,31 +169,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [coupon])
 
-  /* ── Calcular frete por distância ── */
-  useEffect(() => {
-    const digits = cep.replace(/\D/g, '')
-    if (digits.length !== 8) { setFreteValor(null); return }
-    // já carregado como grátis acima do mínimo
-    if (subtotal >= FRETE_GRATIS_MIN) { setFreteValor(0); return }
-    let cancelled = false
-    setFreteLoading(true)
-    ;(async () => {
-      try {
-        const [store, customer] = await Promise.all([getStoreCoords(), getCepCoords(digits)])
-        if (cancelled) return
-        if (!store || !customer) { setFreteValor(null); setFreteLoading(false); return }
-        const km = haversineKm(store.lat, store.lon, customer.lat, customer.lon)
-        const valor = Math.round(km * taxaKm(km) * 100) / 100
-        setFreteValor(valor)
-      } catch {
-        if (!cancelled) setFreteValor(null)
-      } finally {
-        if (!cancelled) setFreteLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [cep, subtotal])
-
   const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
   const toggle = useCallback(() => setIsOpen(v => !v), [])
@@ -273,6 +248,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.reduce((s, i) => s + i.qty, 0)
   const subtotal = items.reduce((s, i) => s + i.priceNum * i.qty, 0)
+
+  /* ── Calcular frete por distância (depende de subtotal) ── */
+  useEffect(() => {
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length !== 8) { setFreteValor(null); return }
+    if (subtotal >= FRETE_GRATIS_MIN) { setFreteValor(0); return }
+    let cancelled = false
+    setFreteLoading(true)
+    ;(async () => {
+      try {
+        const [store, customer] = await Promise.all([getStoreCoords(), getCepCoords(digits)])
+        if (cancelled) return
+        if (!store || !customer) { setFreteValor(null); setFreteLoading(false); return }
+        const km = haversineKm(store.lat, store.lon, customer.lat, customer.lon)
+        const valor = Math.round(km * taxaKm(km) * 100) / 100
+        setFreteValor(valor)
+      } catch {
+        if (!cancelled) setFreteValor(null)
+      } finally {
+        if (!cancelled) setFreteLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [cep, subtotal])
   const discount = coupon
     ? (coupon.categories && coupon.categories.length > 0)
       // desconto apenas nas categorias configuradas
