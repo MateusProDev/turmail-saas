@@ -105,10 +105,11 @@ function toHomeProduct(p: Product) {
 }
 
 /** Gera número de vendas do dia por produto (seed pelo ID — consistente entre renders) */
-function getSocialProof(id: string | number): number {
-  const seed = String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return 12 + (seed % 31) // 12 a 42
+function getSeed(id: string | number): number {
+  return String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
 }
+function getViews(id: string | number): number { return 120 + (getSeed(id) % 340) } // 120–459
+function getLikes(id: string | number): number { return 18 + (getSeed(id) % 73) }  // 18–90
 
 export default function Home() {
   const { addItem, toggle, totalItems } = useCart()
@@ -546,7 +547,10 @@ export default function Home() {
                     <span className="text-sm sm:text-lg font-black text-green-700">{p.price}</span>
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
-                  <p className="text-[10px] text-orange-500 font-semibold mt-0.5">🔥 {getSocialProof(p.id)} compraram hoje</p>
+                  <p className="text-[10px] text-gray-400 font-medium mt-0.5 flex items-center gap-2">
+                    <span>👁 {getViews(p.id)}</span>
+                    <span>❤️ {getLikes(p.id)}</span>
+                  </p>
                   <button
                     onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: (p as any).category })}
                     className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
