@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch } from 'react-icons/fa'
+import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch, FaHeart, FaEye, FaWhatsapp } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
-import { listProducts, formatBRL, type Product } from '../lib/productService'
+import { listProducts, formatBRL, type Product, getProductStats, incrementProductView, toggleProductLike } from '../lib/productService'
 
 /* ── Fallback ── */
 const IMG_FALLBACK = 'https://placehold.co/400x400/1a1a1a/22c55e?text=BenSuplementos'
@@ -58,6 +58,11 @@ export default function Products() {
   const [searchTerm, setSearchTerm] = useState('')
   const location = useLocation()
 
+  /* Stats do detalhe */
+  const [detailStats, setDetailStats] = useState({ views: 0, likes: 0 })
+  const [isLiked, setIsLiked] = useState(false)
+  const [likeLoading, setLikeLoading] = useState(false)
+
   /* Buscar produtos do Firestore */
   useEffect(() => {
     let cancelled = false
@@ -94,6 +99,29 @@ export default function Products() {
     }
   }, [location.state, products])
 
+  /* Quando muda o produto em detalhe: incrementa view + carrega stats */
+  useEffect(() => {
+    if (!detail) return
+    const id = String(detail.id)
+    setIsLiked(!!localStorage.getItem(`ben_liked_${id}`))
+    setDetailStats({ views: 0, likes: 0 })
+    incrementProductView(id)
+    getProductStats(id).then(s => setDetailStats(s)).catch(() => {})
+  }, [detail])
+
+  const handleLike = async () => {
+    if (!detail || likeLoading) return
+    const id = String(detail.id)
+    const newLiked = !isLiked
+    setLikeLoading(true)
+    setIsLiked(newLiked)
+    setDetailStats(s => ({ ...s, likes: Math.max(0, s.likes + (newLiked ? 1 : -1)) }))
+    if (newLiked) localStorage.setItem(`ben_liked_${id}`, '1')
+    else localStorage.removeItem(`ben_liked_${id}`)
+    await toggleProductLike(id, newLiked)
+    setLikeLoading(false)
+  }
+
   const catFiltered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
   const filtered = searchTerm.trim()
     ? catFiltered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -105,6 +133,7 @@ export default function Products() {
 
   /* ── Product Detail View ── */
   if (detail) {
+    const similar = products.filter(p => p.cat === detail.cat && String(p.id) !== String(detail.id)).slice(0, 4)
     return (
       <div className="min-h-screen bg-white">
         {/* Header */}
@@ -127,42 +156,132 @@ export default function Products() {
           </button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden">
-              <img src={detail.image} alt={detail.name} onError={handleImgError} className="w-full h-full object-cover" />
+            {/* Imagem */}
+            <div className="relative">
+              <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden">
+                <img src={detail.image} alt={detail.name} onError={handleImgError} className="w-full h-full object-cover" />
+              </div>
+              {/* Views + Curtidas sobrepostos na imagem */}
+              <div className="absolute bottom-3 left-3 flex items-center gap-3">
+                <span className="flex items-center gap-1 bg-black/60 text-white text-[11px] font-medium px-2 py-1 rounded-full backdrop-blur-sm">
+                  <FaEye className="w-2.5 h-2.5" />
+                  {detailStats.views > 0 ? detailStats.views.toLocaleString('pt-BR') : '—'}
+                </span>
+                <button
+                  onClick={handleLike}
+                  disabled={likeLoading}
+                  className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full backdrop-blur-sm transition-colors ${
+                    isLiked ? 'bg-red-500 text-white' : 'bg-black/60 text-white hover:bg-red-500'
+                  }`}
+                >
+                  <FaHeart className="w-2.5 h-2.5" />
+                  {detailStats.likes > 0 ? detailStats.likes.toLocaleString('pt-BR') : '0'}
+                </button>
+              </div>
             </div>
+
+            {/* Info */}
             <div>
-              <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded mb-3 inline-block">{detail.tag}</span>
-              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mt-2">{detail.name}</h1>
-              <p className="text-sm text-gray-500 mt-1">{detail.cat}</p>
-              <div className="flex items-center gap-1 mt-3">
-                {[...Array(5)].map((_, i) => <FaStar key={i} className="w-3.5 h-3.5 text-yellow-400" />)}
-                <span className="text-xs text-gray-400 ml-1">(120+ avaliações)</span>
+              <div className="flex items-center gap-2 mb-2">
+                {detail.tag && <span className="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded-lg">{detail.tag}</span>}
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">{detail.cat}</span>
               </div>
-              <div className="flex items-baseline gap-3 mt-4">
-                <span className="text-3xl font-black text-green-700">{detail.price}</span>
-                <span className="text-sm text-gray-400 line-through">{detail.oldPrice}</span>
+
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mt-2 leading-tight">{detail.name}</h1>
+
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => <FaStar key={i} className="w-3.5 h-3.5 text-yellow-400" />)}
+                </div>
+                <span className="text-xs text-gray-400">(120+ avaliações)</span>
+                <span className="text-gray-200">·</span>
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <FaEye className="w-3 h-3" />
+                  {detailStats.views > 0 ? `${detailStats.views.toLocaleString('pt-BR')} visualizações` : 'Carregando...'}
+                </span>
               </div>
-              <p className="text-xs text-green-600 font-medium mt-1">No PIX com 5% OFF: {
-                (detail.priceNum * 0.95).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-              }</p>
 
-              <p className="text-sm text-gray-600 mt-6 leading-relaxed">{detail.desc}</p>
+              <div className="flex items-baseline gap-3 mt-5">
+                <span className="text-3xl sm:text-4xl font-black text-green-700">{detail.price}</span>
+                {detail.oldPrice && <span className="text-base text-gray-400 line-through">{detail.oldPrice}</span>}
+              </div>
+              <p className="text-xs text-green-600 font-semibold mt-1">
+                💳 No PIX com 5% OFF: {(detail.priceNum * 0.95).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
 
+              {detail.desc && (
+                <p className="text-sm text-gray-600 mt-5 leading-relaxed border-t pt-4">{detail.desc}</p>
+              )}
+
+              <div className="mt-6 flex flex-col gap-2">
+                <button
+                  onClick={() => { handleAdd(detail); toggle() }}
+                  className="w-full py-3.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <FaShoppingCart className="w-4 h-4" />
+                  Comprar agora
+                </button>
+                <button
+                  onClick={() => handleAdd(detail)}
+                  className="w-full py-3 border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold rounded-xl transition-colors text-sm"
+                >
+                  Adicionar ao Carrinho
+                </button>
+                <a
+                  href={`https://wa.me/5585991470709?text=Olá! Tenho interesse no produto: ${encodeURIComponent(detail.name)} (${detail.price})`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-700 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+                >
+                  <FaWhatsapp className="w-4 h-4 text-green-400" />
+                  Tirar dúvidas no WhatsApp
+                </a>
+              </div>
+
+              {/* Curtir */}
               <button
-                onClick={() => handleAdd(detail)}
-                className="mt-6 w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+                onClick={handleLike}
+                disabled={likeLoading}
+                className={`mt-4 flex items-center gap-2 text-sm font-semibold transition-colors ${
+                  isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
+                }`}
               >
-                <FaShoppingCart className="w-4 h-4" />
-                Adicionar ao Carrinho
-              </button>
-              <button
-                onClick={toggle}
-                className="mt-2 w-full py-3 bg-black hover:bg-gray-800 text-white font-bold rounded-xl transition-colors text-sm"
-              >
-                Ver Carrinho ({totalItems})
+                <FaHeart className={`w-4 h-4 transition-transform ${isLiked ? 'scale-110' : ''}`} />
+                {isLiked ? 'Curtido por você' : 'Curtir este produto'}
+                {detailStats.likes > 0 && <span className="text-xs text-gray-400 font-normal">({detailStats.likes.toLocaleString('pt-BR')} curtidas)</span>}
               </button>
             </div>
           </div>
+
+          {/* Produtos similares */}
+          {similar.length > 0 && (
+            <div className="mt-12 border-t pt-10">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 mb-5">Produtos Similares</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                {similar.map(p => (
+                  <div
+                    key={p.id}
+                    onClick={() => { setDetail(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="group cursor-pointer bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="aspect-square bg-gray-50 overflow-hidden">
+                      <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">{p.name}</p>
+                      <p className="text-sm font-black text-green-700 mt-1">{p.price}</p>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleAdd(p) }}
+                        className="mt-2 w-full py-1.5 bg-black hover:bg-green-600 text-white text-[11px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                      >
+                        <FaShoppingCart className="w-2.5 h-2.5" /> Add
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )

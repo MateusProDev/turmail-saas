@@ -163,3 +163,45 @@ export async function listReviews(): Promise<Review[]> {
     return []
   }
 }
+
+/* ── Stats de produto (visualizações + curtidas) ── */
+export interface ProductStats {
+  views: number
+  likes: number
+}
+
+/** Busca stats (views/likes) de um produto */
+export async function getProductStats(id: string): Promise<ProductStats> {
+  try {
+    const [{ doc, getDoc }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+    const snap = await getDoc(doc(db, 'product_stats', id))
+    if (!snap.exists()) return { views: 0, likes: 0 }
+    const d = snap.data()
+    return { views: d.views ?? 0, likes: d.likes ?? 0 }
+  } catch { return { views: 0, likes: 0 } }
+}
+
+/** Incrementa views atomicamente (público, sem login) */
+export async function incrementProductView(id: string): Promise<void> {
+  try {
+    const [{ doc, setDoc, increment }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+    await setDoc(doc(db, 'product_stats', id), { views: increment(1) }, { merge: true })
+  } catch { /* silent */ }
+}
+
+/** Alterna curtida atomicamente (liked=true incrementa, false decrementa) */
+export async function toggleProductLike(id: string, liked: boolean): Promise<void> {
+  try {
+    const [{ doc, setDoc, increment }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+    await setDoc(doc(db, 'product_stats', id), { likes: increment(liked ? 1 : -1) }, { merge: true })
+  } catch { /* silent */ }
+}
