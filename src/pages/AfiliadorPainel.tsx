@@ -85,9 +85,26 @@ export default function AfiliadorPainel() {
   const confirmedOrders = orders.filter(o => o.status === 'confirmed').length
   const pendingOrders = orders.filter(o => o.status === 'pending').length
   const totalDiscountGiven = orders.reduce((s, o) => s + (o.discount || 0), 0)
-  const confirmedCommission = orders
-    .filter(o => o.status === 'confirmed')
-    .reduce((s, o) => s + (o.discount || 0), 0)
+
+  /* Comissão real = (preço loja − preço repasse) × qty para cada item confirmado.
+     Faz match por nome do produto. Fallback: desconto do cupom se repasse não configurado. */
+  const confirmedCommission = (() => {
+    let total = 0
+    for (const order of orders.filter(o => o.status === 'confirmed')) {
+      let orderCommission = 0
+      let hasAnyRepasse = false
+      for (const item of (order.items ?? [])) {
+        const prod = products.find(p => p.name === item.name)
+        const repasse = prod ? ((prod as any).repassePrice as number | undefined) : undefined
+        if (repasse != null && repasse > 0 && prod) {
+          orderCommission += (prod.price - repasse) * item.qty
+          hasAnyRepasse = true
+        }
+      }
+      total += hasAnyRepasse ? orderCommission : (order.discount || 0)
+    }
+    return total
+  })()
 
   /* ── Loading state ── */
   if (authLoading) {
