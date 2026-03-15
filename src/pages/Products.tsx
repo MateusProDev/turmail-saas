@@ -105,8 +105,13 @@ export default function Products() {
     const id = String(detail.id)
     setIsLiked(!!localStorage.getItem(`ben_liked_${id}`))
     setDetailStats({ views: 0, likes: 0 })
-    incrementProductView(id)
-    getProductStats(id).then(s => setDetailStats(s)).catch(() => {})
+    // Carrega stats e já soma +1 da visita atual otimisticamente
+    getProductStats(id)
+      .then(s => {
+        setDetailStats({ views: s.views + 1, likes: s.likes })
+        incrementProductView(id) // confirma no servidor em paralelo
+      })
+      .catch(() => { incrementProductView(id) })
   }, [detail])
 
   const handleLike = async () => {
@@ -161,23 +166,6 @@ export default function Products() {
               <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden">
                 <img src={detail.image} alt={detail.name} onError={handleImgError} className="w-full h-full object-cover" />
               </div>
-              {/* Views + Curtidas sobrepostos na imagem */}
-              <div className="absolute bottom-3 left-3 flex items-center gap-3">
-                <span className="flex items-center gap-1 bg-black/60 text-white text-[11px] font-medium px-2 py-1 rounded-full backdrop-blur-sm">
-                  <FaEye className="w-2.5 h-2.5" />
-                  {detailStats.views > 0 ? detailStats.views.toLocaleString('pt-BR') : '—'}
-                </span>
-                <button
-                  onClick={handleLike}
-                  disabled={likeLoading}
-                  className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full backdrop-blur-sm transition-colors ${
-                    isLiked ? 'bg-red-500 text-white' : 'bg-black/60 text-white hover:bg-red-500'
-                  }`}
-                >
-                  <FaHeart className="w-2.5 h-2.5" />
-                  {detailStats.likes > 0 ? detailStats.likes.toLocaleString('pt-BR') : '0'}
-                </button>
-              </div>
             </div>
 
             {/* Info */}
@@ -187,30 +175,63 @@ export default function Products() {
                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">{detail.cat}</span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mt-2 leading-tight">{detail.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mt-2 leading-tight text-left">{detail.name}</h1>
 
-              <div className="flex items-center gap-2 mt-3">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => <FaStar key={i} className="w-3.5 h-3.5 text-yellow-400" />)}
+              {/* ─── PAINEL DE STATS ─── */}
+              <div className="flex items-stretch gap-3 mt-4">
+                {/* Views */}
+                <div className="flex-1 flex items-center gap-2.5 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FaEye className="w-3.5 h-3.5 text-blue-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-base font-black text-gray-900 leading-none">
+                      {detailStats.views > 0 ? detailStats.views.toLocaleString('pt-BR') : '—'}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">visualizações</p>
+                  </div>
                 </div>
-                <span className="text-xs text-gray-400">(120+ avaliações)</span>
-                <span className="text-gray-200">·</span>
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <FaEye className="w-3 h-3" />
-                  {detailStats.views > 0 ? `${detailStats.views.toLocaleString('pt-BR')} visualizações` : 'Carregando...'}
-                </span>
+                {/* Curtidas + botão */}
+                <button
+                  onClick={handleLike}
+                  disabled={likeLoading}
+                  className={`flex-1 flex items-center gap-2.5 border rounded-xl px-4 py-3 transition-all active:scale-95 ${
+                    isLiked
+                      ? 'bg-red-50 border-red-300'
+                      : 'bg-gray-50 border-gray-100 hover:bg-red-50 hover:border-red-200'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                    isLiked ? 'bg-red-500' : 'bg-gray-200 group-hover:bg-red-100'
+                  }`}>
+                    <FaHeart className={`w-3.5 h-3.5 ${ isLiked ? 'text-white' : 'text-gray-400'}`} />
+                  </div>
+                  <div className="text-left">
+                    <p className={`text-base font-black leading-none ${ isLiked ? 'text-red-500' : 'text-gray-900'}`}>
+                      {detailStats.likes.toLocaleString('pt-BR')}
+                    </p>
+                    <p className={`text-[10px] mt-0.5 ${ isLiked ? 'text-red-400' : 'text-gray-400'}`}>
+                      {isLiked ? 'curtido por você ❤️' : 'toque para curtir'}
+                    </p>
+                  </div>
+                </button>
               </div>
 
               <div className="flex items-baseline gap-3 mt-5">
                 <span className="text-3xl sm:text-4xl font-black text-green-700">{detail.price}</span>
                 {detail.oldPrice && <span className="text-base text-gray-400 line-through">{detail.oldPrice}</span>}
               </div>
-              <p className="text-xs text-green-600 font-semibold mt-1">
+              <p className="text-xs text-green-600 font-semibold mt-1 text-left">
                 💳 No PIX com 5% OFF: {(detail.priceNum * 0.95).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
 
+              <div className="flex items-center gap-0.5 mt-4">
+                {[...Array(5)].map((_, i) => <FaStar key={i} className="w-3.5 h-3.5 text-yellow-400" />)}
+                <span className="text-xs text-gray-400 ml-1">(120+ avaliações)</span>
+              </div>
+
               {detail.desc && (
-                <p className="text-sm text-gray-600 mt-5 leading-relaxed border-t pt-4">{detail.desc}</p>
+                <p className="text-sm text-gray-600 mt-5 leading-relaxed border-t pt-4 text-left">{detail.desc}</p>
               )}
 
               <div className="mt-6 flex flex-col gap-2">
@@ -223,8 +244,9 @@ export default function Products() {
                 </button>
                 <button
                   onClick={() => handleAdd(detail)}
-                  className="w-full py-3 border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold rounded-xl transition-colors text-sm"
+                  className="w-full py-3 border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
                 >
+                  <FaShoppingCart className="w-3.5 h-3.5" />
                   Adicionar ao Carrinho
                 </button>
                 <a
@@ -237,19 +259,6 @@ export default function Products() {
                   Tirar dúvidas no WhatsApp
                 </a>
               </div>
-
-              {/* Curtir */}
-              <button
-                onClick={handleLike}
-                disabled={likeLoading}
-                className={`mt-4 flex items-center gap-2 text-sm font-semibold transition-colors ${
-                  isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
-                }`}
-              >
-                <FaHeart className={`w-4 h-4 transition-transform ${isLiked ? 'scale-110' : ''}`} />
-                {isLiked ? 'Curtido por você' : 'Curtir este produto'}
-                {detailStats.likes > 0 && <span className="text-xs text-gray-400 font-normal">({detailStats.likes.toLocaleString('pt-BR')} curtidas)</span>}
-              </button>
             </div>
           </div>
 
