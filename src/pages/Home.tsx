@@ -563,8 +563,8 @@ export default function Home() {
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium mt-0.5 flex items-center gap-2">
-                    <span>👁 {productStats[String(p.id)]?.views ?? getViews(p.id)}</span>
-                    <span>❤️ {productStats[String(p.id)]?.likes ?? getLikes(p.id)}</span>
+                    <span>👁 {getViews(p.id) + (productStats[String(p.id)]?.views ?? 0)}</span>
+                    <span>❤️ {getLikes(p.id) + (productStats[String(p.id)]?.likes ?? 0)}</span>
                   </p>
                   <button
                     onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: (p as any).category })}

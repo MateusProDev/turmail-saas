@@ -49,6 +49,13 @@ const fallbackProducts: DisplayProduct[] = [
 
 const categories = ['Todos', 'Whey Protein', 'Creatina', 'Pré-Treino', 'Aminoácidos', 'Vitaminas']
 
+/* Seed social-proof base para views e likes (consistente por produto) */
+function _seed(id: string | number): number {
+  return String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+}
+function seedViews(id: string | number): number { return 120 + (_seed(id) % 340) }
+function seedLikes(id: string | number): number { return 18 + (_seed(id) % 73) }
+
 export default function Products() {
   const { addItem, toggle, totalItems } = useCart()
   const [filter, setFilter] = useState('Todos')
@@ -186,7 +193,7 @@ export default function Products() {
                   </div>
                   <div className="text-left">
                     <p className="text-base font-black text-gray-900 leading-none">
-                      {detailStats.views > 0 ? detailStats.views.toLocaleString('pt-BR') : '—'}
+                      {(seedViews(detail.id) + detailStats.views).toLocaleString('pt-BR')}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">visualizações</p>
                   </div>
@@ -208,7 +215,7 @@ export default function Products() {
                   </div>
                   <div className="text-left">
                     <p className={`text-base font-black leading-none ${ isLiked ? 'text-red-500' : 'text-gray-900'}`}>
-                      {detailStats.likes.toLocaleString('pt-BR')}
+                      {(seedLikes(detail.id) + detailStats.likes).toLocaleString('pt-BR')}
                     </p>
                     <p className={`text-[10px] mt-0.5 ${ isLiked ? 'text-red-400' : 'text-gray-400'}`}>
                       {isLiked ? 'curtido por você ❤️' : 'toque para curtir'}
