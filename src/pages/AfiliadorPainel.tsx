@@ -12,7 +12,7 @@ import {
   logoutAffiliate,
   type Affiliate,
   type AffiliateOrder,
-} from '../lib/affiliateService'
+} from '../lib/affiliateService' 
 import { listProducts, formatBRL as fmtBRL, type Product } from '../lib/productService'
 
 const fmt = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
