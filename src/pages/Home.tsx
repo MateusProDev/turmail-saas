@@ -556,7 +556,8 @@ export default function Home() {
                     className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
                   >
                     <FaShoppingCart className="w-3 h-3" />
-                    Add
+                    <span className="hidden sm:inline">Adicionar ao Carrinho</span>
+                    <span className="sm:hidden">Adicionar</span>
                   </button>
                 </div>
               </div>
