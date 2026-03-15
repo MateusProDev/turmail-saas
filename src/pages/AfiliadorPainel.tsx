@@ -85,9 +85,9 @@ export default function AfiliadorPainel() {
   const confirmedOrders = orders.filter(o => o.status === 'confirmed').length
   const pendingOrders = orders.filter(o => o.status === 'pending').length
   const totalDiscountGiven = orders.reduce((s, o) => s + (o.discount || 0), 0)
-  const confirmedRevenue = orders
+  const confirmedCommission = orders
     .filter(o => o.status === 'confirmed')
-    .reduce((s, o) => s + (o.total || 0), 0)
+    .reduce((s, o) => s + (o.discount || 0), 0)
 
   /* ── Loading state ── */
   if (authLoading) {
@@ -204,10 +204,10 @@ export default function AfiliadorPainel() {
           />
           <StatCard
             icon={<FaChartBar className="w-5 h-5" />}
-            label="Volume Confirmado"
-            value={fmt(confirmedRevenue)}
-            color="text-purple-400"
-            bg="bg-purple-900/20 border-purple-800/50"
+            label="Sua Comissão"
+            value={fmt(confirmedCommission)}
+            color="text-green-400"
+            bg="bg-green-900/20 border-green-800/50"
           />
         </div>
 
