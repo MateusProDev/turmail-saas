@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle, FaWhatsapp } from 'react-icons/fa'
 import {
   listProducts,
   createProduct,
@@ -69,6 +69,7 @@ export default function StoreDashboard() {
     status: 'active',
   })
   const [savingAff, setSavingAff] = useState(false)
+  const [commPeriod, setCommPeriod] = useState<'hoje' | 'semana' | 'mes' | 'tudo'>('mes')
 
   /* ── Load products ── */
   const load = async () => {
@@ -418,7 +419,127 @@ export default function StoreDashboard() {
               </div>
             )}
 
-            {/* ── Pedidos de afiliados ── */}
+            {/* ── Comissões por afiliado ── */}
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h2 className="text-lg font-black text-gray-900">Comissões por Afiliado</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-500 font-semibold">Período:</span>
+                  {(['hoje', 'semana', 'mes', 'tudo'] as const).map(p => (
+                    <button key={p} onClick={() => setCommPeriod(p)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        commPeriod === p ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-black'
+                      }`}>
+                      {p === 'hoje' ? 'Hoje' : p === 'semana' ? '7 dias' : p === 'mes' ? 'Este mês' : 'Tudo'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {(() => {
+                function inPeriod(ts: any): boolean {
+                  if (commPeriod === 'tudo') return true
+                  try {
+                    const d: Date = ts?.toDate ? ts.toDate() : new Date(ts)
+                    const now = new Date()
+                    if (commPeriod === 'hoje') return d.toDateString() === now.toDateString()
+                    if (commPeriod === 'semana') { const w = new Date(now); w.setDate(now.getDate() - 7); return d >= w }
+                    if (commPeriod === 'mes') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                  } catch { return true }
+                  return true
+                }
+                function calcAffCommission(coupon: string): number {
+                  let total = 0
+                  for (const order of orders.filter(o => o.couponCode === coupon && o.status === 'confirmed' && inPeriod(o.createdAt))) {
+                    let comm = 0; let hasRepasse = false
+                    for (const item of (order.items ?? [])) {
+                      const prod = products.find(p => p.name === item.name)
+                      const repasse = prod ? (prod as any).repassePrice as number | undefined : undefined
+                      if (repasse != null && repasse > 0 && prod) { comm += (prod.price - repasse) * item.qty; hasRepasse = true }
+                    }
+                    total += hasRepasse ? comm : (order.discount || 0)
+                  }
+                  return total
+                }
+
+                const rows = affiliates.map(aff => ({
+                  aff,
+                  affOrders: orders.filter(o => o.couponCode === aff.coupon && inPeriod(o.createdAt)),
+                  commission: calcAffCommission(aff.coupon),
+                })).sort((a, b) => b.commission - a.commission)
+
+                const totalCommAll = rows.reduce((s, r) => s + r.commission, 0)
+
+                return (
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    {/* Header */}
+                    <div className="hidden md:grid grid-cols-[2fr_1fr_auto_auto_auto_auto] gap-3 px-5 py-3 bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                      <span>Afiliado</span><span>Cupom</span><span className="text-right">Pedidos</span><span className="text-right">Confirm.</span><span className="text-right text-green-700">Comissão</span><span className="text-right">WhatsApp</span>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {rows.map(({ aff, affOrders, commission }) => {
+                        const confirmed = affOrders.filter(o => o.status === 'confirmed').length
+                        const waLink = aff.phone ? `https://wa.me/55${aff.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Olá ${aff.name}! Sua comissão do período é de ${commission.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}. Entraremos em contato para pagamento.`)}` : null
+                        return (
+                          <div key={aff.uid} className="px-5 py-3">
+                            {/* Desktop */}
+                            <div className="hidden md:grid grid-cols-[2fr_1fr_auto_auto_auto_auto] gap-3 items-center">
+                              <div>
+                                <p className="text-sm font-bold text-gray-900">{aff.name}</p>
+                                <p className="text-xs text-gray-400">{aff.email}</p>
+                              </div>
+                              <span className="font-mono text-sm font-black text-green-700 bg-green-50 px-2 py-0.5 rounded w-fit">{aff.coupon}</span>
+                              <span className="text-right text-sm text-gray-600 font-semibold">{affOrders.length}</span>
+                              <span className="text-right text-sm text-green-600 font-bold">{confirmed}</span>
+                              <span className={`text-right text-base font-black ${commission > 0 ? 'text-green-700' : 'text-gray-400'}`}>
+                                {commission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </span>
+                              <div className="flex justify-end">
+                                {waLink ? (
+                                  <a href={waLink} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors">
+                                    <FaWhatsapp className="w-3 h-3" /> Pagar
+                                  </a>
+                                ) : <span className="text-xs text-gray-400">sem tel.</span>}
+                              </div>
+                            </div>
+                            {/* Mobile */}
+                            <div className="md:hidden flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-gray-900">{aff.name}</p>
+                                <p className="text-xs text-gray-400 mb-1">{aff.email}</p>
+                                <span className="font-mono text-xs font-black text-green-700 bg-green-50 px-2 py-0.5 rounded">{aff.coupon}</span>
+                                <p className="text-xs text-gray-500 mt-1">{affOrders.length} pedidos · {confirmed} confirm.</p>
+                              </div>
+                              <div className="text-right">
+                                <p className={`text-lg font-black ${commission > 0 ? 'text-green-700' : 'text-gray-400'}`}>
+                                  {commission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                                {waLink && (
+                                  <a href={waLink} target="_blank" rel="noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg mt-1">
+                                    <FaWhatsapp className="w-3 h-3" /> Pagar
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {/* Totais */}
+                    <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                      <span className="text-sm font-bold text-gray-500">Total a pagar no período</span>
+                      <span className="text-xl font-black text-green-700">
+                        {totalCommAll.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* ── Pedidos de afiliados ── */}}
             <div>
               <h2 className="text-lg font-black text-gray-900 mb-3">Pedidos de Afiliados</h2>
               {loadingOrders ? (

@@ -34,6 +34,7 @@ export default function AfiliadorPainel() {
   const [error, setError] = useState('')
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(false)
+  const [period, setPeriod] = useState<'hoje' | 'semana' | 'mes' | 'tudo'>('tudo')
 
   /* ── Verificar auth ── */
   useEffect(() => {
@@ -80,17 +81,39 @@ export default function AfiliadorPainel() {
     navigate('/afiliado/cadastro')
   }
 
+  /* ── Filtro de período ── */
+  function inPeriod(ts: any): boolean {
+    if (period === 'tudo') return true
+    try {
+      const d: Date = ts?.toDate ? ts.toDate() : new Date(ts)
+      const now = new Date()
+      if (period === 'hoje') {
+        return d.toDateString() === now.toDateString()
+      }
+      if (period === 'semana') {
+        const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7)
+        return d >= weekAgo
+      }
+      if (period === 'mes') {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      }
+    } catch { return true }
+    return true
+  }
+
+  const filteredOrders = orders.filter(o => inPeriod(o.createdAt))
+
   /* ── Stats ── */
-  const totalOrders = orders.length
-  const confirmedOrders = orders.filter(o => o.status === 'confirmed').length
-  const pendingOrders = orders.filter(o => o.status === 'pending').length
-  const totalDiscountGiven = orders.reduce((s, o) => s + (o.discount || 0), 0)
+  const totalOrders = filteredOrders.length
+  const confirmedOrders = filteredOrders.filter(o => o.status === 'confirmed').length
+  const pendingOrders = filteredOrders.filter(o => o.status === 'pending').length
+  const totalDiscountGiven = filteredOrders.reduce((s, o) => s + (o.discount || 0), 0)
 
   /* Comissão real = (preço loja − preço repasse) × qty para cada item confirmado.
      Faz match por nome do produto. Fallback: desconto do cupom se repasse não configurado. */
-  const confirmedCommission = (() => {
+  function calcCommission(orderList: AffiliateOrder[]): number {
     let total = 0
-    for (const order of orders.filter(o => o.status === 'confirmed')) {
+    for (const order of orderList.filter(o => o.status === 'confirmed')) {
       let orderCommission = 0
       let hasAnyRepasse = false
       for (const item of (order.items ?? [])) {
@@ -104,7 +127,8 @@ export default function AfiliadorPainel() {
       total += hasAnyRepasse ? orderCommission : (order.discount || 0)
     }
     return total
-  })()
+  }
+  const confirmedCommission = calcCommission(filteredOrders)
 
   /* ── Loading state ── */
   if (authLoading) {
@@ -195,6 +219,22 @@ export default function AfiliadorPainel() {
             {error}
           </div>
         )}
+
+        {/* ── Filtro de período ── */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500 font-semibold">Período:</span>
+          {(['hoje', 'semana', 'mes', 'tudo'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                period === p ? 'bg-green-600 text-white border-green-600' : 'bg-gray-900 text-gray-400 border-gray-700 hover:border-green-600 hover:text-green-400'
+              }`}
+            >
+              {p === 'hoje' ? 'Hoje' : p === 'semana' ? '7 dias' : p === 'mes' ? 'Este mês' : 'Tudo'}
+            </button>
+          ))}
+        </div>
 
         {/* ── Cards de estatísticas ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -377,11 +417,12 @@ export default function AfiliadorPainel() {
             <div className="flex justify-center py-10">
               <FaSpinner className="w-6 h-6 text-green-400 animate-spin" />
             </div>
-          ) : orders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-10 text-center text-gray-500 text-sm">
               <FaShoppingCart className="w-8 h-8 mx-auto mb-3 opacity-40" />
-              Nenhum pedido registrado ainda.<br />
-              Compartilhe seu cupom <span className="font-bold text-gray-400">{affiliate.coupon}</span> para começar!
+              {orders.length === 0
+                ? <>Nenhum pedido registrado ainda.<br />Compartilhe seu cupom <span className="font-bold text-gray-400">{affiliate.coupon}</span> para começar!</>
+                : <>Nenhum pedido no período selecionado.</>}
             </div>
           ) : (
             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -395,7 +436,7 @@ export default function AfiliadorPainel() {
               </div>
 
               <div className="divide-y divide-gray-800">
-                {orders.map(order => (
+                {filteredOrders.map(order => (
                   <div key={order.id} className="px-3 sm:px-4 py-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
