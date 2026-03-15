@@ -65,7 +65,7 @@ const CART_KEY = 'ben_cart_items'
 const COUPON_KEY = 'ben_cart_coupon'
 const USED_COUPONS_KEY = 'ben_used_coupons'
 const CEP_KEY = 'ben_cart_cep'
-const FRETE_GRATIS_MIN = 199.90
+export const FRETE_GRATIS_MIN = 199.90
 
 /** ── CEP da loja (origem do frete) ── */
 const STORE_CEP = '60835225'

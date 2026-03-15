@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
-import { useCart } from '../contexts/CartContext'
+import { useCart, FRETE_GRATIS_MIN } from '../contexts/CartContext'
 import { listFeaturedProducts, listProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
@@ -27,7 +27,7 @@ const banners = [
   },
   {
     id: 3,
-    title: 'Frete Grátis acima de R$149,90',
+    title: `Frete Grátis acima de R$${FRETE_GRATIS_MIN.toFixed(1).replace('.', ',')}`,
     subtitle: 'Para toda Fortaleza',
     price: '',
     cta: 'Ver Ofertas',
@@ -182,7 +182,7 @@ export default function Home() {
 
       {/* ─── Top strip ─── */}
       <div className="bg-black text-center py-1.5 px-2 text-[11px] sm:text-xs font-medium text-gray-300 tracking-wide">
-        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R$199,90
+        <span className="text-green-400 font-bold">FRETE GRÁTIS</span> a partir de R${FRETE_GRATIS_MIN.toFixed(1).replace('.', ',')}
         {(userCity || userRegion) && (
           <>&nbsp;|&nbsp; 📍 <span className="text-blue-400">{userCity}{userCity && userRegion ? ', ' : ''}{userRegion}</span></>
         )}
