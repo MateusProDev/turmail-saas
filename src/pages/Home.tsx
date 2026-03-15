@@ -492,54 +492,18 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ─── Urgência / Timer ─── */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-red-700 via-red-600 to-orange-600 text-white py-3 px-4">
-          {/* Efeito de pulso no fundo */}
-          <div className="absolute inset-0 bg-red-500 opacity-20 animate-pulse" />
-          <div className="relative max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-5">
-            {/* Texto esquerda */}
-            <div className="flex items-center gap-2 text-center sm:text-left">
-              <span className="text-xl animate-bounce">🔥</span>
-              <div>
-                <p className="text-[11px] font-semibold tracking-widest uppercase opacity-90 leading-none">Oferta relâmpago</p>
-                <p className="text-sm font-black leading-tight">Promoções encerram hoje!</p>
-              </div>
+        {/* ─── Urgência / Timer estilo Hotmart ─── */}
+        <div className="bg-red-600 text-white py-2 px-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 flex-wrap">
+            <span className="text-sm">🔥 <strong>Promoções encerram em:</strong></span>
+            <div className="flex items-center gap-1">
+              <span className="bg-black/30 rounded px-2 py-0.5 font-mono font-bold text-sm tabular-nums">{timer.h}</span>
+              <span className="font-bold text-xs opacity-75">:</span>
+              <span className="bg-black/30 rounded px-2 py-0.5 font-mono font-bold text-sm tabular-nums">{timer.m}</span>
+              <span className="font-bold text-xs opacity-75">:</span>
+              <span className="bg-black/30 rounded px-2 py-0.5 font-mono font-bold text-sm tabular-nums">{timer.s}</span>
             </div>
-
-            {/* Blocos do contador */}
-            <div className="flex items-center gap-1.5">
-              {/* Horas */}
-              <div className="flex flex-col items-center">
-                <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 min-w-[44px] text-center shadow-lg">
-                  <span className="font-black text-xl sm:text-2xl tabular-nums leading-none">{timer.h}</span>
-                </div>
-                <span className="text-[9px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">horas</span>
-              </div>
-              <span className="text-2xl font-black opacity-70 mb-4">:</span>
-              {/* Minutos */}
-              <div className="flex flex-col items-center">
-                <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 min-w-[44px] text-center shadow-lg">
-                  <span className="font-black text-xl sm:text-2xl tabular-nums leading-none">{timer.m}</span>
-                </div>
-                <span className="text-[9px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">min</span>
-              </div>
-              <span className="text-2xl font-black opacity-70 mb-4">:</span>
-              {/* Segundos */}
-              <div className="flex flex-col items-center">
-                <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 min-w-[44px] text-center shadow-lg">
-                  <span className="font-black text-xl sm:text-2xl tabular-nums leading-none">{timer.s}</span>
-                </div>
-                <span className="text-[9px] font-semibold uppercase tracking-widest opacity-80 mt-0.5">seg</span>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <Link
-              to="/ofertas"
-              className="flex items-center gap-1.5 bg-white text-red-600 font-black text-xs uppercase tracking-wide px-4 py-2 rounded-full shadow-lg hover:bg-yellow-300 hover:text-red-700 transition-all active:scale-95 whitespace-nowrap"
-            >
-              Ver ofertas →
-            </Link>
+            <Link to="/ofertas" className="text-xs font-bold underline underline-offset-2 hover:no-underline opacity-90 hover:opacity-100 whitespace-nowrap">Ver ofertas →</Link>
           </div>
         </div>
 
