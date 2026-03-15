@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart, FRETE_GRATIS_MIN } from '../contexts/CartContext'
-import { listFeaturedProducts, listProducts, formatBRL, type Product, optimizedImage } from '../lib/productService'
+import { listFeaturedProducts, listProducts, listReviews, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -15,6 +15,7 @@ const banners = [
     cta: 'Comprar Agora',
     bg: 'from-green-700 via-green-900 to-black',
     image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80',
+    category: 'Whey Protein' as string | null,
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ const banners = [
     cta: 'Aproveitar',
     bg: 'from-black via-gray-900 to-green-900',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
+    category: 'Creatina' as string | null,
   },
   {
     id: 3,
@@ -33,6 +35,7 @@ const banners = [
     cta: 'Ver Ofertas',
     bg: 'from-green-800 via-green-950 to-black',
     image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80',
+    category: null as string | null,
   },
 ]
 
@@ -101,6 +104,12 @@ function toHomeProduct(p: Product) {
   }
 }
 
+/** Gera número de vendas do dia por produto (seed pelo ID — consistente entre renders) */
+function getSocialProof(id: string | number): number {
+  const seed = String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  return 12 + (seed % 31) // 12 a 42
+}
+
 export default function Home() {
   const { addItem, toggle, totalItems } = useCart()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -124,6 +133,13 @@ export default function Home() {
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [timer, setTimer] = useState({ h: '00', m: '00', s: '00' })
+  const [exitPopup, setExitPopup] = useState(false)
+  const [reviews, setReviews] = useState([
+    { name: 'Lucas M.', text: 'Melhor custo-benefício! Entrega antes do prazo.' },
+    { name: 'Ana P.', text: 'Creatina pura, diferença absurda nos treinos!' },
+    { name: 'Carlos R.', text: 'Pré-treino Extreme é insano, recomendo muito.' },
+  ])
 
   /* Buscar produtos destaque do Firestore */
   useEffect(() => {
@@ -176,6 +192,69 @@ export default function Home() {
     const id = setInterval(next, 4500)
     return () => clearInterval(id)
   }, [next])
+
+  /* Temporizador diário — conta até meia-noite */
+  useEffect(() => {
+    function tick() {
+      const now = new Date()
+      const end = new Date(now); end.setHours(23, 59, 59, 0)
+      const diff = Math.max(0, end.getTime() - now.getTime())
+      setTimer({
+        h: String(Math.floor(diff / 3600000)).padStart(2, '0'),
+        m: String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0'),
+        s: String(Math.floor((diff % 60000) / 1000)).padStart(2, '0'),
+      })
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  /* Exit-intent popup */
+  useEffect(() => {
+    if (localStorage.getItem('ben_exit_dismissed')) return
+    const onLeave = (e: MouseEvent) => { if (e.clientY < 10) setExitPopup(true) }
+    const mobileId = setTimeout(() => {
+      if (!localStorage.getItem('ben_exit_dismissed')) setExitPopup(true)
+    }, 50000)
+    document.addEventListener('mouseleave', onLeave)
+    return () => { document.removeEventListener('mouseleave', onLeave); clearTimeout(mobileId) }
+  }, [])
+
+  /* Carregar depoimentos do Firestore */
+  useEffect(() => {
+    listReviews().then(data => {
+      if (data.length > 0) setReviews(data.map(r => ({ name: r.name, text: r.text })))
+    }).catch(() => {})
+  }, [])
+
+  /* Schema.org ProductList */
+  useEffect(() => {
+    const schema = {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Suplementos — BenSuplementos',
+      itemListElement: products.slice(0, 8).map((p, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        item: {
+          '@type': 'Product',
+          name: p.name,
+          image: p.image,
+          offers: { '@type': 'Offer', price: String(p.priceNum.toFixed(2)), priceCurrency: 'BRL', availability: 'https://schema.org/InStock' },
+        },
+      })),
+    }
+    let el = document.getElementById('schema-products') as HTMLScriptElement | null
+    if (!el) {
+      el = document.createElement('script')
+      el.id = 'schema-products'
+      el.type = 'application/ld+json'
+      document.head.appendChild(el)
+    }
+    el.textContent = JSON.stringify(schema)
+    return () => { document.getElementById('schema-products')?.remove() }
+  }, [products])
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -364,7 +443,11 @@ export default function Home() {
                   <p className="text-green-400 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-1">{b.subtitle}</p>
                   <h2 className="text-xl sm:text-3xl lg:text-5xl font-black text-white leading-tight max-w-2xl">{b.title}</h2>
                   {b.price && <p className="text-2xl sm:text-4xl font-black text-green-400 mt-2">{b.price}</p>}
-                  <Link to="/produtos" className="mt-4 sm:mt-6 px-6 py-2.5 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-bold rounded-lg transition-colors">
+                  <Link
+                    to={b.category ? '/produtos' : '/ofertas'}
+                    state={b.category ? { initialCategory: b.category } : undefined}
+                    className="mt-4 sm:mt-6 px-6 py-2.5 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-bold rounded-lg transition-colors"
+                  >
                     {b.cta}
                   </Link>
                 </div>
@@ -392,6 +475,14 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* ─── Urgência / Timer ─── */}
+        <div className="bg-red-600 text-white py-1.5 text-center text-xs font-bold tracking-wide">
+          ⏳ Promoções do dia encerram em:&nbsp;
+          <span className="font-mono">{timer.h}:{timer.m}:{timer.s}</span>
+          &nbsp;·&nbsp;
+          <Link to="/ofertas" className="underline hover:no-underline">Ver todas as ofertas →</Link>
+        </div>
 
         {/* ─── Trust Bar (compacto) ─── */}
         <section className="bg-green-600 py-2 sm:py-3">
@@ -455,6 +546,7 @@ export default function Home() {
                     <span className="text-sm sm:text-lg font-black text-green-700">{p.price}</span>
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
+                  <p className="text-[10px] text-orange-500 font-semibold mt-0.5">🔥 {getSocialProof(p.id)} compraram hoje</p>
                   <button
                     onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: (p as any).category })}
                     className="mt-2 sm:mt-3 w-full py-2 sm:py-2.5 bg-black text-white text-[11px] sm:text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-1"
@@ -474,11 +566,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-3 sm:px-6">
             <h2 className="text-lg sm:text-2xl font-black mb-4 sm:mb-6">Clientes Satisfeitos</h2>
             <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
-              {[
-                { name: 'Lucas M.', text: 'Melhor custo-benefício! Entrega antes do prazo.' },
-                { name: 'Ana P.', text: 'Creatina pura, diferença absurda nos treinos!' },
-                { name: 'Carlos R.', text: 'Pré-treino Extreme é insano, recomendo muito.' },
-              ].map((r, i) => (
+              {reviews.map((r, i) => (
                 <div key={i} className="flex-shrink-0 w-[260px] sm:w-auto sm:flex-1 bg-white p-4 rounded-xl border border-gray-100 snap-start">
                   <div className="flex text-yellow-400 gap-0.5 mb-2">
                     {[...Array(5)].map((_, j) => <FaStar key={j} className="w-3 h-3" />)}
@@ -494,23 +582,70 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══════ CTA FINAL ═══════ */}
+        {/* ═══════ REDES SOCIAIS ═══════ */}
         <section className="py-10 sm:py-16 bg-black text-center px-4">
           <h2 className="text-xl sm:text-3xl font-black text-white mb-2">
-            Ganhe <span className="text-green-400">10% OFF</span> nos Combos
+            Fique por dentro das <span className="text-green-400">promoções</span>
           </h2>
-          <p className="text-sm text-gray-400 mb-5 max-w-md mx-auto">Entre no nosso grupo do WhatsApp e resgate seu cupom na descrição do grupo!</p>
-          <a
-            href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
-          >
-            <FaWhatsapp className="w-4 h-4" />
-            Entrar no Grupo de Promoções
-          </a>
+          <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
+            Entre no nosso grupo do WhatsApp para receber ofertas e cupons exclusivos — e siga a gente no Instagram para novidades.
+          </p>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <a
+              href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
+            >
+              <FaWhatsapp className="w-4 h-4" />
+              Grupo de Promoções
+            </a>
+            <a
+              href="https://www.instagram.com/bensuplementos_"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
+            >
+              <FaInstagram className="w-4 h-4" />
+              Seguir no Instagram
+            </a>
+          </div>
         </section>
       </main>
+
+      {/* ─── Exit-intent popup ─── */}
+      {exitPopup && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 px-4" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-2xl p-7 max-w-sm w-full text-center shadow-2xl relative">
+            <button
+              onClick={() => { setExitPopup(false); localStorage.setItem('ben_exit_dismissed', '1') }}
+              className="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-2xl leading-none"
+              aria-label="Fechar"
+            >×</button>
+            <div className="text-4xl mb-3">🎁</div>
+            <h3 className="text-xl font-black mb-1 text-gray-900">Espera! Não vá embora ainda.</h3>
+            <p className="text-gray-600 text-sm mb-5">
+              Entre no nosso grupo do WhatsApp e encontre <strong>cupons exclusivos</strong> na descrição do grupo antes de fechar.
+            </p>
+            <a
+              href="https://chat.whatsapp.com/FXWPyvKCDTY2MXMklqOHx9?mode=gi_t"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => { setExitPopup(false); localStorage.setItem('ben_exit_dismissed', '1') }}
+              className="inline-flex items-center justify-center gap-2 w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors text-sm"
+            >
+              <FaWhatsapp className="w-4 h-4" />
+              Quero meu cupom exclusivo!
+            </a>
+            <button
+              onClick={() => { setExitPopup(false); localStorage.setItem('ben_exit_dismissed', '1') }}
+              className="mt-3 block w-full text-xs text-gray-400 hover:text-gray-600"
+            >
+              Não, obrigado
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ─── Footer (compacto) ─── */}
       <footer className="bg-black text-gray-400 py-8 sm:py-10">

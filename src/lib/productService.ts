@@ -139,3 +139,27 @@ export async function deleteProduct(id: string): Promise<void> {
   ])
   await deleteDoc(doc(db, COLLECTION, id))
 }
+
+/* ── Depoimentos ── */
+export interface Review {
+  id?: string
+  name: string
+  text: string
+  stars?: number
+  createdAt?: unknown
+}
+
+/** Lista depoimentos da coleção store_reviews (fallback: array vazio) */
+export async function listReviews(): Promise<Review[]> {
+  try {
+    const [{ collection, getDocs, query, orderBy, limit }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+    const q = query(collection(db, 'store_reviews'), orderBy('createdAt', 'desc'), limit(6))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Review))
+  } catch {
+    return []
+  }
+}
