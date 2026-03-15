@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart, FRETE_GRATIS_MIN } from '../contexts/CartContext'
-import { listFeaturedProducts, listProducts, listReviews, formatBRL, type Product, optimizedImage } from '../lib/productService'
+import { listFeaturedProducts, listProducts, listReviews, getProductStats, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -108,8 +108,8 @@ function toHomeProduct(p: Product) {
 function getSeed(id: string | number): number {
   return String(id).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
 }
-function getViews(id: string | number): number { return 120 + (getSeed(id) % 340) } // 120–459
-function getLikes(id: string | number): number { return 18 + (getSeed(id) % 73) }  // 18–90
+function getViews(id: string | number): number { return 120 + (getSeed(id) % 340) }
+function getLikes(id: string | number): number { return 18 + (getSeed(id) % 73) }
 
 export default function Home() {
   const { addItem, toggle, totalItems } = useCart()
@@ -134,6 +134,7 @@ export default function Home() {
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [productStats, setProductStats] = useState<Record<string, { views: number; likes: number }>>({})  
   const [timer, setTimer] = useState({ h: '00', m: '00', s: '00' })
   const [exitPopup, setExitPopup] = useState(false)
   const [reviews, setReviews] = useState([
@@ -156,6 +157,20 @@ export default function Home() {
     })()
     return () => { cancelled = true }
   }, [])
+
+  /* Carregar stats reais (views/likes) dos produtos do Firestore */
+  useEffect(() => {
+    if (products.length === 0) return
+    Promise.all(
+      products.map(p =>
+        getProductStats(String(p.id)).then(s => ({ id: String(p.id), ...s }))
+      )
+    ).then(results => {
+      const map: Record<string, { views: number; likes: number }> = {}
+      for (const r of results) map[r.id] = { views: r.views, likes: r.likes }
+      setProductStats(map)
+    }).catch(() => {})
+  }, [products])
 
   /* Buscar categorias existentes (uma imagem por categoria) */
   useEffect(() => {
@@ -548,8 +563,8 @@ export default function Home() {
                     <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium mt-0.5 flex items-center gap-2">
-                    <span>👁 {getViews(p.id)}</span>
-                    <span>❤️ {getLikes(p.id)}</span>
+                    <span>👁 {productStats[String(p.id)]?.views ?? getViews(p.id)}</span>
+                    <span>❤️ {productStats[String(p.id)]?.likes ?? getLikes(p.id)}</span>
                   </p>
                   <button
                     onClick={() => addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: (p as any).category })}
