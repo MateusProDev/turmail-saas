@@ -579,7 +579,7 @@ export default function StoreDashboard() {
               })()}
             </div>
 
-            {/* ── Pedidos de afiliados ── */}}
+            {/* ── Pedidos de afiliados ── */}
             <div>
               <h2 className="text-lg font-black text-gray-900 mb-3">Pedidos de Afiliados</h2>
               {loadingOrders ? (
