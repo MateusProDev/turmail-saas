@@ -9,6 +9,7 @@ import {
   formatBRL,
   type Product,
   type ProductInput,
+  type ProductVariant,
 } from '../lib/productService'
 import { uploadImage } from '../lib/cloudinary'
 import {
@@ -37,6 +38,7 @@ const emptyForm: ProductInput = {
   description: '',
   featured: false,
   active: true,
+  variants: [],
 }
 
 export default function StoreDashboard() {
@@ -56,6 +58,43 @@ export default function StoreDashboard() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  /* ── Variants state (form de criação de variantes) ── */
+  const [newVariantType, setNewVariantType] = useState('')
+  const [newVariantValues, setNewVariantValues] = useState<Record<number, string>>({})
+
+  const addVariantGroup = () => {
+    const type = newVariantType.trim()
+    if (!type) return
+    if ((form.variants || []).some(v => v.type.toLowerCase() === type.toLowerCase())) return
+    setForm(prev => ({ ...prev, variants: [...(prev.variants || []), { type, values: [] }] }))
+    setNewVariantType('')
+  }
+
+  const removeVariantGroup = (idx: number) => {
+    setForm(prev => ({ ...prev, variants: (prev.variants || []).filter((_, i) => i !== idx) }))
+  }
+
+  const addVariantValue = (idx: number) => {
+    const v = (newVariantValues[idx] || '').trim()
+    if (!v) return
+    setForm(prev => {
+      const variants = [...(prev.variants || [])]
+      const group = variants[idx]
+      if (group.values.includes(v)) return prev
+      variants[idx] = { ...group, values: [...group.values, v] }
+      return { ...prev, variants }
+    })
+    setNewVariantValues(prev => ({ ...prev, [idx]: '' }))
+  }
+
+  const removeVariantValue = (groupIdx: number, valueIdx: number) => {
+    setForm(prev => {
+      const variants = [...(prev.variants || [])]
+      variants[groupIdx] = { ...variants[groupIdx], values: variants[groupIdx].values.filter((_, i) => i !== valueIdx) }
+      return { ...prev, variants }
+    })
+  }
 
   /* ── Affiliates state ── */
   const [affiliates, setAffiliates] = useState<Affiliate[]>([])
@@ -170,6 +209,7 @@ export default function StoreDashboard() {
       description: p.description || '',
       featured: p.featured || false,
       active: p.active !== false,
+      variants: p.variants || [],
     })
     setShowForm(true)
   }
@@ -888,6 +928,92 @@ export default function StoreDashboard() {
                   rows={3}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
                 />
+              </div>
+
+              {/* Variantes (Sabor / Tamanho) */}
+              <div className="rounded-xl border border-dashed border-blue-300 bg-blue-50 p-3 space-y-3">
+                <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
+                  🎨 Variantes — Sabores / Tamanhos
+                </p>
+
+                {/* Lista de grupos de variantes existentes */}
+                {(form.variants || []).map((group, gi) => (
+                  <div key={gi} className="bg-white rounded-lg border border-blue-200 p-2.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-700">{group.type}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeVariantGroup(gi)}
+                        className="text-red-400 hover:text-red-600"
+                      >
+                        <FaTimes className="w-3 h-3" />
+                      </button>
+                    </div>
+                    {/* Valores existentes */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.values.map((val, vi) => (
+                        <span key={vi} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-[11px] font-semibold rounded-full">
+                          {val}
+                          <button type="button" onClick={() => removeVariantValue(gi, vi)} className="text-blue-400 hover:text-red-500">
+                            <FaTimes className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    {/* Adicionar novo valor */}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newVariantValues[gi] || ''}
+                        onChange={e => setNewVariantValues(prev => ({ ...prev, [gi]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addVariantValue(gi) } }}
+                        placeholder={`Ex: ${group.type === 'Sabor' ? 'Chocolate' : '900g'}`}
+                        className="flex-1 px-2.5 py-1.5 border border-blue-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addVariantValue(gi)}
+                        className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Adicionar novo grupo de variante */}
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={newVariantType}
+                    onChange={e => setNewVariantType(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addVariantGroup() } }}
+                    placeholder="Tipo de variante (ex: Sabor, Tamanho)"
+                    className="w-full px-2.5 py-1.5 border border-blue-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none"
+                  />
+                  <div className="flex gap-1.5 flex-wrap">
+                    {['Sabor', 'Tamanho', 'Cor', 'Volume'].filter(t =>
+                      !(form.variants || []).some(v => v.type === t)
+                    ).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => { setNewVariantType(t) }}
+                        className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-[11px] font-bold rounded-lg transition-colors"
+                      >
+                        + {t}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addVariantGroup}
+                    disabled={!newVariantType.trim()}
+                    className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"
+                  >
+                    <FaPlus className="w-3 h-3" /> Adicionar grupo de variante
+                  </button>
+                </div>
               </div>
 
               {/* Toggles */}
