@@ -9,7 +9,6 @@ import {
   formatBRL,
   type Product,
   type ProductInput,
-  type ProductVariant,
 } from '../lib/productService'
 import { uploadImage } from '../lib/cloudinary'
 import {
