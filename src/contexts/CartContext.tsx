@@ -1,13 +1,15 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
 export interface CartItem {
-  id: string | number
+  id: string | number         // chave única do slot (pode ser composta com variantes)
+  productId?: string | number // ID original do produto
   name: string
   price: string       // "R$ 189,90"
   priceNum: number    // 189.90
   image: string
   qty: number
   category?: string   // ex: "Pré-Treino", "Whey Protein"
+  selectedVariants?: Record<string, string> // ex: { "Sabor": "Chocolate", "Tamanho": "900g" }
 }
 
 interface Coupon {
@@ -175,14 +177,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: Omit<CartItem, 'qty'>) => {
     const priceNum = item.priceNum || parsePrice(item.price)
+    // Gera chave única considerando variantes selecionadas
+    const variantStr = item.selectedVariants && Object.keys(item.selectedVariants).length > 0
+      ? '|' + Object.entries(item.selectedVariants).sort().map(([k, v]) => `${k}=${v}`).join('|')
+      : ''
+    const slotId = variantStr ? `${item.id}${variantStr}` : item.id
     setItems(prev => {
-      const idx = prev.findIndex(i => i.id === item.id)
+      const idx = prev.findIndex(i => i.id === slotId)
       if (idx >= 0) {
         const next = [...prev]
         next[idx] = { ...next[idx], qty: next[idx].qty + 1 }
         return next
       }
-      return [...prev, { ...item, priceNum, qty: 1 }]
+      return [...prev, {
+        ...item,
+        id: slotId,
+        productId: item.productId ?? item.id,
+        priceNum,
+        qty: 1,
+      }]
     })
     // Abrir o drawer ao adicionar um item para dar feedback ao usuário
     setIsOpen(true)

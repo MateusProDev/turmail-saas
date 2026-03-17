@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch, FaHeart, FaEye, FaWhatsapp } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
-import { listProducts, formatBRL, type Product, getProductStats, incrementProductView, toggleProductLike } from '../lib/productService'
+import { listProducts, formatBRL, type Product, type ProductVariant, getProductStats, incrementProductView, toggleProductLike } from '../lib/productService'
 
 /* ── Fallback ── */
 const IMG_FALLBACK = 'https://placehold.co/400x400/1a1a1a/22c55e?text=BenSuplementos'
@@ -22,6 +22,7 @@ interface DisplayProduct {
   tag: string
   cat: string
   desc: string
+  variants?: ProductVariant[]
 }
 
 /* Converte Firestore → DisplayProduct */
@@ -36,6 +37,7 @@ function toDisplay(p: Product): DisplayProduct {
     tag: p.tag || '',
     cat: p.category,
     desc: p.description || '',
+    variants: p.variants,
   }
 }
 
@@ -69,6 +71,9 @@ export default function Products() {
   const [detailStats, setDetailStats] = useState({ views: 0, likes: 0 })
   const [isLiked, setIsLiked] = useState(false)
   const [likeLoading, setLikeLoading] = useState(false)
+
+  /* Variantes selecionadas no detalhe */
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
 
   /* Buscar produtos do Firestore */
   useEffect(() => {
@@ -109,6 +114,8 @@ export default function Products() {
   /* Quando muda o produto em detalhe: incrementa view + carrega stats */
   useEffect(() => {
     if (!detail) return
+    // Resetar variantes selecionadas ao trocar de produto
+    setSelectedVariants({})
     const id = String(detail.id)
     setIsLiked(!!localStorage.getItem(`ben_liked_${id}`))
     setDetailStats({ views: 0, likes: 0 })
@@ -139,8 +146,8 @@ export default function Products() {
     ? catFiltered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
     : catFiltered
 
-  const handleAdd = (p: DisplayProduct) => {
-    addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: p.cat })
+  const handleAdd = (p: DisplayProduct, variants?: Record<string, string>) => {
+    addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: p.cat, selectedVariants: variants && Object.keys(variants).length > 0 ? variants : undefined })
   }
 
   /* ── Product Detail View ── */
@@ -241,17 +248,51 @@ export default function Products() {
                 <p className="text-sm text-gray-600 mt-5 leading-relaxed border-t pt-4 text-left">{detail.desc}</p>
               )}
 
+              {/* ── Seletor de Variantes ── */}
+              {detail.variants && detail.variants.length > 0 && (
+                <div className="mt-5 space-y-4 border-t pt-4">
+                  {detail.variants.map(group => (
+                    <div key={group.type}>
+                      <p className="text-xs font-bold text-gray-700 mb-2">{group.type}:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.values.map(val => (
+                          <button
+                            key={val}
+                            onClick={() => setSelectedVariants(prev => ({ ...prev, [group.type]: val }))}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                              selectedVariants[group.type] === val
+                                ? 'bg-green-600 text-white border-green-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-green-500 hover:text-green-600'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Alerta se nem todas as variantes foram selecionadas */}
+                  {detail.variants.some(g => !selectedVariants[g.type]) && (
+                    <p className="text-[11px] text-orange-600 font-semibold">
+                      ⚠️ Selecione {detail.variants.filter(g => !selectedVariants[g.type]).map(g => g.type.toLowerCase()).join(' e ')} para continuar
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-6 flex flex-col gap-2">
                 <button
-                  onClick={() => { handleAdd(detail); toggle() }}
-                  className="w-full py-3.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  onClick={() => { handleAdd(detail, selectedVariants); toggle() }}
+                  disabled={!!(detail.variants?.length && detail.variants.some(g => !selectedVariants[g.type]))}
+                  className="w-full py-3.5 bg-green-600 hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <FaShoppingCart className="w-4 h-4" />
                   Comprar agora
                 </button>
                 <button
-                  onClick={() => handleAdd(detail)}
-                  className="w-full py-3 border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
+                  onClick={() => handleAdd(detail, selectedVariants)}
+                  disabled={!!(detail.variants?.length && detail.variants.some(g => !selectedVariants[g.type]))}
+                  className="w-full py-3 border-2 border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
                 >
                   <FaShoppingCart className="w-3.5 h-3.5" />
                   Adicionar ao Carrinho

@@ -57,6 +57,16 @@ export default function CartDrawer() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-bold text-gray-900 leading-tight line-clamp-2">{item.name}</h4>
+                  {/* Variantes selecionadas */}
+                  {item.selectedVariants && Object.keys(item.selectedVariants).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {Object.entries(item.selectedVariants).map(([type, val]) => (
+                        <span key={type} className="inline-block px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-semibold rounded">
+                          {type}: {val}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <p className="text-sm font-black text-green-700 mt-0.5">{item.price}</p>
                   {/* Qty controls */}
                   <div className="flex items-center gap-2 mt-1.5">
@@ -217,7 +227,12 @@ export default function CartDrawer() {
             <button
               onClick={async () => {
                 const lines = items.map(
-                  (it) => `• ${it.qty}x ${it.name} — ${it.price}`
+                  (it) => {
+                    const variantStr = it.selectedVariants && Object.keys(it.selectedVariants).length > 0
+                      ? ` (${Object.entries(it.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(', ')})`
+                      : ''
+                    return `• ${it.qty}x ${it.name}${variantStr} — ${it.price}`
+                  }
                 )
                 const msg = [
                   '🛒 *Pedido BenSuplementos*',

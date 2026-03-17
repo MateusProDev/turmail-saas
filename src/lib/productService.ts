@@ -2,6 +2,12 @@
    to avoid pulling the entire Firebase client into the initial bundle.
 */
 
+/* ── Tipagem de Variante ── */
+export interface ProductVariant {
+  type: string     // ex: "Sabor", "Tamanho"
+  values: string[] // ex: ["Chocolate", "Baunilha", "Morango"]
+}
+
 /* ── Tipagem de Produto ── */
 export interface Product {
   id: string
@@ -16,6 +22,7 @@ export interface Product {
   active?: boolean       // visível na loja
   wholesalePrice?: number // custo interno (atacado) — NÃO exibido na loja
   repassePrice?: number   // valor de repasse ao afiliado — NÃO exibido na loja
+  variants?: ProductVariant[] // variantes de sabor/tamanho
   createdAt?: any
   updatedAt?: any
 }
