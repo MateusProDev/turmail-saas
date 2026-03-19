@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle, FaWhatsapp, FaTag } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaArrowUp, FaArrowDown, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle, FaWhatsapp, FaTag } from 'react-icons/fa'
 import {
   listProducts,
   createProduct,
@@ -62,6 +62,9 @@ export default function StoreDashboard() {
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const brandFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  /* ── Reorder state ── */
+  const [reordering, setReordering] = useState(false)
 
   /* ── Brand images state ── */
   const [brandImages, setBrandImages] = useState<Record<string, string>>({})
@@ -319,6 +322,34 @@ export default function StoreDashboard() {
       await load()
     } catch {
       showToast('Erro ao remover', 'err')
+    }
+  }
+
+  /* ── Move product up/down in the displayed list ── */
+  const handleMoveProduct = async (productId: string, direction: 'up' | 'down') => {
+    if (reordering) return
+    const idx = filtered.findIndex(p => p.id === productId)
+    if (idx < 0) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= filtered.length) return
+    const a = filtered[idx]
+    const b = filtered[swapIdx]
+    // Fallback: usa posição no array completo * 10 se sortOrder não existir
+    const aGlobal = products.findIndex(p => p.id === a.id)
+    const bGlobal = products.findIndex(p => p.id === b.id)
+    const aOrder = a.sortOrder ?? aGlobal * 10
+    const bOrder = b.sortOrder ?? bGlobal * 10
+    setReordering(true)
+    try {
+      await Promise.all([
+        updateProduct(a.id, { sortOrder: bOrder } as any),
+        updateProduct(b.id, { sortOrder: aOrder } as any),
+      ])
+      await load()
+    } catch {
+      showToast('Erro ao reordenar', 'err')
+    } finally {
+      setReordering(false)
     }
   }
 
@@ -791,50 +822,66 @@ export default function StoreDashboard() {
         {!loading && filtered.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Desktop table header */}
-            <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
-              <div className="col-span-1">Img</div>
-              <div className="col-span-3">Nome</div>
-              <div className="col-span-2">Cat / Marca</div>
-              <div className="col-span-1">Preço</div>
-              <div className="col-span-1">Tag</div>
-              <div className="col-span-1">Ativo</div>
-              <div className="col-span-1">Destaque</div>
-              <div className="col-span-2 text-right">Ações</div>
+            <div className="hidden md:grid grid-cols-[48px_1fr_1fr_auto_auto_auto_auto_auto] gap-3 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
+              <div>Img</div>
+              <div>Nome</div>
+              <div>Cat / Marca</div>
+              <div>Preço</div>
+              <div>Ativo</div>
+              <div>Dest.</div>
+              <div>Ordem</div>
+              <div className="text-right">Ações</div>
             </div>
 
             {filtered.map(p => (
               <div key={p.id} className="border-b border-gray-100 last:border-0">
                 {/* Desktop row */}
-                <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
-                  <div className="col-span-1">
+                <div className="hidden md:grid grid-cols-[48px_1fr_1fr_auto_auto_auto_auto_auto] gap-3 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
+                  <div>
                     <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
                   </div>
-                  <div className="col-span-3">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
                     {p.description && <p className="text-xs text-gray-400 truncate mt-0.5">{p.description}</p>}
                   </div>
-                  <div className="col-span-2">
+                  <div className="min-w-0">
                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">{p.category}</span>
                     {p.brand && <span className="block text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-medium mt-1">{p.brand}</span>}
                   </div>
-                  <div className="col-span-1">
+                  <div className="whitespace-nowrap">
                     <span className="text-sm font-bold text-green-700">{formatBRL(p.price)}</span>
                     {p.oldPrice ? <span className="block text-[10px] text-gray-400 line-through">{formatBRL(p.oldPrice)}</span> : null}
                   </div>
-                  <div className="col-span-1">
-                    {p.tag ? <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{p.tag}</span> : <span className="text-gray-300">—</span>}
-                  </div>
-                  <div className="col-span-1">
+                  <div>
                     <button onClick={() => toggleField(p, 'active')} className="text-xl">
                       {p.active !== false ? <FaToggleOn className="text-green-500" /> : <FaToggleOff className="text-gray-300" />}
                     </button>
                   </div>
-                  <div className="col-span-1">
+                  <div>
                     <button onClick={() => toggleField(p, 'featured')} className="text-lg">
                       <FaStar className={p.featured ? 'text-yellow-400' : 'text-gray-300'} />
                     </button>
                   </div>
-                  <div className="col-span-2 flex justify-end gap-2">
+                  {/* Botões de ordem */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => handleMoveProduct(p.id, 'up')}
+                      disabled={reordering || filtered.indexOf(p) === 0}
+                      className="p-1 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Mover para cima"
+                    >
+                      <FaArrowUp className="w-2.5 h-2.5" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveProduct(p.id, 'down')}
+                      disabled={reordering || filtered.indexOf(p) === filtered.length - 1}
+                      className="p-1 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Mover para baixo"
+                    >
+                      <FaArrowDown className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                  <div className="flex justify-end gap-2">
                     <button onClick={() => openEdit(p)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Editar">
                       <FaEdit className="w-3.5 h-3.5" />
                     </button>
@@ -873,6 +920,23 @@ export default function StoreDashboard() {
                       </button>
                     </div>
                     <div className="flex gap-2">
+                      {/* Ordem mobile */}
+                      <button
+                        onClick={() => handleMoveProduct(p.id, 'up')}
+                        disabled={reordering || filtered.indexOf(p) === 0}
+                        className="p-2 rounded-lg bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Mover para cima"
+                      >
+                        <FaArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveProduct(p.id, 'down')}
+                        disabled={reordering || filtered.indexOf(p) === filtered.length - 1}
+                        className="p-2 rounded-lg bg-gray-100 text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Mover para baixo"
+                      >
+                        <FaArrowDown className="w-3 h-3" />
+                      </button>
                       <button onClick={() => openEdit(p)} className="p-2 rounded-lg bg-blue-50 text-blue-600">
                         <FaEdit className="w-3.5 h-3.5" />
                       </button>

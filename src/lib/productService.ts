@@ -24,6 +24,7 @@ export interface Product {
   wholesalePrice?: number // custo interno (atacado) — NÃO exibido na loja
   repassePrice?: number   // valor de repasse ao afiliado — NÃO exibido na loja
   variants?: ProductVariant[] // variantes de sabor/tamanho
+  sortOrder?: number          // posição na vitrine (menor = primeiro)
   createdAt?: any
   updatedAt?: any
 }
