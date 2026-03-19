@@ -17,6 +17,7 @@ export interface Product {
   image: string          // URL da imagem
   tag?: string           // ex: "Mais Vendido", "-25%", "Novo"
   category: string       // ex: "Whey Protein", "Creatina"
+  brand?: string         // ex: "MaxTitanium", "IntegralMédica"
   description?: string
   featured?: boolean     // aparece na Home
   active?: boolean       // visível na loja
@@ -211,4 +212,30 @@ export async function toggleProductLike(id: string, liked: boolean): Promise<voi
     ])
     await setDoc(doc(db, 'product_stats', id), { likes: increment(liked ? 1 : -1) }, { merge: true })
   } catch { /* silent */ }
+}
+
+/* ── Brand Images ── */
+const BRAND_IMAGES_COLLECTION = 'store_brand_images'
+
+/** Lista todas as imagens de marcas: { brandName: imageUrl } */
+export async function listBrandImages(): Promise<Record<string, string>> {
+  try {
+    const [{ collection, getDocs }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('./firebase')
+    ])
+    const snap = await getDocs(collection(db, BRAND_IMAGES_COLLECTION))
+    const map: Record<string, string> = {}
+    snap.docs.forEach(d => { map[d.id] = (d.data() as any).image || '' })
+    return map
+  } catch { return {} }
+}
+
+/** Salva/atualiza a imagem (logo) de uma marca */
+export async function saveBrandImage(name: string, image: string): Promise<void> {
+  const [{ doc, setDoc }, { db }] = await Promise.all([
+    import('firebase/firestore'),
+    import('./firebase')
+  ])
+  await setDoc(doc(db, BRAND_IMAGES_COLLECTION, name), { image })
 }

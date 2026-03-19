@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle, FaWhatsapp } from 'react-icons/fa'
+import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaStar, FaArrowLeft, FaImage, FaSpinner, FaSearch, FaTimes, FaUsers, FaBoxOpen, FaCheckCircle, FaWhatsapp, FaTag } from 'react-icons/fa'
 import {
   listProducts,
   createProduct,
   updateProduct,
   deleteProduct,
   formatBRL,
+  listBrandImages,
+  saveBrandImage,
   type Product,
   type ProductInput,
 } from '../lib/productService'
@@ -34,6 +36,7 @@ const emptyForm: ProductInput = {
   image: '',
   tag: '',
   category: CATEGORIES[0],
+  brand: '',
   description: '',
   featured: false,
   active: true,
@@ -42,7 +45,7 @@ const emptyForm: ProductInput = {
 
 export default function StoreDashboard() {
   /* ── Tab ── */
-  const [activeTab, setActiveTab] = useState<'produtos' | 'afiliados'>('produtos')
+  const [activeTab, setActiveTab] = useState<'produtos' | 'afiliados' | 'marcas'>('produtos')
 
   /* ── Products state ── */
   const [products, setProducts] = useState<Product[]>([])
@@ -53,10 +56,17 @@ export default function StoreDashboard() {
   const [form, setForm] = useState<ProductInput>({ ...emptyForm })
   const [search, setSearch] = useState('')
   const [filterCat, setFilterCat] = useState('Todos')
+  const [filterBrand, setFilterBrand] = useState('Todos')
   const [uploading, setUploading] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'ok' | 'err' } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const brandFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  /* ── Brand images state ── */
+  const [brandImages, setBrandImages] = useState<Record<string, string>>({})
+  const [loadingBrands, setLoadingBrands] = useState(false)
+  const [uploadingBrand, setUploadingBrand] = useState<string | null>(null)
 
   /* ── Variants state (form de criação de variantes) ── */
   const [newVariantType, setNewVariantType] = useState('')
@@ -180,11 +190,47 @@ export default function StoreDashboard() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  /* ── Brands derivadas dos produtos cadastrados ── */
+  const brands = [...new Set(products.map(p => p.brand).filter(Boolean))] as string[]
+
+  /* ── Load brand images ── */
+  useEffect(() => {
+    setLoadingBrands(true)
+    listBrandImages().then(setBrandImages).finally(() => setLoadingBrands(false))
+  }, [])
+
+  const handleBrandImageUpload = async (brandName: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingBrand(brandName)
+    try {
+      const res = await uploadImage(file)
+      await saveBrandImage(brandName, res.secure_url)
+      setBrandImages(prev => ({ ...prev, [brandName]: res.secure_url }))
+      showToast('Logo atualizado!', 'ok')
+    } catch {
+      showToast('Erro ao enviar imagem', 'err')
+    } finally {
+      setUploadingBrand(null)
+    }
+  }
+
+  const handleBrandImageUrl = async (brandName: string, url: string) => {
+    try {
+      await saveBrandImage(brandName, url)
+      setBrandImages(prev => ({ ...prev, [brandName]: url }))
+      showToast('Logo atualizado!', 'ok')
+    } catch {
+      showToast('Erro ao salvar', 'err')
+    }
+  }
+
   /* ── Filtered list ── */
   const filtered = products.filter(p => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase())
     const matchCat = filterCat === 'Todos' || p.category === filterCat
-    return matchSearch && matchCat
+    const matchBrand = filterBrand === 'Todos' || p.brand === filterBrand
+    return matchSearch && matchCat && matchBrand
   })
 
   /* ── Form handlers ── */
@@ -205,6 +251,7 @@ export default function StoreDashboard() {
       image: p.image,
       tag: p.tag || '',
       category: p.category,
+      brand: p.brand || '',
       description: p.description || '',
       featured: p.featured || false,
       active: p.active !== false,
@@ -325,6 +372,14 @@ export default function StoreDashboard() {
           >
             <FaUsers className="w-3.5 h-3.5" /> Afiliados
           </button>
+          <button
+            onClick={() => setActiveTab('marcas')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+              activeTab === 'marcas' ? 'bg-black text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <FaTag className="w-3.5 h-3.5" /> Marcas
+          </button>
         </div>
         {/* ── Title + New button ── */}
         {activeTab === 'produtos' && (
@@ -345,31 +400,115 @@ export default function StoreDashboard() {
 
         {/* ── Search + Category filter ── */}
         {activeTab === 'produtos' && (
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-            />
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar produto..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+              />
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {['Todos', ...CATEGORIES].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setFilterCat(cat)}
+                  className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                    filterCat === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {['Todos', ...CATEGORIES].map(cat => (
-              <button
-                key={cat}
-                onClick={() => setFilterCat(cat)}
-                className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                  filterCat === cat ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+          {/* ── Filtro por Marca ── */}
+          {brands.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide flex-shrink-0">Marca:</span>
+              {['Todos', ...brands].map(b => (
+                <button
+                  key={b}
+                  onClick={() => setFilterBrand(b)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    filterBrand === b ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        )}
+
+        {/* ▐▐▐▐▐▐▐▐▐▐▐▐▐ TAB MARCAS ▐▐▐▐▐▐▐▐▐▐▐▐▐ */}
+        {activeTab === 'marcas' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-gray-900 mb-1">Logos das Marcas</h2>
+              <p className="text-sm text-gray-500">Configure a imagem (logo) 1×1 de cada marca para exibição na Home.</p>
+            </div>
+
+            {loadingBrands || loading ? (
+              <div className="flex justify-center py-16"><FaSpinner className="w-6 h-6 text-green-600 animate-spin" /></div>
+            ) : brands.length === 0 ? (
+              <div className="text-center py-16 text-gray-400">
+                <FaTag className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Nenhuma marca cadastrada.</p>
+                <p className="text-xs mt-1">Adicione a marca nos produtos para gerenciá-la aqui.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {brands.map(brand => {
+                  const img = brandImages[brand] || ''
+                  const isUploading = uploadingBrand === brand
+                  return (
+                    <div key={brand} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col items-center gap-3">
+                      {/* Preview 1x1 */}
+                      <div className="w-full aspect-square rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                        {img ? (
+                          <img src={img} alt={brand} className="w-full h-full object-contain p-2" />
+                        ) : (
+                          <FaImage className="w-10 h-10 text-gray-300" />
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-gray-800 text-center">{brand}</p>
+
+                      {/* Upload button */}
+                      <button
+                        onClick={() => brandFileRefs.current[brand]?.click()}
+                        disabled={isUploading}
+                        className="w-full py-1.5 border-2 border-dashed border-gray-200 rounded-lg text-xs font-bold text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-1"
+                      >
+                        {isUploading ? <><FaSpinner className="w-3 h-3 animate-spin" /> Enviando...</> : <><FaImage className="w-3 h-3" /> Upload Logo</>}
+                      </button>
+                      <input
+                        ref={el => { brandFileRefs.current[brand] = el }}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => handleBrandImageUpload(brand, e)}
+                      />
+
+                      {/* URL input */}
+                      <input
+                        type="text"
+                        defaultValue={img}
+                        placeholder="Ou cole a URL da logo"
+                        onBlur={e => { if (e.target.value !== img && e.target.value.trim()) handleBrandImageUrl(brand, e.target.value.trim()) }}
+                        className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-[11px] focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ▐▐▐▐▐▐▐▐▐▐▐▐▐ TAB AFILIADOS ▐▐▐▐▐▐▐▐▐▐▐▐▐ */}
@@ -638,9 +777,9 @@ export default function StoreDashboard() {
             </div>
             <h3 className="text-lg font-bold text-gray-700 mb-1">Nenhum produto encontrado</h3>
             <p className="text-sm text-gray-400 mb-4">
-              {search || filterCat !== 'Todos' ? 'Tente outro filtro.' : 'Comece adicionando seu primeiro produto!'}
+              {search || filterCat !== 'Todos' || filterBrand !== 'Todos' ? 'Tente outro filtro.' : 'Comece adicionando seu primeiro produto!'}
             </p>
-            {!search && filterCat === 'Todos' && (
+            {!search && filterCat === 'Todos' && filterBrand === 'Todos' && (
               <button onClick={openNew} className="px-5 py-2 bg-green-600 text-white font-bold rounded-lg text-sm hover:bg-green-500 transition-colors">
                 <FaPlus className="w-3 h-3 inline mr-1" /> Cadastrar Produto
               </button>
@@ -655,7 +794,7 @@ export default function StoreDashboard() {
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wide">
               <div className="col-span-1">Img</div>
               <div className="col-span-3">Nome</div>
-              <div className="col-span-2">Categoria</div>
+              <div className="col-span-2">Cat / Marca</div>
               <div className="col-span-1">Preço</div>
               <div className="col-span-1">Tag</div>
               <div className="col-span-1">Ativo</div>
@@ -676,6 +815,7 @@ export default function StoreDashboard() {
                   </div>
                   <div className="col-span-2">
                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded font-medium">{p.category}</span>
+                    {p.brand && <span className="block text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-medium mt-1">{p.brand}</span>}
                   </div>
                   <div className="col-span-1">
                     <span className="text-sm font-bold text-green-700">{formatBRL(p.price)}</span>
@@ -712,6 +852,7 @@ export default function StoreDashboard() {
                       <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{p.category}</span>
+                        {p.brand && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">{p.brand}</span>}
                         {p.tag && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">{p.tag}</span>}
                       </div>
                       <div className="flex items-baseline gap-2 mt-1">
@@ -866,6 +1007,24 @@ export default function StoreDashboard() {
                 >
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+
+              {/* Marca */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Marca</label>
+                <input
+                  type="text"
+                  value={(form as any).brand || ''}
+                  onChange={e => handleChange('brand' as any, e.target.value)}
+                  placeholder="Ex: MaxTitanium, IntegralMédica, Darkness..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  list="brands-datalist"
+                />
+                {brands.length > 0 && (
+                  <datalist id="brands-datalist">
+                    {brands.map(b => <option key={b} value={b} />)}
+                  </datalist>
+                )}
               </div>
 
               {/* Tag */}

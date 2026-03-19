@@ -181,8 +181,8 @@ service cloud.firestore {
     match /affiliates/{uid} {
       // Criação: o próprio usuário cria seu doc (uid bate com auth.uid)
       allow create: if request.auth != null && request.auth.uid == uid;
-      // Leitura: o próprio afiliado ou qualquer auth (admin da loja)
-      allow read: if request.auth != null;
+      // Leitura: pública (necessário para validar cupom no carrinho e no cadastro antes de autenticar)
+      allow read: if true;
       // Update/delete: o próprio afiliado ou qualquer auth autenticado (admin)
       allow update, delete: if request.auth != null;
     }

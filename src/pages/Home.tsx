@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { FaShoppingCart, FaInstagram, FaWhatsapp, FaTruck, FaShieldAlt, FaStar, FaChevronLeft, FaChevronRight, FaSpinner, FaSearch } from 'react-icons/fa'
 import { useCart, FRETE_GRATIS_MIN } from '../contexts/CartContext'
-import { listFeaturedProducts, listProducts, listReviews, getProductStats, formatBRL, type Product, optimizedImage } from '../lib/productService'
+import { listFeaturedProducts, listProducts, listReviews, getProductStats, listBrandImages, formatBRL, type Product, optimizedImage } from '../lib/productService'
 import './Home.css'
 
 /* ── Banners do Carrossel (troque imagens/textos aqui) ── */
@@ -131,6 +131,7 @@ export default function Home() {
   const [current, setCurrent] = useState(0)
   const [products, setProducts] = useState(fallbackProducts)
   const [categoriesList, setCategoriesList] = useState<{ name: string; image: string }[]>([])
+  const [brandsList, setBrandsList] = useState<{ name: string; image: string }[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -177,15 +178,26 @@ export default function Home() {
     let cancelled = false
     ;(async () => {
       try {
-        const all = await listProducts(true)
+        const [all, imgMap] = await Promise.all([listProducts(true), listBrandImages()])
         if (cancelled) return
-        const map = new Map<string, string>()
+
+        // Categorias
+        const catMap = new Map<string, string>()
+        // Marcas
+        const brandMap = new Map<string, string>()
         for (const p of all) {
-          if (!p.category) continue
-          if (!map.has(p.category)) map.set(p.category, p.image)
+          if (p.category && !catMap.has(p.category)) catMap.set(p.category, p.image)
+          if (p.brand && !brandMap.has(p.brand)) brandMap.set(p.brand, p.image)
         }
-        const out = Array.from(map.entries()).map(([name, image]) => ({ name, image }))
-        if (out.length > 0) setCategoriesList(out)
+        const cats = Array.from(catMap.entries()).map(([name, image]) => ({ name, image }))
+        if (cats.length > 0) setCategoriesList(cats)
+
+        // Marcas: usa logo do Firestore se existir, cáí no produto
+        const brs = Array.from(brandMap.keys()).map(name => ({
+          name,
+          image: imgMap[name] || brandMap.get(name) || '',
+        })).filter(b => b.image)
+        if (brs.length > 0) setBrandsList(brs)
       } catch {
         /* ignore */
       }
@@ -533,6 +545,28 @@ export default function Home() {
                     <img src={optimizedImage(cat.image, 360)} alt={cat.name} onError={handleImgError} className="w-full h-full object-cover" />
                   </div>
                   <div className="text-xs mt-2 text-gray-700 font-semibold">{cat.name}</div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ═══════ MARCAS (quadrados 1x1) ═══════ */}
+        {brandsList.length > 0 && (
+          <section className="py-4 sm:py-6 px-3 sm:px-6 max-w-7xl mx-auto">
+            <h3 className="text-sm sm:text-base font-bold mb-3">Marcas</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {brandsList.map(b => (
+                <Link
+                  key={b.name}
+                  to="/produtos"
+                  state={{ initialBrand: b.name }}
+                  className="flex-shrink-0 w-20 sm:w-24 text-center"
+                >
+                  <div className="w-20 sm:w-24 h-20 sm:h-24 rounded-xl overflow-hidden mx-auto border border-gray-100 shadow-sm bg-white flex items-center justify-center">
+                    <img src={optimizedImage(b.image, 360)} alt={b.name} onError={handleImgError} className="w-full h-full object-contain p-1" />
+                  </div>
+                  <div className="text-xs mt-2 text-gray-700 font-semibold">{b.name}</div>
                 </Link>
               ))}
             </div>

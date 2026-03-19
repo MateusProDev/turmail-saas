@@ -21,6 +21,7 @@ interface DisplayProduct {
   image: string
   tag: string
   cat: string
+  brand: string
   desc: string
   variants?: ProductVariant[]
 }
@@ -36,6 +37,7 @@ function toDisplay(p: Product): DisplayProduct {
     image: p.image,
     tag: p.tag || '',
     cat: p.category,
+    brand: p.brand || '',
     desc: p.description || '',
     variants: p.variants,
   }
@@ -43,10 +45,10 @@ function toDisplay(p: Product): DisplayProduct {
 
 /* ── Catálogo fallback (caso Firestore esteja vazio / offline) ── */
 const fallbackProducts: DisplayProduct[] = [
-  { id: 'fb-1', name: 'Whey Isolado 900g', price: 'R$ 189,90', priceNum: 189.90, oldPrice: 'R$ 249,90', image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Mais Vendido', cat: 'Whey Protein', desc: 'Whey Protein Isolado de alta pureza, 27g de proteína por dose.' },
-  { id: 'fb-2', name: 'Creatina 300g', price: 'R$ 89,90', priceNum: 89.90, oldPrice: 'R$ 119,90', image: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?auto=format&fit=crop&w=400&h=400&q=80', tag: '-25%', cat: 'Creatina', desc: 'Creatina Monohidratada pura, 5g por dose.' },
-  { id: 'fb-3', name: 'Pré-Treino Extreme 300g', price: 'R$ 129,90', priceNum: 129.90, oldPrice: 'R$ 169,90', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Novo', cat: 'Pré-Treino', desc: 'Pré-treino com cafeína, beta-alanina e citrulina.' },
-  { id: 'fb-4', name: 'BCAA 2:1:1 120 Cáps', price: 'R$ 59,90', priceNum: 59.90, oldPrice: 'R$ 79,90', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&h=400&q=80', tag: '-25%', cat: 'Aminoácidos', desc: 'BCAA na proporção 2:1:1 para recuperação muscular acelerada.' },
+  { id: 'fb-1', name: 'Whey Isolado 900g', price: 'R$ 189,90', priceNum: 189.90, oldPrice: 'R$ 249,90', image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Mais Vendido', cat: 'Whey Protein', brand: '', desc: 'Whey Protein Isolado de alta pureza, 27g de proteína por dose.' },
+  { id: 'fb-2', name: 'Creatina 300g', price: 'R$ 89,90', priceNum: 89.90, oldPrice: 'R$ 119,90', image: 'https://images.unsplash.com/photo-1546483875-ad9014c88eba?auto=format&fit=crop&w=400&h=400&q=80', tag: '-25%', cat: 'Creatina', brand: '', desc: 'Creatina Monohidratada pura, 5g por dose.' },
+  { id: 'fb-3', name: 'Pré-Treino Extreme 300g', price: 'R$ 129,90', priceNum: 129.90, oldPrice: 'R$ 169,90', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&h=400&q=80', tag: 'Novo', cat: 'Pré-Treino', brand: '', desc: 'Pré-treino com cafeína, beta-alanina e citrulina.' },
+  { id: 'fb-4', name: 'BCAA 2:1:1 120 Cáps', price: 'R$ 59,90', priceNum: 59.90, oldPrice: 'R$ 79,90', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&h=400&q=80', tag: '-25%', cat: 'Aminoácidos', brand: '', desc: 'BCAA na proporção 2:1:1 para recuperação muscular acelerada.' },
 ]
 
 const categories = ['Todos', 'Whey Protein', 'Creatina', 'Pré-Treino', 'Aminoácidos', 'Vitaminas']
@@ -61,6 +63,7 @@ function seedLikes(id: string | number): number { return 18 + (_seed(id) % 73) }
 export default function Products() {
   const { addItem, toggle, totalItems } = useCart()
   const [filter, setFilter] = useState('Todos')
+  const [filterBrand, setFilterBrand] = useState('Todos')
   const [detail, setDetail] = useState<DisplayProduct | null>(null)
   const [products, setProducts] = useState<DisplayProduct[]>([])
   const [loading, setLoading] = useState(true)
@@ -109,6 +112,11 @@ export default function Products() {
       const exists = products.some(p => p.cat === s.initialCategory)
       if (exists) setFilter(s.initialCategory)
     }
+    // Se navegamos com uma marca inicial, aplica o filtro de marca
+    if (s.initialBrand && products.length > 0) {
+      const exists = products.some(p => p.brand === s.initialBrand)
+      if (exists) setFilterBrand(s.initialBrand)
+    }
   }, [location.state, products])
 
   /* Quando muda o produto em detalhe: incrementa view + carrega stats */
@@ -142,9 +150,13 @@ export default function Products() {
   }
 
   const catFiltered = filter === 'Todos' ? products : products.filter(p => p.cat === filter)
+  const brandFiltered = filterBrand === 'Todos' ? catFiltered : catFiltered.filter(p => p.brand === filterBrand)
   const filtered = searchTerm.trim()
-    ? catFiltered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : catFiltered
+    ? brandFiltered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : brandFiltered
+
+  /* Marcas disponíveis nos produtos carregados */
+  const availableBrands = [...new Set(products.map(p => p.brand).filter(Boolean))] as string[]
 
   const handleAdd = (p: DisplayProduct, variants?: Record<string, string>) => {
     addItem({ id: p.id, name: p.name, price: p.price, priceNum: p.priceNum, image: p.image, category: p.cat, selectedVariants: variants && Object.keys(variants).length > 0 ? variants : undefined })
@@ -402,7 +414,7 @@ export default function Products() {
         ) : (
         <>
         {/* Category filters */}
-        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide mb-2">
           {categories.map(cat => (
             <button
               key={cat}
@@ -418,6 +430,26 @@ export default function Products() {
           ))}
         </div>
 
+        {/* Brand filters */}
+        {availableBrands.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide mb-6">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide flex-shrink-0">Marca:</span>
+            {['Todos', ...availableBrands].map(b => (
+              <button
+                key={b}
+                onClick={() => setFilterBrand(b)}
+                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold transition-colors border ${
+                  filterBrand === b
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Product grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
           {filtered.map(p => (
@@ -432,6 +464,14 @@ export default function Products() {
                 <button onClick={() => setDetail(p)} className="text-left w-full">
                   <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight line-clamp-2 hover:text-green-600 transition-colors">{p.name}</h3>
                 </button>
+                {p.brand && (
+                  <button
+                    onClick={() => setFilterBrand(filterBrand === p.brand ? 'Todos' : p.brand)}
+                    className="mt-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    {p.brand}
+                  </button>
+                )}
                 <div className="flex items-baseline gap-1.5 mt-1">
                   <span className="text-sm sm:text-lg font-black text-green-700">{p.price}</span>
                   <span className="text-[10px] sm:text-xs text-gray-400 line-through">{p.oldPrice}</span>
