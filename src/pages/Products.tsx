@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch, FaHeart, FaEye, FaWhatsapp } from 'react-icons/fa'
+import { FaShoppingCart, FaStar, FaArrowLeft, FaSpinner, FaSearch, FaHeart, FaEye, FaWhatsapp, FaShareAlt, FaCheck } from 'react-icons/fa'
 import { useCart } from '../contexts/CartContext'
 import { listProducts, formatBRL, type Product, type ProductVariant, getProductStats, incrementProductView, toggleProductLike } from '../lib/productService'
 
@@ -74,6 +74,7 @@ export default function Products() {
   const [detailStats, setDetailStats] = useState({ views: 0, likes: 0 })
   const [isLiked, setIsLiked] = useState(false)
   const [likeLoading, setLikeLoading] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   /* Variantes selecionadas no detalhe */
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
@@ -85,10 +86,14 @@ export default function Products() {
       try {
         const data = await listProducts(true) // apenas ativos
         if (!cancelled) {
-          if (data.length > 0) {
-            setProducts(data.map(toDisplay))
-          } else {
-            setProducts(fallbackProducts)
+          const prods = data.length > 0 ? data.map(toDisplay) : fallbackProducts
+          setProducts(prods)
+          // Abrir produto direto via URL ?produto=ID (vindo de link compartilhado)
+          const params = new URLSearchParams(window.location.search)
+          const productIdFromUrl = params.get('produto')
+          if (productIdFromUrl) {
+            const found = prods.find(p => String(p.id) === String(productIdFromUrl))
+            if (found) setDetail(found)
           }
         }
       } catch {
@@ -318,6 +323,37 @@ export default function Products() {
                   <FaWhatsapp className="w-4 h-4 text-green-400" />
                   Tirar dúvidas no WhatsApp
                 </a>
+                {/* Botão compartilhar — gera link OG que mostra foto do produto no WhatsApp */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={async () => {
+                      const url = `${window.location.origin}/api/produto?id=${detail.id}`
+                      try {
+                        if (navigator.share) {
+                          await navigator.share({ title: detail.name, text: `${detail.name} — ${detail.price}`, url })
+                          return
+                        }
+                      } catch {}
+                      try { await navigator.clipboard.writeText(url) } catch {}
+                      setShareCopied(true)
+                      setTimeout(() => setShareCopied(false), 2500)
+                    }}
+                    className="flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    {shareCopied
+                      ? <><FaCheck className="w-3.5 h-3.5 text-green-500" /><span className="text-green-600">Link copiado!</span></>
+                      : <><FaShareAlt className="w-3.5 h-3.5" /> Copiar link</>
+                    }
+                  </button>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`${detail.name} — ${detail.price}\n${window.location.origin}/api/produto?id=${detail.id}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 py-2.5 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl text-sm font-bold transition-colors"
+                  >
+                    <FaWhatsapp className="w-4 h-4" /> Compartilhar
+                  </a>
+                </div>
               </div>
             </div>
           </div>
