@@ -838,7 +838,7 @@ export default function StoreDashboard() {
                 {/* Desktop row */}
                 <div className="hidden md:grid grid-cols-[48px_1fr_1fr_auto_auto_auto_auto_auto] gap-3 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
                   <div>
-                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
+                    <img src={p.image || 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img'} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
@@ -894,7 +894,7 @@ export default function StoreDashboard() {
                 {/* Mobile card */}
                 <div className="md:hidden p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex gap-3">
-                    <img src={p.image} alt={p.name} className="w-16 h-16 rounded-lg object-cover bg-gray-100 flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
+                    <img src={p.image || 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img'} alt={p.name} className="w-16 h-16 rounded-lg object-cover bg-gray-100 flex-shrink-0" onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/80x80/1a1a1a/22c55e?text=Img' }} />
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold text-gray-900 truncate">{p.name}</h3>
                       <div className="flex items-center gap-2 mt-1">

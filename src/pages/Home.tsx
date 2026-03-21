@@ -341,7 +341,7 @@ export default function Home() {
                                 onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
                                 className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                               >
-                              <img src={optimizedImage(p.image, 160)} srcSet={`${optimizedImage(p.image,160)} 160w, ${optimizedImage(p.image,360)} 360w`} sizes="64px" alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                              <img src={optimizedImage(p.image || IMG_FALLBACK, 160)} srcSet={`${optimizedImage(p.image || IMG_FALLBACK,160)} 160w, ${optimizedImage(p.image || IMG_FALLBACK,360)} 360w`} sizes="64px" alt={p.name} onError={handleImgError} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                               <div>
                                 <p className="text-xs font-bold text-gray-900">{p.name}</p>
                                 <p className="text-xs font-black text-green-700">{p.price}</p>
@@ -431,7 +431,7 @@ export default function Home() {
                           onClick={() => { setSearchTerm(''); setSearchOpen(false) }}
                           className="flex items-center gap-3 p-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                         >
-                          <img src={optimizedImage(p.image, 160)} srcSet={`${optimizedImage(p.image,160)} 160w, ${optimizedImage(p.image,360)} 360w`} sizes="64px" alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                          <img src={optimizedImage(p.image || IMG_FALLBACK, 160)} srcSet={`${optimizedImage(p.image || IMG_FALLBACK,160)} 160w, ${optimizedImage(p.image || IMG_FALLBACK,360)} 360w`} sizes="64px" alt={p.name} onError={handleImgError} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                           <div>
                             <p className="text-xs font-bold text-gray-900">{p.name}</p>
                             <p className="text-xs font-black text-green-700">{p.price}</p>
@@ -589,7 +589,7 @@ export default function Home() {
               <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Imagem - clique abre detalhe do produto */}
                 <Link to="/produtos" state={{ openProductId: p.id }} className="block relative aspect-square bg-gray-50 overflow-hidden">
-                  <img src={optimizedImage(p.image, 720)} srcSet={`${optimizedImage(p.image,720)} 720w, ${optimizedImage(p.image,1200)} 1200w`} sizes="(max-width: 640px) 100vw, 329px" alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                  <img src={optimizedImage(p.image || IMG_FALLBACK, 720)} srcSet={`${optimizedImage(p.image || IMG_FALLBACK,720)} 720w, ${optimizedImage(p.image || IMG_FALLBACK,1200)} 1200w`} sizes="(max-width: 640px) 100vw, 329px" alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                   <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">
                     {p.tag}
                   </span>

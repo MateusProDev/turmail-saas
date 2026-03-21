@@ -34,7 +34,7 @@ function toDisplay(p: Product): DisplayProduct {
     price: formatBRL(p.price),
     priceNum: p.price,
     oldPrice: p.oldPrice ? formatBRL(p.oldPrice) : '',
-    image: p.image,
+    image: p.image || IMG_FALLBACK,
     tag: p.tag || '',
     cat: p.category,
     brand: p.brand || '',
@@ -195,7 +195,7 @@ export default function Products() {
             {/* Imagem */}
             <div className="relative">
               <div className="aspect-square bg-gray-50 rounded-2xl overflow-hidden">
-                <img src={detail.image} alt={detail.name} onError={handleImgError} className="w-full h-full object-cover" />
+                <img src={detail.image || IMG_FALLBACK} alt={detail.name} onError={handleImgError} className="w-full h-full object-cover" />
               </div>
             </div>
 
@@ -370,7 +370,7 @@ export default function Products() {
                     className="group cursor-pointer bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     <div className="aspect-square bg-gray-50 overflow-hidden">
-                      <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      <img src={p.image || IMG_FALLBACK} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                     </div>
                     <div className="p-2.5">
                       <p className="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">{p.name}</p>
@@ -492,7 +492,7 @@ export default function Products() {
             <div key={p.id} className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
               {/* Image - click for detail */}
               <button onClick={() => setDetail(p)} className="w-full relative aspect-square bg-gray-50 overflow-hidden">
-                <img src={p.image} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                <img src={p.image || IMG_FALLBACK} alt={p.name} onError={handleImgError} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
                 <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-2 py-0.5 bg-green-600 text-white text-[10px] sm:text-xs font-bold rounded">{p.tag}</span>
               </button>
               {/* Info */}
