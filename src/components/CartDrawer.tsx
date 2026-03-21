@@ -196,14 +196,17 @@ export default function CartDrawer() {
                 {freteStatus === 'calculando' && (
                   <p className="text-blue-500 text-[11px] flex items-center gap-1"><FaSpinner className="w-3 h-3 animate-spin" /> Calculando frete...</p>
                 )}
-                {freteStatus === 'calculado' && freteValor !== null && (
-                  <div className="flex justify-between text-[11px]">
+                {freteStatus === 'calculado' && freteValor !== null && freteValor === 0 && (
+                  <p className="text-green-600 font-bold text-[11px] flex items-center gap-1">✅ Frete GRÁTIS!</p>
+                )}
+                {freteStatus === 'calculado' && freteValor !== null && freteValor > 0 && (
+                  <div className="flex justify-between items-center text-[11px]">
                     <span className="text-gray-500 flex items-center gap-1"><FaTruck className="w-3 h-3" /> Frete estimado</span>
-                    <span className="text-blue-600 font-bold">{fmt(freteValor)}</span>
+                    <span className="text-blue-600 font-bold text-xs">{fmt(freteValor)}</span>
                   </div>
                 )}
                 {freteStatus === 'erro' && (
-                  <p className="text-yellow-600 font-semibold text-[11px]">📦 Frete a combinar — confirmaremos no WhatsApp</p>
+                  <p className="text-yellow-600 font-semibold text-[11px]">⚠️ CEP não encontrado — frete a combinar no WhatsApp</p>
                 )}
                 {freteStatus === 'pendente' && cep.replace(/\D/g, '').length < 8 && (
                   <p className="text-gray-400 text-[10px]">Digite seu CEP para calcular o frete</p>
